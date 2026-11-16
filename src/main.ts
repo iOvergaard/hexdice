@@ -1,5 +1,8 @@
 import './style.css';
+import { installDebug } from './debug';
+import { Controller } from './game/controller';
+import { parseUrlParams } from './game/url-params';
 
-// Placeholder until Task E wires the controller in.
-const app = document.querySelector<HTMLDivElement>('#app')!;
-app.innerHTML = '<main class="placeholder" data-testid="placeholder"><h1>Hexdice</h1><p>Under construction.</p></main>';
+const controller = new Controller(document.querySelector<HTMLElement>('#app')!, parseUrlParams(location.search));
+if (import.meta.env.DEV) installDebug(controller);
+controller.start();
