@@ -5,9 +5,10 @@ import type { Board, CellIndex, RulesConfig, Territory } from './types';
 export type MapTerritory = Pick<Territory, 'id' | 'cells' | 'neighbours' | 'centre'>;
 
 const MAX_ATTEMPTS = 500;
+const SEA_MARGIN = 2;
 
 /**
- * Grows a ragged land blob, spreads seeds over it (best-of-k farthest point), grows territories round-robin
+ * Shapes one continent from a lobed, bay-notched radial mask inside a sea margin, spreads seeds over it (best-of-k farthest point), grows territories round-robin
  * into free land, then validates. A failed draw is retried on the same rng, so output stays deterministic.
  */
 export function generateMap(rules: RulesConfig, rng: Rng): { board: Board; territories: MapTerritory[] } {
@@ -23,37 +24,13 @@ function tryGenerate(rules: RulesConfig, rng: Rng): { board: Board; territories:
   const total = W * H;
   const nbrs: CellIndex[][] = Array.from({ length: total }, (_, c) => neighbours(c, W, H));
 
-  // Land blob: random frontier growth, biased towards cells with many land neighbours (compact, ragged coast).
   const span = rules.landRatioMax - rules.landRatioMin;
   const ratio = rules.landRatioMin + span * 0.25 + rng.next() * span * 0.5;
   const lakeSizes = Array.from({ length: rules.lakeCount }, () => rules.lakeSizeMin + rng.int(rules.lakeSizeMax - rules.lakeSizeMin + 1));
   // Grow extra land for the lakes so the land ratio still holds once they are carved out.
   const landTarget = Math.round(ratio * total) + lakeSizes.reduce((a, b) => a + b, 0);
-  const isLand = new Uint8Array(total);
-  const start = (Math.floor(H / 2) + rng.int(5) - 2) * W + Math.floor(W / 2) + rng.int(5) - 2;
-  const frontier: CellIndex[] = [start];
-  const inFrontier = new Uint8Array(total);
-  inFrontier[start] = 1;
-  const score = (c: CellIndex) => nbrs[c]!.filter((n) => isLand[n]).length;
-  let landCount = 0;
-  while (landCount < landTarget && frontier.length > 0) {
-    let pick = rng.int(frontier.length);
-    for (let k = 0; k < 2; k++) {
-      const other = rng.int(frontier.length);
-      if (score(frontier[other]!) > score(frontier[pick]!)) pick = other;
-    }
-    const cell = frontier[pick]!;
-    frontier[pick] = frontier[frontier.length - 1]!;
-    frontier.pop();
-    isLand[cell] = 1;
-    landCount++;
-    for (const n of nbrs[cell]!) {
-      if (!isLand[n] && !inFrontier[n]) {
-        inFrontier[n] = 1;
-        frontier.push(n);
-      }
-    }
-  }
+  const isLand = shapeContinent(W, H, landTarget, nbrs, rng);
+  if (!isLand) return null;
   if (!carveLakes(isLand, lakeSizes, nbrs, rng)) return null;
   const land: CellIndex[] = [];
   for (let c = 0; c < total; c++) if (isLand[c]) land.push(c);
@@ -136,6 +113,7 @@ function tryGenerate(rules: RulesConfig, rng: Rng): { board: Board; territories:
     }
   }
   if (seen.size !== territoryCount) return null;
+  if (hasNarrowBridge(adj)) return null;
 
   const territories: MapTerritory[] = cellsOf.map((cells, id) => ({
     id,
@@ -144,6 +122,36 @@ function tryGenerate(rules: RulesConfig, rng: Rng): { board: Board; territories:
     centre: interiorCell(cells, cellTerritory, id, nbrs),
   }));
   return { board: { width: W, height: H, cellTerritory }, territories };
+}
+
+/**
+ * True when removing one territory splits the map into two or more parts bigger than a small peninsula.
+ * Such single-territory bridges make endgames drag: two big empires trade one chokepoint forever.
+ */
+function hasNarrowBridge(adj: Set<number>[]): boolean {
+  const count = adj.length;
+  for (let cut = 0; cut < count; cut++) {
+    const seen = new Uint8Array(count);
+    seen[cut] = 1;
+    let large = 0;
+    for (let start = 0; start < count; start++) {
+      if (seen[start]) continue;
+      let size = 0;
+      const stack = [start];
+      seen[start] = 1;
+      while (stack.length > 0) {
+        size++;
+        for (const nb of adj[stack.pop()!]!) {
+          if (!seen[nb]) {
+            seen[nb] = 1;
+            stack.push(nb);
+          }
+        }
+      }
+      if (size > 3 && ++large > 1) return true;
+    }
+  }
+  return false;
 }
 
 /** Turns interior land into lakes. Lake cells stay at least one land cell away from the open sea. */
@@ -221,4 +229,69 @@ function interiorCell(cells: CellIndex[], cellTerritory: number[], id: number, n
   let best = cells[0]!;
   for (const c of cells) if ((depth.get(c) ?? 0) > (depth.get(best) ?? 0)) best = c;
   return best;
+}
+
+/**
+ * Land mask: an ellipse whose radius varies with the angle (low-frequency lobes, bumps for peninsulas, dips for bays),
+ * scaled to hit `target` cells, then reduced to the component around the centre so the landmass is one piece.
+ */
+function shapeContinent(W: number, H: number, target: number, nbrs: CellIndex[][], rng: Rng): Uint8Array | null {
+  const total = W * H;
+  const ROW = Math.sqrt(3) / 2;
+  const cx = W / 2;
+  const cy = (H * ROW) / 2;
+  const rx = W / 2 - SEA_MARGIN;
+  const ry = (H * ROW) / 2 - SEA_MARGIN * ROW;
+  const lobes: [number, number, number][] = [];
+  for (let k = 2; k <= 8; k++) lobes.push([k, (0.4 / (k - 1) ** 0.6) * (0.5 + rng.next()), rng.next() * Math.PI * 2]);
+  const features: [number, number, number][] = []; // [angle, signed height, width]
+  const bays = 4 + rng.int(3);
+  const capes = 4 + rng.int(3);
+  for (let i = 0; i < bays; i++) features.push([rng.next() * Math.PI * 2, -(0.4 + rng.next() * 0.35), 0.15 + rng.next() * 0.2]);
+  for (let i = 0; i < capes; i++) features.push([rng.next() * Math.PI * 2, 0.3 + rng.next() * 0.3, 0.14 + rng.next() * 0.14]);
+  const radius = (a: number) => {
+    let f = 1;
+    for (const [k, amp, ph] of lobes) f += amp * Math.cos(k * a + ph);
+    for (const [centre, h, w] of features) {
+      let d = Math.abs(a - centre) % (Math.PI * 2);
+      if (d > Math.PI) d = Math.PI * 2 - d;
+      f += h * Math.exp(-((d / w) ** 2));
+    }
+    return Math.max(0.3, f);
+  };
+  const norm = new Float64Array(total); // distance relative to the radius at this angle
+  let fMax = 0;
+  for (let c = 0; c < total; c++) {
+    const x = ((c % W) + (Math.floor(c / W) % 2 ? 0.5 : 0) - cx) / rx;
+    const y = (Math.floor(c / W) * ROW - cy) / ry;
+    const f = radius(Math.atan2(y, x));
+    fMax = Math.max(fMax, f);
+    norm[c] = Math.hypot(x, y) / f + (rng.next() - 0.5) * 0.04;
+  }
+  const cut = (s: number) => {
+    let n = 0;
+    for (let c = 0; c < total; c++) if (norm[c]! <= s) n++;
+    return n;
+  };
+  let lo = 0;
+  let hi = 1 / 1; // hi = 1: the mask hits the sea margin at the widest lobe only when f is 1; guarded below
+  for (let i = 0; i < 24; i++) {
+    const mid = (lo + hi) / 2;
+    if (cut(mid) < target) lo = mid;
+    else hi = mid;
+  }
+  const isLand = new Uint8Array(total);
+  const root = Math.floor(H / 2) * W + Math.floor(W / 2);
+  if (norm[root]! > hi) return null;
+  isLand[root] = 1;
+  const stack = [root];
+  while (stack.length) {
+    for (const n of nbrs[stack.pop()!]!) {
+      if (!isLand[n] && norm[n]! <= hi && nbrs[n]!.length === 6) {
+        isLand[n] = 1;
+        stack.push(n);
+      }
+    }
+  }
+  return isLand;
 }

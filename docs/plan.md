@@ -38,8 +38,8 @@ The point of v0.1 is a **solid, playable base to build your improvement ideas on
 This section is the complete, authoritative rule set. It's our design, not a paraphrase of Dice Wars. All numbers are **config defaults**, not constants, so they can be tuned later.
 
 **Board**
-- Hex grid, default 32 × 24 cells. Territories are contiguous blobs of cells; the rest is sea. *(My call:)* roughly 65–75% land, one compact continent with a ragged coast; small inland lakes allowed.
-- Default 30 territories. Every territory has ≥ 6 cells. The territory adjacency graph is connected (one landmass).
+- Hex grid, default 44 × 33 cells. Territories are contiguous blobs of cells; the rest is sea. One continent with bays and peninsulas and open sea around it (Jacob's choice, 16-11-2026): about 33–40% land, no land on the grid edge.
+- Default 30 territories. Every territory has ≥ 6 cells. The territory adjacency graph is connected (one landmass), and no single territory is the only link between two regions larger than 3 territories (such bridges made endgames drag for 100+ rounds).
 - **Lakes** (added 16-11-2026, from Jacob): 3 inland lakes of 4–9 cells (they may merge), never touching the open sea. Territories can't border across water, so lakes create chokepoints and defensible spots.
 - Two territories are adjacent if any of their cells share an edge.
 
@@ -101,7 +101,9 @@ tests/unit/   Vitest      tests/e2e/   Playwright
 - **Game over overlay** across the board: "You win" / "You were eliminated" / "<name> wins", buttons **Title** and **Replay**. If you're eliminated while the game continues, a third button: **Watch the rest**.
 - **Replay:** plays the finished game back from its seed and move log at fast speed, read-only. Cheap because the engine is deterministic.
 
-Click own territory (≥ 2 dice) to select and highlight valid targets; click a target to attack; Esc deselects; Space ends turn. Flat, clean look with our own palette and a numbered dice token per territory. *(My call:)* the 8 player colours differ in lightness as well as hue; each player's emblem (a simple shape) sits on their dice tokens; the player panel and roll result always show colour, emblem and name. A richer "who is who" treatment is one of your later ideas.
+**Map look** (merged 16-11-2026 after the `proto/painted-map` prototype): a painted landscape in our own style. Sea shaded by depth with surf and waves, smooth sandy coasts and lake shores with hex steps kept between territories, painted meadow with trees, hills and rocks, owner shown as a colour wash plus darkened borders. The view zooms to the continent; on a portrait screen the board rotates 90° to fill it. **Units:** dice stacked upwards in the owner's colour (2D, not isometric) with a count-and-emblem label; `?units=cluster|banners` keeps the two alternatives for comparison.
+
+Click own territory (≥ 2 dice) to select and highlight valid targets; click a target to attack; Esc deselects; Space ends turn (and skips ahead during AI turns). *(My call:)* the 8 player colours differ in lightness as well as hue; each player's emblem (a simple shape) sits on their dice tokens; the player panel and roll result always show colour, emblem and name. A richer "who is who" treatment is one of your later ideas.
 
 ## 6. Playtesting: how every change gets proven
 
