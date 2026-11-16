@@ -155,4 +155,11 @@ Hex orientation and coordinate storage, exact map-growth algorithm, palette and 
 - **Powers or technology research** that you earn, for example by rolling all sixes. How it works is still open.
 - **Special fields:** territories that grant powers or research points when captured.
 
+- **Getting dice to the front** (16-11-2026). Random reinforcements pile up on interior territories that can never use them, while the front is always outnumbered because that's where you attack from. Results then depend on the length of your front more than the size of your empire, and luck dominates. Candidate fixes, to be compared in the simulator against the v0.1 rules as config flags:
+  1. *Fortify:* once per turn, move dice between two adjacent own territories (at least 1 stays). Most player agency; needs a move gesture and AI logic; may make the leader snowball harder.
+  2. *Front-line reinforcement:* new dice land only, or mostly, on territories bordering an enemy (or interior overflow spills to the nearest border). A one-function change in reinforcement, no new UI, turns stay fast.
+  3. *Supporting attacks:* neighbouring own territories lend dice to an attack. The biggest change to the odds model.
+
+  How to judge them: Normal-vs-Easy win rate as a proxy for "skill beats luck", comeback rate (does the leader at round 10 still win?), game length, plus a hands-on feel check.
+
 v0.1 keeps the door open without building any of it: roll events carry every die face, territories and players are plain data that can gain a `feature` or `powers` field, and the rules keep attack, reinforcement and turn-advance as separate steps a power could hook into.
