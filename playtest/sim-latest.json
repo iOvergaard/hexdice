@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-16T14:37:48.638Z",
+  "date": "2026-11-16T15:17:39.710Z",
   "games": 500,
   "rules": {
     "lossRule": "classic",
@@ -12,23 +12,23 @@
   },
   "eightPlayer": {
     "games": 250,
-    "avgRounds": 17.096,
-    "maxRounds": 38,
+    "avgRounds": 24.036,
+    "maxRounds": 144,
     "winsBySeat": [
-      38,
-      32,
-      31,
+      35,
+      30,
       29,
-      23,
       26,
-      29,
-      42
+      22,
+      30,
+      39,
+      39
     ]
   },
   "crashes": 0,
   "illegalActions": 0,
   "roundCapHits": 0,
-  "attacks": 99435,
-  "ties": 3513,
-  "durationMs": 1928
+  "attacks": 108712,
+  "ties": 3552,
+  "durationMs": 2824
 }
