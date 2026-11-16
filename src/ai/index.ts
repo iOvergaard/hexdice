@@ -1,7 +1,9 @@
 import type { Rng } from '../engine/rng';
 import type { Action, AiLevel, GameState } from '../engine/types';
+import { chooseEasy } from './easy';
+import { chooseNormal } from './normal';
 
-/** Next action for state.current. Stub until Task D lands: always ends the turn. */
-export function chooseAction(_state: GameState, _level: AiLevel, _rng: Rng): Action {
-  return { type: 'endTurn' };
+/** Next action for state.current. Pure apart from drawing from rng. */
+export function chooseAction(state: GameState, level: AiLevel, rng: Rng): Action {
+  return level === 'easy' ? chooseEasy(state, rng) : chooseNormal(state, rng);
 }
