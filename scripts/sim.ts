@@ -20,6 +20,7 @@ const baseSeed = Number(arg('seed', '1'));
 const out = arg('out', 'playtest/sim-latest.json');
 const lossRule = arg('loss-rule', 'classic') as LossRule;
 if (lossRule !== 'classic' && lossRule !== 'attrition') throw new Error(`unknown --loss-rule ${lossRule}`);
+const eliminationBonus = Number(arg('elimination-bonus', '1'));
 
 let crashes = 0;
 let illegalActions = 0;
@@ -35,7 +36,7 @@ interface Result {
 
 function play(levels: AiLevel[], seed: number): Result {
   try {
-    let state = createGame(makeConfig(aiSeats(levels), seed, { lossRule }));
+    let state = createGame(makeConfig(aiSeats(levels), seed, { lossRule, eliminationBonus }));
     const rng = new Rng(seed ^ 0x9e3779b9);
     while (state.winner === null) {
       if (state.round > ROUND_CAP) {
@@ -90,7 +91,7 @@ const winRate = duelGames === 0 ? 0 : normalWins / duelGames;
 const result = {
   date: new Date().toISOString(),
   games,
-  rules: { lossRule },
+  rules: { lossRule, eliminationBonus },
   normalVsEasy: { games: duelGames, normalWins, winRate },
   eightPlayer: { games: eightGames, avgRounds: eightGames ? roundSum / eightGames : 0, maxRounds, winsBySeat },
   crashes,
@@ -102,7 +103,7 @@ const result = {
 };
 writeFileSync(out, JSON.stringify(result, null, 2) + '\n');
 
-console.log(`Rules: lossRule=${lossRule}; ${attacks} attacks, ${ties} draws (${((ties / Math.max(1, attacks)) * 100).toFixed(1)}%)`);
+console.log(`Rules: lossRule=${lossRule} eliminationBonus=${eliminationBonus}; ${attacks} attacks, ${ties} draws (${((ties / Math.max(1, attacks)) * 100).toFixed(1)}%)`);
 console.log(`Normal vs Easy: ${normalWins}/${duelGames} (${(winRate * 100).toFixed(1)}%)`);
 console.log(`8-player: avg ${result.eightPlayer.avgRounds.toFixed(1)} rounds, max ${maxRounds}, wins by seat [${winsBySeat.join(', ')}]`);
 console.log(`crashes ${crashes}, illegal ${illegalActions}, cap hits ${roundCapHits}, ${(durationMs / 1000).toFixed(1)} s`);

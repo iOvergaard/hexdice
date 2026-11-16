@@ -40,6 +40,7 @@ This section is the complete, authoritative rule set. It's our design, not a par
 **Board**
 - Hex grid, default 32 × 24 cells. Territories are contiguous blobs of cells; the rest is sea. *(My call:)* roughly 65–75% land, one compact continent with a ragged coast; small inland lakes allowed.
 - Default 30 territories. Every territory has ≥ 6 cells. The territory adjacency graph is connected (one landmass).
+- **Lakes** (added 16-11-2026, from Jacob): 3 inland lakes of 4–9 cells (they may merge), never touching the open sea. Territories can't border across water, so lakes create chokepoints and defensible spots.
 - Two territories are adjacent if any of their cells share an edge.
 
 **Setup**
@@ -53,7 +54,7 @@ This section is the complete, authoritative rule set. It's our design, not a par
   - Win: target changes owner; source dice − 1 move into it; source keeps 1. (A source holds at most 8, so the target never gets more than 7.)
   - Loss: source drops to 1; target unchanged.
 - A player who loses their last territory is eliminated; their reserve is discarded.
-- **Reinforcement (end of turn):** amount = number of territories in the player's largest connected group of own territories, plus their reserve. Dice are placed one at a time on random own territories with < 8 dice. Leftovers go to the reserve, capped at 64.
+- **Reinforcement (end of turn):** amount = number of territories in the player's largest connected group of own territories, plus their reserve, plus the **knockout bonus**: +1 die per turn, permanently, for each opponent the player has eliminated (`eliminationBonus`, added 16-11-2026, from Jacob). Dice are placed one at a time on random own territories with < 8 dice. Leftovers go to the reserve, capped at 64.
 - **Game over:** one player owns every territory. If you're eliminated: defeat screen with "watch the rest" or "new game".
 
 **Odds:** the engine precomputes the exact win probability for every a-vs-d dice matchup (1–8 each). AI uses it; the UI can show it later.

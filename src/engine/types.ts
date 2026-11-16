@@ -28,6 +28,8 @@ export interface RulesConfig {
   maxDice: number;
   maxReserve: number;
   lossRule: LossRule;
+  /** Extra dice per reinforcement, permanently, for each opponent the player has knocked out. */
+  eliminationBonus: number;
   /** Starting dice per player: floor(startingDiceFactor * territoryCount / players). */
   startingDiceFactor: number;
 }
@@ -78,6 +80,8 @@ export interface Player {
   identity: number;
   /** 0..maxReserve */
   reserve: number;
+  /** Opponents this player has eliminated. */
+  knockouts: number;
   alive: boolean;
 }
 
@@ -116,8 +120,8 @@ export type GameEvent =
     }
   | { type: 'territoryCaptured'; territory: TerritoryId; previousOwner: PlayerId; newOwner: PlayerId; dice: number }
   | { type: 'playerEliminated'; player: PlayerId; by: PlayerId }
-  /** placed: one territory id per die, in placement order. reserve: the player's reserve afterwards. */
-  | { type: 'reinforced'; player: PlayerId; largestGroup: number; placed: TerritoryId[]; reserve: number }
+  /** placed: one territory id per die, in placement order. bonus: dice from knockouts. reserve: afterwards. */
+  | { type: 'reinforced'; player: PlayerId; largestGroup: number; bonus: number; placed: TerritoryId[]; reserve: number }
   | { type: 'turnStarted'; player: PlayerId; round: number }
   | { type: 'gameOver'; winner: PlayerId };
 

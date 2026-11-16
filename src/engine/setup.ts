@@ -17,6 +17,7 @@ export function createGame(config: GameConfig): GameState {
     aiLevel: s.aiLevel,
     identity: s.identity,
     reserve: 0,
+    knockouts: 0,
     alive: true,
   }));
 

@@ -109,6 +109,7 @@ function resolveAttack(s: GameState, from: TerritoryId, to: TerritoryId, rng: Rn
     const loser = s.players[defender]!;
     loser.alive = false;
     loser.reserve = 0;
+    s.players[attacker]!.knockouts++;
     events.push({ type: 'playerEliminated', player: defender, by: attacker });
   }
   if (s.territories.every((t) => t.owner === attacker)) {
@@ -121,7 +122,8 @@ function resolveAttack(s: GameState, from: TerritoryId, to: TerritoryId, rng: Rn
 function reinforce(s: GameState, rng: Rng, events: GameEvent[]): void {
   const player = s.players[s.current]!;
   const group = largestGroup(s, player.id);
-  let remaining = group + player.reserve;
+  const bonus = player.knockouts * s.config.eliminationBonus;
+  let remaining = group + bonus + player.reserve;
   const placed: TerritoryId[] = [];
   const max = s.config.maxDice;
   const open: Territory[] = s.territories.filter((t) => t.owner === player.id && t.dice < max);
@@ -136,7 +138,7 @@ function reinforce(s: GameState, rng: Rng, events: GameEvent[]): void {
   }
 
   player.reserve = Math.min(s.config.maxReserve, remaining);
-  events.push({ type: 'reinforced', player: player.id, largestGroup: group, placed, reserve: player.reserve });
+  events.push({ type: 'reinforced', player: player.id, largestGroup: group, bonus, placed, reserve: player.reserve });
 }
 
 /** Mutates the (already cloned) state: hands play to the next alive player. */

@@ -174,6 +174,31 @@ describe('applyAction', () => {
     });
   }
 
+  /** P0 knocks out P1 (its only territory, t1) from an 8-die stack; P2 keeps the game going. */
+  function knockOut(eliminationBonus: number) {
+    const base = buildState({ owners: [0, 1, 2, 0], dice: [8, 1, 1, 1], edges: [[0, 1], [1, 2], [2, 3]], players: 3, rules: { eliminationBonus } });
+    for (let seed = 1; seed <= 100; seed++) {
+      const result = applyAction({ ...base, rngState: seed }, { type: 'attack', from: 0, to: 1 });
+      if (result.state.territories[1]!.owner === 0) return result.state;
+    }
+    throw new Error('8 vs 1 never won');
+  }
+
+  it('knocking out a player earns a bonus die every turn', () => {
+    const state = knockOut(1);
+    expect(state.players[0]!.knockouts).toBe(1);
+    const r = applyAction(state, { type: 'endTurn' }).events.find((e) => e.type === 'reinforced');
+    expect(r).toMatchObject({ largestGroup: 2, bonus: 1 });
+    expect(r?.type === 'reinforced' && r.placed.length).toBe(3);
+  });
+
+  it('gives no knockout bonus when the rule is off', () => {
+    const state = knockOut(0);
+    const r = applyAction(state, { type: 'endTurn' }).events.find((e) => e.type === 'reinforced');
+    expect(r).toMatchObject({ largestGroup: 2, bonus: 0 });
+    expect(r?.type === 'reinforced' && r.placed.length).toBe(2);
+  });
+
   it('capturing the last territory eliminates the player', () => {
     for (let seed = 1; seed <= 50; seed++) {
       const s = buildState({
