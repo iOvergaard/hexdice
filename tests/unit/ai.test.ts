@@ -1,0 +1,64 @@
+import { describe, expect, it } from 'vitest';
+import { chooseAction } from '../../src/ai';
+import { makeConfig } from '../../src/engine/config';
+import { Rng } from '../../src/engine/rng';
+import { isLegalAttack } from '../../src/engine/rules';
+import { aiSeats } from '../../src/engine/seats';
+import { createGame } from '../../src/engine/setup';
+import type { AiLevel } from '../../src/engine/types';
+import { buildState } from '../fixtures/state';
+
+const LEVELS: AiLevel[] = ['easy', 'normal'];
+
+describe('ai', () => {
+  it('ends the turn when there is no legal attack', () => {
+    const state = buildState({ owners: [0, 1], dice: [1, 5], edges: [[0, 1]] });
+    for (const level of LEVELS) expect(chooseAction(state, level, new Rng(1))).toEqual({ type: 'endTurn' });
+  });
+
+  it('only returns legal actions', () => {
+    for (let i = 0; i < 200; i++) {
+      const players = 2 + (i % 7);
+      for (const level of LEVELS) {
+        const state = createGame(makeConfig(aiSeats(Array.from({ length: players }, () => level)), i + 1));
+        const action = chooseAction(state, level, new Rng(i));
+        if (action.type === 'attack') expect(isLegalAttack(state, action.from, action.to)).toBe(true);
+      }
+    }
+  });
+
+  it('normal takes an overwhelming attack', () => {
+    const state = buildState({ owners: [0, 1], dice: [8, 1], edges: [[0, 1]] });
+    expect(chooseAction(state, 'normal', new Rng(1))).toEqual({ type: 'attack', from: 0, to: 1 });
+  });
+
+  it('normal declines a hopeless attack', () => {
+    const state = buildState({ owners: [0, 1], dice: [2, 8], edges: [[0, 1]] });
+    expect(chooseAction(state, 'normal', new Rng(1))).toEqual({ type: 'endTurn' });
+  });
+
+  it('normal attacks when every border is full', () => {
+    const state = buildState({
+      owners: [0, 1, 0, 1],
+      dice: [8, 8, 8, 8],
+      edges: [[0, 1], [1, 2], [2, 3], [3, 0]],
+    });
+    expect(chooseAction(state, 'normal', new Rng(1)).type).toBe('attack');
+  });
+
+  it('easy attacks sometimes', () => {
+    const state = buildState({ owners: [0, 1], dice: [5, 3], edges: [[0, 1]] });
+    let attacks = 0;
+    for (let seed = 0; seed < 100; seed++) {
+      if (chooseAction(state, 'easy', new Rng(seed)).type === 'attack') attacks++;
+    }
+    expect(attacks).toBeGreaterThan(0);
+  });
+
+  it('is deterministic for the same rng seed', () => {
+    const state = createGame(makeConfig(aiSeats(['easy', 'normal', 'normal', 'easy']), 7));
+    for (const level of LEVELS) {
+      expect(chooseAction(state, level, new Rng(5))).toEqual(chooseAction(state, level, new Rng(5)));
+    }
+  });
+});

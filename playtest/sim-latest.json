@@ -1,0 +1,28 @@
+{
+  "date": "2026-11-16T14:22:21.738Z",
+  "games": 500,
+  "normalVsEasy": {
+    "games": 250,
+    "normalWins": 223,
+    "winRate": 0.892
+  },
+  "eightPlayer": {
+    "games": 250,
+    "avgRounds": 17.272,
+    "maxRounds": 39,
+    "winsBySeat": [
+      38,
+      28,
+      22,
+      31,
+      28,
+      24,
+      38,
+      41
+    ]
+  },
+  "crashes": 0,
+  "illegalActions": 0,
+  "roundCapHits": 0,
+  "durationMs": 1927
+}
