@@ -1,0 +1,94 @@
+import { expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
+
+const shot = (page: Page, project: string, name: string) =>
+  page.screenshot({ path: `playtest/screens/ui-${project}-${name}.png`, fullPage: true });
+
+test('renders 30 territories', async ({ page }) => {
+  await page.goto('/harness.html?seed=7&players=4');
+  await expect(page.getByTestId('board')).toBeVisible();
+  await expect(page.locator('[data-territory]')).toHaveCount(30);
+});
+
+test('tapping an own 2+ territory selects it', async ({ page }) => {
+  await page.goto('/harness.html?seed=7&players=4');
+  const id = await page.evaluate(() => {
+    const g = [...document.querySelectorAll<SVGElement>('[data-territory]')].find(
+      (el) => el.dataset.owner === '0' && Number(el.dataset.dice) >= 2,
+    );
+    return g?.dataset.territory;
+  });
+  expect(id).toBeDefined();
+  await page.getByTestId(`token-${id}`).click();
+  await expect(page.locator(`[data-territory="${id}"]`)).toHaveClass(/is-selected/);
+  await page.getByTestId(`token-${id}`).click();
+  await expect(page.locator('.is-selected')).toHaveCount(0);
+});
+
+test('attacker is on the right', async ({ page }) => {
+  await page.goto('/harness.html?seed=7&players=4&roll=1');
+  const att = await page.getByTestId('roll-attacker').boundingBox();
+  const def = await page.getByTestId('roll-defender').boundingBox();
+  expect(att!.x).toBeGreaterThan(def!.x);
+  await expect(page.getByTestId('roll-attacker-sum')).toHaveText('16');
+  await expect(page.getByTestId('roll-defender-sum')).toHaveText('12');
+  await expect(page.getByTestId('roll-attacker')).toHaveClass(/is-winner/);
+});
+
+test('no horizontal scroll', async ({ page }) => {
+  await page.goto('/harness.html?seed=7&players=8&roll=1');
+  const fits = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+  expect(fits).toBe(true);
+  for (const id of ['roll', 'board', 'end-turn', 'player-0', 'player-7']) {
+    await expect(page.getByTestId(id)).toBeVisible();
+  }
+});
+
+test('title screen has 2–8 player chips', async ({ page }) => {
+  await page.goto('/harness.html?title=1&players=5');
+  for (let n = 2; n <= 8; n++) await expect(page.getByTestId(`players-${n}`)).toHaveText(`${n} players`);
+  await expect(page.getByTestId('players-5')).toHaveAttribute('aria-pressed', 'true');
+  await page.getByTestId('players-3').click();
+  await expect(page.getByTestId('players-3')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('players-5')).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByTestId('ai-normal')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('start')).toBeVisible();
+  const fits = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+  expect(fits).toBe(true);
+});
+
+test('game-over overlay has its buttons', async ({ page }) => {
+  await page.goto('/harness.html?seed=7&players=4&overlay=1');
+  await expect(page.getByTestId('overlay-heading')).toHaveText('You were eliminated');
+  for (const id of ['overlay-title', 'overlay-replay', 'overlay-watch']) await expect(page.getByTestId(id)).toBeVisible();
+});
+
+test('board preview prompt replaces the player bar', async ({ page }) => {
+  await page.goto('/harness.html?seed=7&players=4&preview=1');
+  await expect(page.getByTestId('preview-seed')).toHaveText('Seed 7');
+  await expect(page.getByTestId('player-0')).toBeHidden();
+  await page.getByTestId('preview-yes').click();
+  await expect(page.getByTestId('preview')).toBeHidden();
+  await expect(page.getByTestId('player-0')).toBeVisible();
+});
+
+test('saves screenshots', async ({ page }, testInfo) => {
+  const p = testInfo.project.name;
+  await page.goto('/harness.html?seed=7&players=8');
+  await shot(page, p, 'board');
+  const id = await page.evaluate(
+    () =>
+      [...document.querySelectorAll<SVGElement>('[data-territory]')].find((el) => el.dataset.owner === '0' && Number(el.dataset.dice) >= 3)
+        ?.dataset.territory,
+  );
+  await page.getByTestId(`token-${id}`).click();
+  await shot(page, p, 'selected');
+  await page.goto('/harness.html?seed=7&players=8&roll=1');
+  await shot(page, p, 'roll');
+  await page.goto('/harness.html?seed=7&players=8&overlay=1');
+  await shot(page, p, 'overlay');
+  await page.goto('/harness.html?title=1&players=8');
+  await shot(page, p, 'title');
+  await page.goto('/harness.html?seed=7&players=8&preview=1');
+  await shot(page, p, 'preview');
+});
