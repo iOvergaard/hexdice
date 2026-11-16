@@ -8,6 +8,23 @@ const SEEDS = Array.from({ length: 1000 }, (_, i) => i + 1);
 const maps = new Map(SEEDS.map((s) => [s, generateMap(DEFAULT_RULES, new Rng(s))]));
 const W = DEFAULT_RULES.gridWidth;
 const H = DEFAULT_RULES.gridHeight;
+const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]!;
+const isEdge = (c: number) => c % W === 0 || c % W === W - 1 || c < W || c >= W * (H - 1);
+
+/** Coastline edges (land side facing water or the grid border, lakes included) divided by sqrt(land cells). */
+function irregularity(cellTerritory: number[]): number {
+  let land = 0;
+  let coast = 0;
+  cellTerritory.forEach((t, c) => {
+    if (t === -1) return;
+    land++;
+    coast += 6 - neighbours(c, W, H).filter((n) => cellTerritory[n] !== -1).length;
+  });
+  return coast / Math.sqrt(land);
+}
+
+/** Median irregularity of the old blob generator (32x24, 65-75% land) over seeds 1..1000. */
+const BASELINE_IRREGULARITY = 11.57;
 
 /** Water cells not connected to the grid edge, grouped into lakes. */
 function lakes(cellTerritory: number[]): number[][] {
@@ -52,7 +69,7 @@ function lakes(cellTerritory: number[]): number[][] {
 describe('generateMap', () => {
   it('generates exactly territoryCount territories', () => {
     for (const [, m] of maps) {
-      expect(m.territories).toHaveLength(30);
+      expect(m.territories).toHaveLength(DEFAULT_RULES.territoryCount);
       m.territories.forEach((t, i) => expect(t.id).toBe(i));
     }
   });
@@ -60,8 +77,8 @@ describe('generateMap', () => {
   it('territories are contiguous and within size bounds', () => {
     for (const [seed, m] of maps) {
       for (const t of m.territories) {
-        expect(t.cells.length, `seed ${seed}`).toBeGreaterThanOrEqual(6);
-        expect(t.cells.length, `seed ${seed}`).toBeLessThanOrEqual(40);
+        expect(t.cells.length, `seed ${seed}`).toBeGreaterThanOrEqual(DEFAULT_RULES.minTerritoryCells);
+        expect(t.cells.length, `seed ${seed}`).toBeLessThanOrEqual(DEFAULT_RULES.maxTerritoryCells);
         expect(t.cells).toEqual([...t.cells].sort((a, b) => a - b));
         const inside = new Set(t.cells);
         const seen = new Set([t.cells[0]!]);
@@ -82,8 +99,8 @@ describe('generateMap', () => {
   it('land ratio is within bounds', () => {
     for (const [seed, m] of maps) {
       const land = m.board.cellTerritory.filter((t) => t !== -1).length / (W * H);
-      expect(land, `seed ${seed}`).toBeGreaterThanOrEqual(0.65);
-      expect(land, `seed ${seed}`).toBeLessThanOrEqual(0.75);
+      expect(land, `seed ${seed}`).toBeGreaterThanOrEqual(DEFAULT_RULES.landRatioMin);
+      expect(land, `seed ${seed}`).toBeLessThanOrEqual(DEFAULT_RULES.landRatioMax);
     }
   });
 
@@ -161,7 +178,32 @@ describe('generateMap', () => {
 
   it('can generate without lakes', () => {
     const m = generateMap({ ...DEFAULT_RULES, lakeCount: 0 }, new Rng(3));
-    expect(m.territories).toHaveLength(30);
+    expect(m.territories).toHaveLength(DEFAULT_RULES.territoryCount);
+  });
+
+  it('leaves open sea around the continent', () => {
+    const shares = [...maps.values()].map((m) => {
+      let edge = 0;
+      let edgeLand = 0;
+      m.board.cellTerritory.forEach((t, c) => {
+        if (!isEdge(c)) return;
+        edge++;
+        if (t !== -1) edgeLand++;
+      });
+      return edgeLand / edge;
+    });
+    expect(median(shares)).toBeLessThanOrEqual(0.1);
+  });
+
+  it('has a coastline at least 25% more irregular than the old blob', () => {
+    const med = median([...maps.values()].map((m) => irregularity(m.board.cellTerritory)));
+    expect(med).toBeGreaterThanOrEqual(BASELINE_IRREGULARITY * 1.25);
+  });
+
+  it('keeps territories around 15 to 20 cells on average', () => {
+    const avg = median([...maps.values()].map((m) => m.board.cellTerritory.filter((t) => t !== -1).length / m.territories.length));
+    expect(avg).toBeGreaterThanOrEqual(15);
+    expect(avg).toBeLessThanOrEqual(20);
   });
 
   it('is deterministic', () => {
