@@ -35,6 +35,7 @@ interface Geometry {
 interface TerritoryNodes {
   group: SVGGElement;
   fill: SVGPathElement;
+  token: SVGGElement;
   emblem: SVGPathElement;
   count: SVGTextElement;
   emblemIdentity: number;
@@ -64,6 +65,8 @@ export class BoardView {
   private readonly landLayer: SVGGElement;
   private readonly lineLayer: SVGGElement;
   private readonly hlLayer: SVGGElement;
+  // Tokens sit above every fill, outline and highlight so neighbours never cover them.
+  private readonly tokenLayer: SVGGElement;
   private board: Board | null = null;
   private geometry: Geometry[] = [];
   private nodes: TerritoryNodes[] = [];
@@ -83,13 +86,14 @@ export class BoardView {
     this.landLayer = svg('g', {}, 'layer-land');
     this.lineLayer = svg('g', {}, 'layer-lines');
     this.hlLayer = svg('g', {}, 'layer-highlight');
-    this.root.append(defs, this.landLayer, this.lineLayer, this.hlLayer);
+    this.tokenLayer = svg('g', {}, 'layer-tokens');
+    this.root.append(defs, this.landLayer, this.lineLayer, this.hlLayer, this.tokenLayer);
     container.append(this.root);
 
     this.root.addEventListener('pointerup', (e) => {
       if (!e.isPrimary || e.button > 0 || !this.interactive) return;
-      const hit = (e.target as Element | null)?.closest<SVGElement>('[data-territory]');
-      this.tapHandler(hit ? Number(hit.dataset.territory) : null);
+      const hit = (e.target as Element | null)?.closest<SVGElement>('[data-territory],[data-token-for]');
+      this.tapHandler(hit ? Number(hit.dataset.territory ?? hit.dataset.tokenFor) : null);
     });
   }
 
@@ -117,6 +121,10 @@ export class BoardView {
       node.group.classList.toggle('is-target', targets.has(id));
       node.group.classList.toggle('is-attack', view.attack?.from === id || view.attack?.to === id);
       node.group.classList.toggle('is-full', t.dice >= state.config.maxDice);
+      node.token.style.setProperty('--c', colour);
+      for (const cls of ['is-selected', 'is-target', 'is-attack', 'is-full']) {
+        node.token.classList.toggle(cls, node.group.classList.contains(cls));
+      }
       if (node.emblemIdentity !== identity) {
         node.emblem.setAttribute('d', emblemPath(identity, 9));
         node.emblemIdentity = identity;
@@ -134,13 +142,14 @@ export class BoardView {
     this.nodes = [];
     this.landLayer.replaceChildren();
     this.lineLayer.replaceChildren();
+    this.tokenLayer.replaceChildren();
 
     const size = boardPixelSize(board.width, board.height, HEX);
     const w = n(size.width + PAD * 2);
     const h = n(size.height + PAD * 2);
     this.root.setAttribute('viewBox', `0 0 ${w} ${h}`);
     this.root.replaceChildren(...Array.from(this.root.children).filter((c) => c.tagName === 'defs'));
-    this.root.append(svg('rect', { x: 0, y: 0, width: w, height: h, rx: 16 }, 'sea'), this.landLayer, this.lineLayer, this.hlLayer);
+    this.root.append(svg('rect', { x: 0, y: 0, width: w, height: h, rx: 16 }, 'sea'), this.landLayer, this.lineLayer, this.hlLayer, this.tokenLayer);
 
     state.territories.forEach((_t, id) => {
       const geo = this.geometry[id]!;
@@ -151,6 +160,7 @@ export class BoardView {
 
       const token = svg('g', { transform: `translate(${n(geo.centre.x)} ${n(geo.centre.y)})` }, 'token');
       token.dataset.testid = `token-${id}`;
+      token.dataset.tokenFor = String(id);
       const body = svg('g', {}, 'token-body');
       body.append(
         svg('rect', { x: -TOKEN_W / 2, y: -TOKEN_H / 2, width: TOKEN_W, height: TOKEN_H, rx: 13 }, 'token-plate'),
@@ -159,11 +169,12 @@ export class BoardView {
       const count = svg('text', { x: 14, y: 1, 'text-anchor': 'middle', 'dominant-baseline': 'central' }, 'token-count');
       body.append(emblem, count);
       token.append(body);
-      group.append(fill, token);
+      group.append(fill);
       this.landLayer.append(group);
+      this.tokenLayer.append(token);
 
       this.lineLayer.append(svg('path', { d: geo.outline }, 'outline'));
-      this.nodes.push({ group, fill, emblem, count, emblemIdentity: -1 });
+      this.nodes.push({ group, fill, token, emblem, count, emblemIdentity: -1 });
     });
   }
 

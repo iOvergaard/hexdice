@@ -36,7 +36,8 @@ export function emblemPath(identity: number, size: number): string {
   const s = size;
   switch (((identity % 8) + 8) % 8) {
     case 0:
-      return `M${-s} 0 A${s} ${s} 0 1 0 ${s} 0 A${s} ${s} 0 1 0 ${-s} 0 Z`;
+      // Polygon, not two 180° arcs: those resolve ambiguously and render as a half circle.
+      return regular(32, s, 0);
     case 1: {
       const h = s * 0.82;
       return polygon([[-h, -h], [h, -h], [h, h], [-h, h]]);

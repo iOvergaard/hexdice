@@ -202,6 +202,15 @@
   pointer-events: none;
 }
 
+.board .token {
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.board.is-locked .token {
+  cursor: default;
+}
+
 .token-plate {
   fill: var(--ink);
   stroke: var(--c);
@@ -233,7 +242,9 @@
 }
 
 .has-selection .territory:not(.is-selected):not(.is-target),
-.has-attack .territory:not(.is-attack) {
+.has-attack .territory:not(.is-attack),
+.has-selection .token:not(.is-selected):not(.is-target),
+.has-attack .token:not(.is-attack) {
   opacity: 0.5;
 }
 
