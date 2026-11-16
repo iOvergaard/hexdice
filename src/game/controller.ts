@@ -7,7 +7,7 @@ import { createGame } from '../engine/setup';
 import type { Action, AiLevel, GameConfig, GameEvent, GameState, Speed, TerritoryId } from '../engine/types';
 import { createGameScreen, showTitle, type GameScreen, type TitleOptions } from '../ui/screens';
 import { nextSelection, targetsFor } from '../ui/selection';
-import { PAUSE_MS, PLACE_MS, ROLL_MS } from './timing';
+import { AI_PLACE_MS, AI_ROLL_MS, PAUSE_MS, PLACE_MS, ROLL_MS } from './timing';
 import type { UrlParams } from './url-params';
 
 const TITLE_KEY = 'hexdice:title';
@@ -97,6 +97,7 @@ export class Controller {
   }
   load(state: GameState): void {
     this.gen++;
+    this.skipping = false;
     this.config = state.config;
     this.state = state;
     this.actionLog = [];
@@ -125,6 +126,7 @@ export class Controller {
   // ---- screen flow ----
   private toTitle(): void {
     this.gen++;
+    this.skipping = false;
     this.busy = false;
     this.screen = null;
     this.state = null;
@@ -137,6 +139,7 @@ export class Controller {
 
   private newGame(opts: TitleOptions, seed: number): void {
     this.gen++;
+    this.skipping = false;
     this.config = makeConfig(defaultSeats(opts.players - 1, opts.aiLevel), seed);
     this.state = createGame(this.config);
     this.actionLog = [];
@@ -197,6 +200,7 @@ export class Controller {
     screen.board.onTap((t) => this.onTap(t));
     screen.hud.onEndTurn(() => {
       if (this.canAct()) void this.submit({ type: 'endTurn' });
+      else if (this.canSkip()) this.skip();
     });
     screen.hud.onSpeedChange((s) => {
       this.speed = s;
@@ -219,6 +223,17 @@ export class Controller {
     return !!this.state && !this.busy && !this.paused && this.mode === 'play' && this.isHumanTurn();
   }
 
+  /** AIs are playing a live game you could fast-forward. */
+  private canSkip(): boolean {
+    const s = this.state;
+    return !!s && this.mode === 'play' && !this.paused && !this.skipping && s.winner === null && !this.isHumanTurn();
+  }
+
+  private skip(): void {
+    this.skipping = true;
+    this.renderAll();
+  }
+
   private canAttack = (from: TerritoryId, to: TerritoryId): boolean => isLegalAttack(this.state!, from, to);
 
   private renderBoard(interactive: boolean, attack: { from: TerritoryId; to: TerritoryId } | null = null, state = this.state!): void {
@@ -237,6 +252,7 @@ export class Controller {
     this.screen!.hud.render(s, {
       largestGroups: s.players.map((p) => (p.alive ? largestGroup(s, p.id) : 0)),
       canEndTurn: interactive,
+      skip: this.canSkip() ? (s.players.some((p) => p.kind === 'human' && p.alive) && !this.autoplay ? 'turn' : 'end') : null,
       speed: this.speed,
       mode: this.mode,
     });
@@ -262,6 +278,7 @@ export class Controller {
       if (t && /^(BUTTON|SELECT|INPUT|TEXTAREA)$/.test(t.tagName)) return;
       e.preventDefault();
       if (this.canAct()) void this.submit({ type: 'endTurn' });
+      else if (this.canSkip()) this.skip();
     }
   }
 
@@ -285,10 +302,11 @@ export class Controller {
       this.actionLog.push(action);
       this.eventLog.push(...events);
     }
+    const byAi = this.autoplay || before.players[before.current]!.kind === 'ai';
     const roll = events.find((e) => e.type === 'attackRolled');
     if (roll) {
       this.renderBoard(false, { from: roll.from, to: roll.to }, before);
-      await this.screen!.roll.show(roll, before, ROLL_MS[speed]);
+      await this.screen!.roll.show(roll, before, (byAi ? AI_ROLL_MS : ROLL_MS)[speed]);
       if (gen !== this.gen) return;
     }
     this.state = next;
@@ -300,7 +318,7 @@ export class Controller {
       if (reinforced.bonus > 0) parts.push(`+${reinforced.bonus} knockout bonus`);
       if (reinforced.reserve > 0) parts.push(`${reinforced.reserve} in reserve`);
       this.screen!.roll.message(parts.join(' · '));
-      await this.screen!.board.showPlacements(reinforced.placed, PLACE_MS[speed]);
+      await this.screen!.board.showPlacements(reinforced.placed, (byAi ? AI_PLACE_MS : PLACE_MS)[speed]);
       if (gen !== this.gen) return;
     }
     if (events.some((e) => e.type === 'turnStarted')) this.turnCue();
@@ -322,6 +340,8 @@ export class Controller {
   }
 
   private watching = false;
+  /** Set by the skip button: AI turns play instantly until a human's turn or the end. */
+  private skipping = false;
 
   private humansAllOut(events: GameEvent[]): boolean {
     const s = this.state!;
@@ -350,15 +370,17 @@ export class Controller {
         if (this.paused) return;
         if (this.isHumanTurn()) {
           this.busy = false;
+          this.skipping = false;
           this.renderAll();
           return;
         }
         this.busy = true;
         this.renderAll();
-        await sleep(PAUSE_MS[this.speed]);
+        const pace: Speed = this.skipping ? 'instant' : this.speed;
+        await sleep(PAUSE_MS[pace]);
         if (gen !== this.gen) return;
         const level: AiLevel = s.players[s.current]!.aiLevel ?? 'normal';
-        await this.play(chooseAction(s, level, this.aiRng), gen, this.speed, true);
+        await this.play(chooseAction(s, level, this.aiRng), gen, pace, true);
         if (gen === this.gen && this.paused) {
           this.busy = false;
           return;
@@ -372,6 +394,7 @@ export class Controller {
   // ---- end of game and replay ----
   private finishGame(): void {
     this.busy = false;
+    this.skipping = false;
     this.mode = 'play';
     this.renderAll();
     const s = this.state!;
@@ -386,6 +409,7 @@ export class Controller {
 
   private async replay(): Promise<void> {
     const gen = ++this.gen;
+    this.skipping = false;
     const log = [...this.actionLog];
     const screen = this.screen!;
     screen.overlay.hide();

@@ -39,7 +39,7 @@ function start(): void {
       attack,
       interactive: true,
     });
-    screen.hud.render(state, { largestGroups: groups, canEndTurn: true, speed: 'normal', mode: 'play' });
+    screen.hud.render(state, { largestGroups: groups, canEndTurn: true, skip: null, speed: 'normal', mode: 'play' });
   };
 
   const sampleAttack = (): { from: TerritoryId; to: TerritoryId } => {

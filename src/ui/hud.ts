@@ -5,6 +5,8 @@ export interface HudOptions {
   /** Largest connected group per player id. */
   largestGroups: number[];
   canEndTurn: boolean;
+  /** While AIs play, the End turn button becomes a skip button: to your next turn, or to the end once you're out. */
+  skip: 'turn' | 'end' | null;
   speed: Speed;
   mode: 'play' | 'replay';
 }
@@ -130,7 +132,8 @@ export class Hud {
 
     this.round.textContent = `Round ${state.round}`;
     this.speed.value = opts.speed;
-    this.endTurn.disabled = !opts.canEndTurn;
+    this.endTurn.disabled = !opts.canEndTurn && opts.skip === null;
+    this.endTurn.textContent = opts.skip === 'turn' ? 'Skip to my turn' : opts.skip === 'end' ? 'Skip to the end' : 'End turn';
     this.endTurn.hidden = opts.mode === 'replay';
     this.quit.textContent = opts.mode === 'replay' ? 'Stop replay' : 'Quit';
   }

@@ -90,6 +90,22 @@ test('ends turn and the AIs play', async ({ page }) => {
   await expect(page.getByTestId('round')).toHaveText(`Round ${s.round}`);
 });
 
+test('skip plays the rest of the round instantly', async ({ page }) => {
+  await page.goto('/?seed=42&players=8&speed=slow');
+  await ready(page);
+  const startRound = await page.evaluate(() => window.__hexdice!.state()!.round);
+  const button = page.getByTestId('end-turn');
+  await button.click();
+  await expect(button).toHaveText('Skip to my turn');
+  await expect(button).toBeEnabled();
+  const started = Date.now();
+  await button.click();
+  await page.evaluate(() => window.__hexdice!.idle());
+  expect(Date.now() - started).toBeLessThan(5_000);
+  expect(await page.evaluate(() => window.__hexdice!.state()!.round)).toBe(startRound + 1);
+  await expect(button).toHaveText('End turn');
+});
+
 test('autoplay reaches game over and replay runs', async ({ page }, info) => {
   test.setTimeout(120_000);
   await page.goto('/?seed=7&players=4&speed=instant');
