@@ -140,39 +140,39 @@ describe('applyAction', () => {
     expect(ties).toBeGreaterThan(0);
   });
 
-  /** First seed whose a-vs-d attack ties, with its result. */
-  function firstTie(ad: number, dd: number, tieRule: 'defender' | 'attrition') {
+  /** First seed whose a-vs-d attack matches the outcome, with its result. */
+  function firstAttack(ad: number, dd: number, lossRule: 'classic' | 'attrition', outcome: 'draw' | 'loss') {
     for (let seed = 1; seed <= 20_000; seed++) {
-      const s = buildState({ owners: [0, 1], dice: [ad, dd], edges: [[0, 1]], seed, rules: { tieRule } });
+      const s = buildState({ owners: [0, 1], dice: [ad, dd], edges: [[0, 1]], seed, rules: { lossRule } });
       const result = applyAction(s, { type: 'attack', from: 0, to: 1 });
       const e = rolled(result.events);
-      if (e.attackSum === e.defendSum) return result;
+      if (outcome === 'draw' ? e.attackSum === e.defendSum : e.attackSum < e.defendSum) return result;
     }
-    throw new Error(`no tie found for ${ad} vs ${dd}`);
+    throw new Error(`no ${outcome} found for ${ad} vs ${dd}`);
   }
 
-  it('classic draws drop the attacker to 1', () => {
-    const { state } = firstTie(6, 4, 'defender');
-    expect(state.territories[0]!.dice).toBe(1);
-    expect(state.territories[1]).toMatchObject({ owner: 1, dice: 4 });
-  });
+  for (const outcome of ['draw', 'loss'] as const) {
+    it(`classic: a ${outcome} drops the attacker to 1`, () => {
+      const { state } = firstAttack(6, 4, 'classic', outcome);
+      expect(state.territories[0]!.dice).toBe(1);
+      expect(state.territories[1]).toMatchObject({ owner: 1, dice: 4 });
+    });
+  }
 
-  for (const [ad, dd, expected] of [[6, 4, 4], [3, 5, 2], [2, 2, 1], [8, 8, 7]] as const) {
-    it(`attrition draw ${ad} vs ${dd} leaves the attacker ${expected}`, () => {
-      const { state } = firstTie(ad, dd, 'attrition');
+  for (const [ad, dd, outcome, expected] of [
+    [6, 4, 'draw', 4],
+    [7, 5, 'loss', 5],
+    [8, 8, 'draw', 7],
+    [3, 5, 'loss', 2],
+    [2, 2, 'draw', 1],
+    [2, 8, 'loss', 1],
+  ] as const) {
+    it(`attrition: ${ad} vs ${dd} ${outcome} leaves the attacker ${expected}`, () => {
+      const { state } = firstAttack(ad, dd, 'attrition', outcome);
       expect(state.territories[0]!.dice).toBe(expected);
       expect(state.territories[1]).toMatchObject({ owner: 1, dice: dd });
     });
   }
-
-  it('attrition still drops a clear loss to 1', () => {
-    for (let seed = 1; seed <= 300; seed++) {
-      const s = buildState({ owners: [0, 1], dice: [3, 5], edges: [[0, 1]], seed, rules: { tieRule: 'attrition' } });
-      const { state, events } = applyAction(s, { type: 'attack', from: 0, to: 1 });
-      const e = rolled(events);
-      if (e.attackSum < e.defendSum) expect(state.territories[0]!.dice).toBe(1);
-    }
-  });
 
   it('capturing the last territory eliminates the player', () => {
     for (let seed = 1; seed <= 50; seed++) {

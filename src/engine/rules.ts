@@ -1,6 +1,6 @@
 import { Rng } from './rng';
 import { IllegalActionError } from './types';
-import type { Action, ActionResult, GameEvent, GameState, PlayerId, Territory, TerritoryId } from './types';
+import type { Action, ActionResult, GameEvent, GameState, PlayerId, RulesConfig, Territory, TerritoryId } from './types';
 
 export function isLegalAttack(state: GameState, from: TerritoryId, to: TerritoryId): boolean {
   if (state.winner !== null) return false;
@@ -8,6 +8,11 @@ export function isLegalAttack(state: GameState, from: TerritoryId, to: Territory
   const dst = state.territories[to];
   if (!src || !dst) return false;
   return src.owner === state.current && dst.owner !== state.current && src.dice >= 2 && src.neighbours.includes(to);
+}
+
+/** Dice left on the attacking territory after a failed attack, per the loss rule. */
+export function diceAfterFailedAttack(rules: RulesConfig, attackDice: number, defendDice: number): number {
+  return rules.lossRule === 'attrition' ? Math.max(1, Math.min(attackDice - 1, defendDice)) : 1;
 }
 
 export function legalAttacks(state: GameState): Array<{ from: TerritoryId; to: TerritoryId }> {
@@ -91,8 +96,7 @@ function resolveAttack(s: GameState, from: TerritoryId, to: TerritoryId, rng: Rn
   events.push({ type: 'attackRolled', attacker, defender, from, to, attackRolls, defendRolls, attackSum, defendSum, success });
 
   if (!success) {
-    const tie = attackSum === defendSum;
-    src.dice = tie && s.config.tieRule === 'attrition' ? Math.max(1, Math.min(src.dice - 1, dst.dice)) : 1;
+    src.dice = diceAfterFailedAttack(s.config, src.dice, dst.dice);
     return;
   }
 

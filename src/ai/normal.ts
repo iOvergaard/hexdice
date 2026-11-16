@@ -1,6 +1,6 @@
 import { winProbability } from '../engine/odds';
 import type { Rng } from '../engine/rng';
-import { largestGroup, legalAttacks } from '../engine/rules';
+import { diceAfterFailedAttack, largestGroup, legalAttacks } from '../engine/rules';
 import type { Action, GameState, PlayerId, Territory } from '../engine/types';
 
 const MIN_WIN = 0.5;
@@ -48,8 +48,9 @@ export function chooseNormal(state: GameState, _rng: Rng): Action {
     let bonus = 0.08 * (largestGroup(after, me) - myGroup);
     if (dst.owner === top) bonus += 0.06 * (topGroup - largestGroup(after, top));
     if (state.territories.filter((t) => t.owner === dst.owner).length === 1) bonus += 0.3;
-    // A lost fight drops the source to one die, so the cost scales with the stack.
-    const risk = (1 - p) * (src.dice / max);
+    // Cost of losing scales with the dice the loss rule takes off the stack.
+    const lost = src.dice - diceAfterFailedAttack(state.config, src.dice, dst.dice);
+    const risk = (1 - p) * ((lost + 1) / max);
     const score = p + bonus - risk;
     if (best === null || score > best.score) best = { from: a.from, to: a.to, score };
   }

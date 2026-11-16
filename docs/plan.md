@@ -49,7 +49,7 @@ This section is the complete, authoritative rule set. It's our design, not a par
 
 **A turn**
 - The active player makes any number of attacks, then ends the turn.
-- **Attack:** from an own territory with ≥ 2 dice into an adjacent enemy territory. Attacker rolls all dice in the source, defender all dice in the target (d6 each). Attacker wins only on a strictly higher sum; ties go to the defender. What a draw costs the attacker is the `tieRule` setting (added 16-11-2026): `defender` (classic, drops to 1 like a loss) or `attrition` (drops to the defender's dice, losing at least 1, never below 1). Simulated over 2,000 games each, the two rules show no measurable difference in skill expression or game length; draws are 3.6% of attacks.
+- **Attack:** from an own territory with ≥ 2 dice into an adjacent enemy territory. Attacker rolls all dice in the source, defender all dice in the target (d6 each). Attacker wins only on a strictly higher sum; ties go to the defender. What a failed attack (loss or draw) costs the attacking stack is the `lossRule` setting (added 16-11-2026, from Jacob): `classic` (drops to 1) or `attrition` (drops to the defender's dice, losing at least 1, never below 1). Note that attrition lets one big stack retry the same target within a turn at shrinking cost. Draws are 3.6% of attacks.
   - Win: target changes owner; source dice − 1 move into it; source keeps 1. (A source holds at most 8, so the target never gets more than 7.)
   - Loss: source drops to 1; target unchanged.
 - A player who loses their last territory is eliminated; their reserve is discarded.
