@@ -150,6 +150,9 @@
   position: absolute;
   inset: 0;
   height: 100%;
+  /* Deep-sea tone: the view can extend past the map frame to fill the box. */
+  background: #1d4f86;
+  border-radius: 16px;
 }
 
 @media (min-width: 720px) {
@@ -823,14 +826,22 @@
 /* ---------- phone ---------- */
 
 @media (max-width: 640px) {
+  /* One fixed height for dice and messages alike, so the board never jumps; 8 dice fit on one row. */
   .roll {
-    --die: 26px;
-    min-height: 118px;
-    padding: 8px;
+    --die: 16px;
+    min-height: 80px;
+    padding: 6px 8px;
     gap: 4px;
   }
+  .roll-dice {
+    flex-wrap: nowrap;
+    gap: 2px;
+  }
+  .roll-message {
+    font-size: 0.95rem;
+  }
   .roll-side {
-    padding: 4px 6px;
+    padding: 2px 4px;
   }
   .roll-sum {
     font-size: 1.3rem;
@@ -839,8 +850,8 @@
     font-size: 1.6rem;
   }
   .roll-mid {
-    min-width: 3.4rem;
-    font-size: 0.85rem;
+    min-width: 2.4rem;
+    font-size: 0.8rem;
   }
 
   .chips {

@@ -90,6 +90,10 @@ export class BoardView {
   private nodes: TerritoryNodes[] = [];
   private mapW = 0;
   private mapH = 0;
+  /** Land bounds plus a sea margin, in map units: the view zooms to the continent. */
+  private crop = { x: 0, y: 0, w: 0, h: 0 };
+  /** Where each token is drawn, in view units, after overlapping tokens are nudged apart. */
+  private tokenAt: Point[] = [];
   private rotated = false;
   private tapHandler: (territory: TerritoryId | null) => void = () => {};
   private interactive = true;
@@ -176,6 +180,8 @@ export class BoardView {
     });
 
     this.renderHighlights(view, targets);
+    // Dice counts change token sizes, so overlaps are re-solved on every render.
+    this.placeTokens();
   }
 
   /** Pulses each territory that received dice and floats a "+N" over it. */
@@ -192,7 +198,7 @@ export class BoardView {
       if (!geo || !node) continue;
       node.token.classList.add('is-placed');
       pulsed.push(node.token);
-      const p = this.toView(geo.centre);
+      const p = this.tokenAt[id] ?? this.toView(geo.centre);
       const label = svg('text', { x: n(p.x), y: n(p.y - (TOKEN_TOP + 4) * scale), 'text-anchor': 'middle' }, 'placement');
       label.dataset.testid = `placement-${id}`;
       label.style.setProperty('--dur', `${durationMs}ms`);
@@ -214,21 +220,82 @@ export class BoardView {
     return this.rotated ? { x: this.mapH - p.y, y: p.x } : p;
   }
 
-  /** Portrait container: rotate the map; tokens keep their own orientation. */
+  /** Portrait container: rotate the map; tokens keep their own orientation. The view zooms to the continent. */
   private layout(): void {
     if (!this.board) return;
     const cw = this.container.clientWidth;
     const ch = this.container.clientHeight;
     const rotated = ch > cw && cw > 0;
     this.rotated = rotated;
-    this.root.setAttribute('viewBox', rotated ? `0 0 ${this.mapH} ${this.mapW}` : `0 0 ${this.mapW} ${this.mapH}`);
+    const c = this.crop;
+    const v = rotated ? { x: this.mapH - c.y - c.h, y: c.x, w: c.h, h: c.w } : { ...c };
+    // Grow the crop to the container's shape; past the map frame the board's deep-sea background shows.
+    if (cw > 0 && ch > 0) {
+      const aspect = cw / ch;
+      if (v.w / v.h < aspect) {
+        const w = v.h * aspect;
+        v.x -= (w - v.w) / 2;
+        v.w = w;
+      } else {
+        const h = v.w / aspect;
+        v.y -= (h - v.h) / 2;
+        v.h = h;
+      }
+    }
+    this.root.setAttribute('viewBox', `${n(v.x)} ${n(v.y)} ${n(v.w)} ${n(v.h)}`);
     this.world.setAttribute('transform', rotated ? `translate(${this.mapH} 0) rotate(90)` : '');
     this.root.classList.toggle('is-rotated', rotated);
-    const s = rotated ? PORTRAIT_UNIT_SCALE : 1;
-    this.geometry.forEach((geo, id) => {
-      const p = this.toView(geo.centre);
-      this.nodes[id]?.token.setAttribute('transform', `translate(${n(p.x)} ${n(p.y)}) scale(${s})`);
+    this.placeTokens();
+  }
+
+  /** Puts tokens at their territory centres, then nudges overlapping ones apart (at most ~1.6 hexes). */
+  private placeTokens(): void {
+    const s = this.rotated ? PORTRAIT_UNIT_SCALE : 1;
+    const pos = this.geometry.map((geo) => this.toView(geo.centre));
+    const home = pos.map((p) => ({ ...p }));
+    const boxes = this.nodes.map((node) => {
+      const b = node.token.firstElementChild instanceof SVGGraphicsElement ? node.token.firstElementChild.getBBox() : null;
+      return b && b.width > 0 ? { x: b.x * s, y: b.y * s, w: b.width * s, h: b.height * s } : null;
     });
+    const maxShift = HEX * 1.6;
+    for (let iter = 0; iter < 24; iter++) {
+      let moved = false;
+      for (let i = 0; i < pos.length; i++) {
+        const a = boxes[i];
+        if (!a) continue;
+        for (let j = i + 1; j < pos.length; j++) {
+          const b = boxes[j];
+          if (!b) continue;
+          const pi = pos[i]!;
+          const pj = pos[j]!;
+          const ox = Math.min(pi.x + a.x + a.w, pj.x + b.x + b.w) - Math.max(pi.x + a.x, pj.x + b.x);
+          const oy = Math.min(pi.y + a.y + a.h, pj.y + b.y + b.h) - Math.max(pi.y + a.y, pj.y + b.y);
+          if (ox <= 0 || oy <= 0) continue;
+          moved = true;
+          if (ox < oy) {
+            const d = (ox / 2 + 1) * (Math.sign(pj.x + b.x + b.w / 2 - (pi.x + a.x + a.w / 2)) || 1);
+            pi.x -= d;
+            pj.x += d;
+          } else {
+            const d = (oy / 2 + 1) * (Math.sign(pj.y + b.y + b.h / 2 - (pi.y + a.y + a.h / 2)) || 1);
+            pi.y -= d;
+            pj.y += d;
+          }
+        }
+      }
+      for (let i = 0; i < pos.length; i++) {
+        const p = pos[i]!;
+        const h = home[i]!;
+        const dist = Math.hypot(p.x - h.x, p.y - h.y);
+        if (dist > maxShift) {
+          p.x = h.x + ((p.x - h.x) * maxShift) / dist;
+          p.y = h.y + ((p.y - h.y) * maxShift) / dist;
+        }
+      }
+      if (!moved) break;
+    }
+    this.tokenAt = pos;
+    pos.forEach((p, id) => this.nodes[id]?.token.setAttribute('transform', `translate(${n(p.x)} ${n(p.y)}) scale(${s})`));
   }
 
   private build(state: GameState): void {
@@ -245,6 +312,22 @@ export class BoardView {
     const size = boardPixelSize(board.width, board.height, HEX);
     this.mapW = n(size.width + PAD * 2);
     this.mapH = n(size.height + PAD * 2);
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    board.cellTerritory.forEach((t, cell) => {
+      if (t === -1) return;
+      const c = cellCentre(cell, board.width, HEX);
+      minX = Math.min(minX, c.x);
+      minY = Math.min(minY, c.y);
+      maxX = Math.max(maxX, c.x);
+      maxY = Math.max(maxY, c.y);
+    });
+    const margin = HEX * 2.4;
+    const x0 = Math.max(0, minX + PAD - margin);
+    const y0 = Math.max(0, minY + PAD - margin);
+    this.crop = { x: x0, y: y0, w: Math.min(this.mapW, maxX + PAD + margin) - x0, h: Math.min(this.mapH, maxY + PAD + margin) - y0 };
 
     const terrain = buildTerrain(board, state.territories, state.config.seed, HEX, PAD, this.mapW, this.mapH);
     this.defs.replaceChildren(this.defs.querySelector('#hexdice-hatch') ?? document.createComment(''));
