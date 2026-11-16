@@ -7,6 +7,11 @@ export type CellIndex = number;
 export type AiLevel = 'easy' | 'normal';
 export type SeatKind = 'human' | 'ai';
 export type Speed = 'slow' | 'normal' | 'fast' | 'instant';
+/**
+ * What a draw (equal sums) costs the attacker; the defender always keeps the territory.
+ * 'defender': drop to 1 die, like a loss. 'attrition': drop to the defender's dice, losing at least 1, never below 1.
+ */
+export type TieRule = 'defender' | 'attrition';
 
 export interface RulesConfig {
   gridWidth: number;
@@ -18,6 +23,7 @@ export interface RulesConfig {
   landRatioMax: number;
   maxDice: number;
   maxReserve: number;
+  tieRule: TieRule;
   /** Starting dice per player: floor(startingDiceFactor * territoryCount / players). */
   startingDiceFactor: number;
 }

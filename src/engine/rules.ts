@@ -91,7 +91,8 @@ function resolveAttack(s: GameState, from: TerritoryId, to: TerritoryId, rng: Rn
   events.push({ type: 'attackRolled', attacker, defender, from, to, attackRolls, defendRolls, attackSum, defendSum, success });
 
   if (!success) {
-    src.dice = 1;
+    const tie = attackSum === defendSum;
+    src.dice = tie && s.config.tieRule === 'attrition' ? Math.max(1, Math.min(src.dice - 1, dst.dice)) : 1;
     return;
   }
 

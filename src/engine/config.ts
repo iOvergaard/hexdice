@@ -13,6 +13,7 @@ export const DEFAULT_RULES: Readonly<RulesConfig> = {
   landRatioMax: 0.75,
   maxDice: 8,
   maxReserve: 64,
+  tieRule: 'defender',
   startingDiceFactor: 3,
 };
 
