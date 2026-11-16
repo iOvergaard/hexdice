@@ -4,13 +4,13 @@ export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 8;
 
 export const DEFAULT_RULES: Readonly<RulesConfig> = {
-  gridWidth: 32,
-  gridHeight: 24,
+  gridWidth: 44,
+  gridHeight: 33,
   territoryCount: 30,
   minTerritoryCells: 6,
   maxTerritoryCells: 40,
-  landRatioMin: 0.65,
-  landRatioMax: 0.75,
+  landRatioMin: 0.33,
+  landRatioMax: 0.4,
   lakeCount: 3,
   lakeSizeMin: 4,
   lakeSizeMax: 9,
