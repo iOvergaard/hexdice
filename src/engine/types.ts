@@ -21,6 +21,10 @@ export interface RulesConfig {
   maxTerritoryCells: number;
   landRatioMin: number;
   landRatioMax: number;
+  /** Inland lakes carved out of the landmass, each lakeSizeMin..lakeSizeMax cells; they may merge. */
+  lakeCount: number;
+  lakeSizeMin: number;
+  lakeSizeMax: number;
   maxDice: number;
   maxReserve: number;
   lossRule: LossRule;

@@ -26,7 +26,9 @@ function tryGenerate(rules: RulesConfig, rng: Rng): { board: Board; territories:
   // Land blob: random frontier growth, biased towards cells with many land neighbours (compact, ragged coast).
   const span = rules.landRatioMax - rules.landRatioMin;
   const ratio = rules.landRatioMin + span * 0.25 + rng.next() * span * 0.5;
-  const landTarget = Math.round(ratio * total);
+  const lakeSizes = Array.from({ length: rules.lakeCount }, () => rules.lakeSizeMin + rng.int(rules.lakeSizeMax - rules.lakeSizeMin + 1));
+  // Grow extra land for the lakes so the land ratio still holds once they are carved out.
+  const landTarget = Math.round(ratio * total) + lakeSizes.reduce((a, b) => a + b, 0);
   const isLand = new Uint8Array(total);
   const start = (Math.floor(H / 2) + rng.int(5) - 2) * W + Math.floor(W / 2) + rng.int(5) - 2;
   const frontier: CellIndex[] = [start];
@@ -52,6 +54,7 @@ function tryGenerate(rules: RulesConfig, rng: Rng): { board: Board; territories:
       }
     }
   }
+  if (!carveLakes(isLand, lakeSizes, nbrs, rng)) return null;
   const land: CellIndex[] = [];
   for (let c = 0; c < total; c++) if (isLand[c]) land.push(c);
   if (land.length < territoryCount * minTerritoryCells) return null;
@@ -141,6 +144,56 @@ function tryGenerate(rules: RulesConfig, rng: Rng): { board: Board; territories:
     centre: interiorCell(cells, cellTerritory, id, nbrs),
   }));
   return { board: { width: W, height: H, cellTerritory }, territories };
+}
+
+/** Turns interior land into lakes. Lake cells stay at least one land cell away from the open sea. */
+function carveLakes(isLand: Uint8Array, sizes: number[], nbrs: CellIndex[][], rng: Rng): boolean {
+  const total = isLand.length;
+  // Distance to water, with the grid edge counting as water. Water first, then edge land, keeps the BFS ordered.
+  const dist = new Int32Array(total).fill(-1);
+  const queue: CellIndex[] = [];
+  for (let c = 0; c < total; c++) {
+    if (!isLand[c]) {
+      dist[c] = 0;
+      queue.push(c);
+    }
+  }
+  for (let c = 0; c < total; c++) {
+    if (isLand[c] && nbrs[c]!.length < 6) {
+      dist[c] = 1;
+      queue.push(c);
+    }
+  }
+  for (let i = 0; i < queue.length; i++) {
+    const c = queue[i]!;
+    for (const n of nbrs[c]!) {
+      if (dist[n] === -1) {
+        dist[n] = dist[c]! + 1;
+        queue.push(n);
+      }
+    }
+  }
+
+  for (const size of sizes) {
+    const candidates: CellIndex[] = [];
+    for (let c = 0; c < total; c++) if (isLand[c] && dist[c]! >= 3) candidates.push(c);
+    if (candidates.length === 0) return false;
+    const first = rng.pick(candidates);
+    isLand[first] = 0;
+    let carved = 1;
+    const frontier = [...nbrs[first]!];
+    while (carved < size && frontier.length > 0) {
+      const i = rng.int(frontier.length);
+      const c = frontier[i]!;
+      frontier[i] = frontier[frontier.length - 1]!;
+      frontier.pop();
+      if (!isLand[c] || dist[c]! < 2) continue;
+      isLand[c] = 0;
+      carved++;
+      frontier.push(...nbrs[c]!);
+    }
+  }
+  return true;
 }
 
 /** Cell deepest inside the territory (BFS from its border), ties to the lowest index. */

@@ -9,6 +9,46 @@ const maps = new Map(SEEDS.map((s) => [s, generateMap(DEFAULT_RULES, new Rng(s))
 const W = DEFAULT_RULES.gridWidth;
 const H = DEFAULT_RULES.gridHeight;
 
+/** Water cells not connected to the grid edge, grouped into lakes. */
+function lakes(cellTerritory: number[]): number[][] {
+  const water = (c: number) => cellTerritory[c] === -1;
+  const outer = new Set<number>();
+  const stack: number[] = [];
+  for (let c = 0; c < W * H; c++) {
+    const col = c % W;
+    const row = Math.floor(c / W);
+    if (water(c) && (col === 0 || row === 0 || col === W - 1 || row === H - 1)) {
+      outer.add(c);
+      stack.push(c);
+    }
+  }
+  while (stack.length) {
+    for (const n of neighbours(stack.pop()!, W, H)) {
+      if (water(n) && !outer.has(n)) {
+        outer.add(n);
+        stack.push(n);
+      }
+    }
+  }
+  const seen = new Set<number>();
+  const result: number[][] = [];
+  for (let c = 0; c < W * H; c++) {
+    if (!water(c) || outer.has(c) || seen.has(c)) continue;
+    const lake = [c];
+    seen.add(c);
+    for (let i = 0; i < lake.length; i++) {
+      for (const n of neighbours(lake[i]!, W, H)) {
+        if (water(n) && !outer.has(n) && !seen.has(n)) {
+          seen.add(n);
+          lake.push(n);
+        }
+      }
+    }
+    result.push(lake);
+  }
+  return result;
+}
+
 describe('generateMap', () => {
   it('generates exactly territoryCount territories', () => {
     for (const [, m] of maps) {
@@ -108,6 +148,20 @@ describe('generateMap', () => {
         if (t.cells.some(interior)) expect(interior(t.centre)).toBe(true);
       }
     }
+  });
+
+  it('has inland lakes', () => {
+    const { lakeCount, lakeSizeMin } = DEFAULT_RULES;
+    for (const [seed, m] of maps) {
+      const found = lakes(m.board.cellTerritory);
+      expect(found.some((l) => l.length >= lakeSizeMin), `seed ${seed}`).toBe(true);
+      expect(found.flat().length, `seed ${seed}`).toBeGreaterThanOrEqual(lakeCount * lakeSizeMin);
+    }
+  });
+
+  it('can generate without lakes', () => {
+    const m = generateMap({ ...DEFAULT_RULES, lakeCount: 0 }, new Rng(3));
+    expect(m.territories).toHaveLength(30);
   });
 
   it('is deterministic', () => {
