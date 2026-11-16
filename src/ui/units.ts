@@ -3,9 +3,10 @@ import { emblemPath } from './identity';
 
 export type UnitVariant = 'cluster' | 'stack' | 'banners';
 
+/** Stack is the default (Jacob's pick, 16-11-2026); `?units=cluster|banners` keeps the others for comparison. */
 export function unitVariant(search: string): UnitVariant {
   const v = new URLSearchParams(search).get('units');
-  return v === 'stack' || v === 'banners' ? v : 'cluster';
+  return v === 'cluster' || v === 'banners' ? v : 'stack';
 }
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
