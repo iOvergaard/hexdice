@@ -1,0 +1,25 @@
+{
+  "name": "hexdice",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Hexdice: a dice-conquest strategy game for the browser",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc",
+    "test": "vitest run",
+    "check": "tsc && vitest run",
+    "sim": "tsx scripts/sim.ts",
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
+  }
+}
