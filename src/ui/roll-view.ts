@@ -84,6 +84,7 @@ export class RollView {
   private readonly attacker = makeSide('attacker');
   private readonly mid: HTMLElement;
   private readonly hint: HTMLElement;
+  private readonly msg: HTMLElement;
   private timer: ReturnType<typeof setInterval> | null = null;
   private settleTimer: ReturnType<typeof setTimeout> | null = null;
   private finish: (() => void) | null = null;
@@ -99,13 +100,17 @@ export class RollView {
     this.hint = document.createElement('p');
     this.hint.className = 'roll-hint';
     this.hint.textContent = 'Attack rolls appear here';
-    this.root.append(this.defender.el, this.mid, this.attacker.el, this.hint);
+    this.msg = document.createElement('p');
+    this.msg.className = 'roll-message';
+    this.msg.dataset.testid = 'roll-message';
+    this.root.append(this.defender.el, this.mid, this.attacker.el, this.hint, this.msg);
     container.append(this.root);
   }
 
   show(event: AttackRolledEvent, state: GameState, durationMs: number): Promise<void> {
     this.stop();
-    this.root.classList.remove('is-idle', 'is-settled');
+    this.root.classList.remove('is-idle', 'is-settled', 'is-message');
+    this.msg.textContent = '';
     this.root.classList.add('is-rolling');
 
     const att = state.players[event.attacker];
@@ -164,9 +169,18 @@ export class RollView {
     });
   }
 
+  /** Replaces the dice with a line of text until the next roll or clear. */
+  message(text: string): void {
+    this.clear();
+    this.root.classList.remove('is-idle');
+    this.root.classList.add('is-message');
+    this.msg.textContent = text;
+  }
+
   clear(): void {
     this.stop();
-    this.root.classList.remove('is-rolling', 'is-settled');
+    this.msg.textContent = '';
+    this.root.classList.remove('is-rolling', 'is-settled', 'is-message');
     this.root.classList.add('is-idle');
     for (const s of [this.attacker, this.defender]) {
       s.el.classList.remove('is-winner', 'is-loser');

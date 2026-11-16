@@ -7,7 +7,7 @@ import { createGame } from '../engine/setup';
 import type { Action, AiLevel, GameConfig, GameEvent, GameState, Speed, TerritoryId } from '../engine/types';
 import { createGameScreen, showTitle, type GameScreen, type TitleOptions } from '../ui/screens';
 import { nextSelection, targetsFor } from '../ui/selection';
-import { PAUSE_MS, ROLL_MS } from './timing';
+import { PAUSE_MS, PLACE_MS, ROLL_MS } from './timing';
 import type { UrlParams } from './url-params';
 
 const TITLE_KEY = 'hexdice:title';
@@ -112,6 +112,7 @@ export class Controller {
     this.screen.overlay.hide();
     this.screen.preview.hide();
     this.screen.roll.clear();
+    this.turnCue();
     this.renderAll();
     this.kick();
   }
@@ -154,21 +155,39 @@ export class Controller {
     const screen = this.screen!;
     const show = (): void => {
       this.renderBoard(false);
-      screen.preview.show(this.config!.seed, {
-        onYes: () => {
-          screen.preview.hide();
-          this.begin();
+      screen.preview.show(
+        this.config!.seed,
+        {
+          onYes: () => {
+            screen.preview.hide();
+            this.begin();
+          },
+          onNo: () => {
+            this.newGame(opts, randomSeed());
+            this.preview(opts);
+          },
         },
-        onNo: () => {
-          this.newGame(opts, randomSeed());
-          this.preview(opts);
-        },
-      });
+        this.humanSeat(),
+      );
     };
     show();
   }
 
+  private humanSeat(): { name: string; identity: number } | undefined {
+    const p = this.state?.players.find((x) => x.kind === 'human');
+    return p && this.humans() === 1 ? { name: p.name, identity: p.identity } : undefined;
+  }
+
+  private turnCue(): void {
+    const s = this.state!;
+    if (s.winner !== null || this.autoplay || this.watching || this.mode !== 'play') return;
+    const p = s.players[s.current]!;
+    if (p.kind !== 'human' || !p.alive) return;
+    this.screen!.roll.message(this.humans() === 1 ? 'Your turn: tap one of your territories with 2+ dice' : `${p.name}'s turn`);
+  }
+
   private begin(): void {
+    this.turnCue();
     this.renderAll();
     this.kick();
   }
@@ -274,6 +293,17 @@ export class Controller {
     }
     this.state = next;
     this.renderAll();
+    const reinforced = events.find((e) => e.type === 'reinforced');
+    if (reinforced) {
+      const name = next.players[reinforced.player]?.name ?? '';
+      const parts = [`${name} +${reinforced.placed.length}`, `largest group ${reinforced.largestGroup}`];
+      if (reinforced.bonus > 0) parts.push(`+${reinforced.bonus} knockout bonus`);
+      if (reinforced.reserve > 0) parts.push(`${reinforced.reserve} in reserve`);
+      this.screen!.roll.message(parts.join(' · '));
+      await this.screen!.board.showPlacements(reinforced.placed, PLACE_MS[speed]);
+      if (gen !== this.gen) return;
+    }
+    if (events.some((e) => e.type === 'turnStarted')) this.turnCue();
     if (record && !this.watching && !this.autoplay && this.humansAllOut(events)) {
       this.paused = true;
       this.renderAll();

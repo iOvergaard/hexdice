@@ -149,6 +149,46 @@ test('eliminated player can watch the rest', async ({ page }, info) => {
   await expect(page.getByTestId('overlay-watch')).toHaveCount(0);
 });
 
+test('shows where reinforcements land', async ({ page }, info) => {
+  await page.goto('/?seed=42&players=4&speed=slow');
+  await ready(page);
+  await page.getByTestId('end-turn').click();
+  await expect(page.locator('[data-testid^="placement-"]').first()).toBeVisible();
+  await expect(page.getByTestId('roll-message')).toContainText('largest group');
+  await shot(page, info, 'reinforcements');
+});
+
+test('shows a your-turn cue', async ({ page }, info) => {
+  await page.goto('/?seed=42&players=4&speed=instant');
+  await ready(page);
+  await page.getByTestId('end-turn').click();
+  await page.evaluate(() => window.__hexdice!.idle());
+  await expect(page.getByTestId('roll-message')).toContainText('Your turn');
+  await shot(page, info, 'your-turn');
+});
+
+test('preview names your colour', async ({ page }, info) => {
+  await page.goto('/');
+  await page.getByTestId('players-4').click();
+  await page.getByTestId('start').click();
+  await expect(page.getByTestId('preview-you')).toBeVisible();
+  await shot(page, info, 'preview-you');
+});
+
+test('player bar shows the knockout bonus', async ({ page }, info) => {
+  await page.goto('/?seed=42&players=4&speed=instant');
+  await ready(page);
+  const id = await page.evaluate(() => {
+    const s: GameState = structuredClone(window.__hexdice!.state()!);
+    const human = s.players.find((p) => p.kind === 'human')!;
+    human.knockouts = 1;
+    window.__hexdice!.load(s);
+    return human.id;
+  });
+  await expect(page.getByTestId(`player-${id}-bonus`)).toHaveText('+1/turn');
+  await shot(page, info, 'knockout-bonus');
+});
+
 test('phone layout fits', async ({ page }, info) => {
   test.skip(info.project.name !== 'phone', 'phone only');
   await page.goto('/?seed=42&players=4&speed=instant');

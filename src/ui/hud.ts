@@ -111,12 +111,18 @@ export class Hud {
         if (p.alive) {
           li.append(el('span', 'chip-group', String(group)));
           if (p.reserve > 0) li.append(el('span', 'chip-reserve', `+${p.reserve}`));
+          const bonus = p.knockouts * state.config.eliminationBonus;
+          if (bonus > 0) {
+            const b = el('span', 'chip-bonus', `+${bonus}/turn`);
+            b.dataset.testid = `player-${p.id}-bonus`;
+            li.append(b);
+          }
         } else {
           li.append(el('span', 'chip-group', 'out'));
         }
         li.setAttribute(
           'aria-label',
-          `${isYou ? 'You' : p.name}${p.alive ? `, largest group ${group}${p.reserve > 0 ? `, reserve ${p.reserve}` : ''}` : ', eliminated'}${current ? ', playing now' : ''}`,
+          `${isYou ? 'You' : p.name}${p.alive ? `, largest group ${group}${p.reserve > 0 ? `, reserve ${p.reserve}` : ''}${p.knockouts * state.config.eliminationBonus > 0 ? `, knockout bonus ${p.knockouts * state.config.eliminationBonus} per turn` : ''}` : ', eliminated'}${current ? ', playing now' : ''}`,
         );
         return li;
       }),

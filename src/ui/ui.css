@@ -455,6 +455,74 @@
   display: flex;
 }
 
+.roll-message {
+  grid-column: 1 / -1;
+  display: none;
+  margin: 0;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.roll.is-message .roll-side,
+.roll.is-message .roll-mid {
+  display: none;
+}
+
+.roll.is-message .roll-message {
+  display: block;
+}
+
+/* ---------- reinforcement placements ---------- */
+
+.board .layer-placements {
+  pointer-events: none;
+}
+
+.placement {
+  fill: #fff;
+  stroke: var(--ink);
+  stroke-width: 5px;
+  paint-order: stroke;
+  font-family: var(--font);
+  font-size: 34px;
+  font-weight: 800;
+  animation: placement-float var(--dur, 700ms) ease-out forwards;
+}
+
+@keyframes placement-float {
+  from {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+  15% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-14px);
+    opacity: 0;
+  }
+}
+
+.token.is-placed .token-body {
+  animation: placement-pulse 0.5s ease-in-out infinite;
+}
+
+.token.is-placed .token-plate {
+  stroke: #fff;
+}
+
+@keyframes placement-pulse {
+  50% {
+    transform: scale(1.25);
+  }
+}
+
 /* ---------- player bar ---------- */
 
 .chips {
@@ -515,6 +583,14 @@
   font-weight: 700;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+
+.chip-bonus {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .chip.is-current {
@@ -606,6 +682,29 @@
   font-weight: 800;
 }
 
+.preview-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.preview-you {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.preview-you[hidden] {
+  display: none;
+}
+
+.preview-you-chip {
+  display: inline-flex;
+}
+
 .preview-seed {
   margin: 2px 0 0;
   font-size: 0.8rem;
@@ -680,8 +779,13 @@
     padding-top: 6px;
   }
   .chip {
+    flex-wrap: wrap;
     padding: 6px;
     gap: 4px;
+  }
+  .chip-bonus {
+    flex: 1 0 100%;
+    text-align: right;
   }
   .chip-name {
     display: none;
@@ -710,6 +814,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .token.is-placed .token-body {
+    animation: none;
+  }
   .is-rolling .die {
     animation: none;
   }
