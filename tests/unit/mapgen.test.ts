@@ -206,6 +206,32 @@ describe('generateMap', () => {
     expect(avg).toBeLessThanOrEqual(20);
   });
 
+  it('has no single-territory bridge between large regions', () => {
+    for (const [seed, m] of maps) {
+      for (let cut = 0; cut < m.territories.length; cut++) {
+        const seen = new Set([cut]);
+        const sizes: number[] = [];
+        for (const start of m.territories) {
+          if (seen.has(start.id)) continue;
+          let size = 0;
+          const stack = [start.id];
+          seen.add(start.id);
+          while (stack.length) {
+            size++;
+            for (const nb of m.territories[stack.pop()!]!.neighbours) {
+              if (!seen.has(nb)) {
+                seen.add(nb);
+                stack.push(nb);
+              }
+            }
+          }
+          sizes.push(size);
+        }
+        expect(sizes.filter((s) => s > 3).length, `seed ${seed} cut ${cut}`).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
   it('is deterministic', () => {
     expect(generateMap(DEFAULT_RULES, new Rng(5))).toEqual(generateMap(DEFAULT_RULES, new Rng(5)));
     expect(generateMap(DEFAULT_RULES, new Rng(1))).not.toEqual(generateMap(DEFAULT_RULES, new Rng(2)));

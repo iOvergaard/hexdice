@@ -113,6 +113,7 @@ function tryGenerate(rules: RulesConfig, rng: Rng): { board: Board; territories:
     }
   }
   if (seen.size !== territoryCount) return null;
+  if (hasNarrowBridge(adj)) return null;
 
   const territories: MapTerritory[] = cellsOf.map((cells, id) => ({
     id,
@@ -121,6 +122,36 @@ function tryGenerate(rules: RulesConfig, rng: Rng): { board: Board; territories:
     centre: interiorCell(cells, cellTerritory, id, nbrs),
   }));
   return { board: { width: W, height: H, cellTerritory }, territories };
+}
+
+/**
+ * True when removing one territory splits the map into two or more parts bigger than a small peninsula.
+ * Such single-territory bridges make endgames drag: two big empires trade one chokepoint forever.
+ */
+function hasNarrowBridge(adj: Set<number>[]): boolean {
+  const count = adj.length;
+  for (let cut = 0; cut < count; cut++) {
+    const seen = new Uint8Array(count);
+    seen[cut] = 1;
+    let large = 0;
+    for (let start = 0; start < count; start++) {
+      if (seen[start]) continue;
+      let size = 0;
+      const stack = [start];
+      seen[start] = 1;
+      while (stack.length > 0) {
+        size++;
+        for (const nb of adj[stack.pop()!]!) {
+          if (!seen[nb]) {
+            seen[nb] = 1;
+            stack.push(nb);
+          }
+        }
+      }
+      if (size > 3 && ++large > 1) return true;
+    }
+  }
+  return false;
 }
 
 /** Turns interior land into lakes. Lake cells stay at least one land cell away from the open sea. */
