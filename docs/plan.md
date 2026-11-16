@@ -163,4 +163,10 @@ Hex orientation and coordinate storage, exact map-growth algorithm, palette and 
   How to judge them: Normal-vs-Easy win rate as a proxy for "skill beats luck", comeback rate (does the leader at round 10 still win?), game length, plus a hands-on feel check.
 - **Connection bonus** (16-11-2026). Every game starts with your territories scattered as islands. Today joining them only pays off indirectly, through a bigger largest group at the end of the turn. Idea: an explicit, visible bonus the moment a capture joins two or more of your groups. Open questions: how big (flat, or the size of the smaller group joined), and what it grants (dice, or research or power points from the powers idea). One option that also tackles "getting dice to the front": put the bonus dice on the territory that made the link, which is by definition on the front line. The engine can detect it cheaply by comparing group count before and after a capture; it would be judged with the same simulator metrics as above.
 
+- **Effort shouldn't just make you lose faster** (16-11-2026). Reinforcement already happens at the end of your own turn, counted right after your attacks, so conquests pay out at once. What hurts is overextension: every attack leaves its source at 1 die, new dice land at random (mostly behind the front), and then every opponent gets a turn against your thin edge before you act again. Candidate fixes, all simulator-testable:
+  1. *Hold the line:* a winning attack leaves dice behind, e.g. half stay and half move in, or the attacker chooses how many move (Risk-style).
+  2. *Spoils of war:* each capture this turn adds +1 to your reserve, so effort pays directly.
+  3. *Front-line reinforcement* (above) puts the new dice where you just fought.
+  Pairs naturally with the `attrition` loss rule, which already stops a failed attack from emptying the stack.
+
 v0.1 keeps the door open without building any of it: roll events carry every die face, territories and players are plain data that can gain a `feature` or `powers` field, and the rules keep attack, reinforcement and turn-advance as separate steps a power could hook into.
