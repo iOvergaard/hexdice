@@ -67,6 +67,7 @@ export class BoardView {
   private readonly hlLayer: SVGGElement;
   // Tokens sit above every fill, outline and highlight so neighbours never cover them.
   private readonly tokenLayer: SVGGElement;
+  private readonly placeLayer: SVGGElement;
   private board: Board | null = null;
   private geometry: Geometry[] = [];
   private nodes: TerritoryNodes[] = [];
@@ -87,7 +88,8 @@ export class BoardView {
     this.lineLayer = svg('g', {}, 'layer-lines');
     this.hlLayer = svg('g', {}, 'layer-highlight');
     this.tokenLayer = svg('g', {}, 'layer-tokens');
-    this.root.append(defs, this.landLayer, this.lineLayer, this.hlLayer, this.tokenLayer);
+    this.placeLayer = svg('g', {}, 'layer-placements');
+    this.root.append(defs, this.landLayer, this.lineLayer, this.hlLayer, this.tokenLayer, this.placeLayer);
     container.append(this.root);
 
     this.root.addEventListener('pointerup', (e) => {
@@ -135,6 +137,35 @@ export class BoardView {
     this.renderHighlights(view, targets);
   }
 
+  /** Pulses each territory that received dice and floats a "+N" over it. */
+  showPlacements(placed: TerritoryId[], durationMs: number): Promise<void> {
+    if (durationMs <= 0 || placed.length === 0) return Promise.resolve();
+    const counts = new Map<TerritoryId, number>();
+    for (const id of placed) counts.set(id, (counts.get(id) ?? 0) + 1);
+    const labels: SVGElement[] = [];
+    const pulsed: SVGElement[] = [];
+    for (const [id, count] of counts) {
+      const geo = this.geometry[id];
+      const node = this.nodes[id];
+      if (!geo || !node) continue;
+      node.token.classList.add('is-placed');
+      pulsed.push(node.token);
+      const label = svg('text', { x: n(geo.centre.x), y: n(geo.centre.y - TOKEN_H / 2 - 4), 'text-anchor': 'middle' }, 'placement');
+      label.dataset.testid = `placement-${id}`;
+      label.style.setProperty('--dur', `${durationMs}ms`);
+      label.textContent = `+${count}`;
+      this.placeLayer.append(label);
+      labels.push(label);
+    }
+    return new Promise((resolve) =>
+      setTimeout(() => {
+        for (const l of labels) l.remove();
+        for (const t of pulsed) t.classList.remove('is-placed');
+        resolve();
+      }, durationMs),
+    );
+  }
+
   private build(state: GameState): void {
     const { board } = state;
     this.board = board;
@@ -149,7 +180,8 @@ export class BoardView {
     const h = n(size.height + PAD * 2);
     this.root.setAttribute('viewBox', `0 0 ${w} ${h}`);
     this.root.replaceChildren(...Array.from(this.root.children).filter((c) => c.tagName === 'defs'));
-    this.root.append(svg('rect', { x: 0, y: 0, width: w, height: h, rx: 16 }, 'sea'), this.landLayer, this.lineLayer, this.hlLayer, this.tokenLayer);
+    this.root.append(svg('rect', { x: 0, y: 0, width: w, height: h, rx: 16 }, 'sea'), this.landLayer, this.lineLayer, this.hlLayer, this.tokenLayer, this.placeLayer);
+    this.placeLayer.replaceChildren();
 
     state.territories.forEach((_t, id) => {
       const geo = this.geometry[id]!;

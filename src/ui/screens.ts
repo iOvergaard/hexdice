@@ -2,7 +2,7 @@ import type { AiLevel } from '../engine/types';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../engine/config';
 import { BoardView } from './board-view';
 import { Hud } from './hud';
-import { PALETTE, emblemPath } from './identity';
+import { PALETTE, emblemPath, playerColour } from './identity';
 import { RollView } from './roll-view';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -109,6 +109,7 @@ export function showTitle(root: HTMLElement, initial: TitleOptions, onStart: (op
 export class PreviewPrompt {
   private readonly el: HTMLElement;
   private readonly seed: HTMLElement;
+  private readonly you: HTMLElement;
   private readonly yes: HTMLButtonElement;
   private readonly no: HTMLButtonElement;
 
@@ -120,7 +121,13 @@ export class PreviewPrompt {
     this.el.dataset.testid = 'preview';
     this.el.hidden = true;
     const text = el('div', 'preview-text');
-    text.append(el('p', 'preview-question', 'Play this board?'));
+    const head = el('div', 'preview-head');
+    head.append(el('p', 'preview-question', 'Play this board?'));
+    this.you = el('span', 'preview-you');
+    this.you.dataset.testid = 'preview-you';
+    this.you.hidden = true;
+    head.append(this.you);
+    text.append(head);
     this.seed = el('p', 'preview-seed');
     this.seed.dataset.testid = 'preview-seed';
     text.append(this.seed);
@@ -132,7 +139,24 @@ export class PreviewPrompt {
     container.append(this.el);
   }
 
-  show(seed: number, handlers: { onYes: () => void; onNo: () => void }): void {
+  show(seed: number, handlers: { onYes: () => void; onNo: () => void }, you?: { name: string; identity: number }): void {
+    this.you.hidden = !you;
+    if (you) {
+      const chip = el('span', 'preview-you-chip');
+      chip.style.setProperty('--c', playerColour(you.identity));
+      const badge = el('span', 'chip-badge');
+      const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      s.setAttribute('viewBox', '-12 -12 24 24');
+      s.setAttribute('class', 'emblem');
+      s.setAttribute('aria-hidden', 'true');
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', emblemPath(you.identity, 10));
+      s.append(path);
+      badge.append(s);
+      chip.append(badge);
+      this.you.replaceChildren(el('span', 'preview-you-label', 'You are'), chip);
+      this.you.setAttribute('aria-label', `You are ${you.name}`);
+    }
     this.seed.textContent = `Seed ${seed}`;
     this.yes.onclick = handlers.onYes;
     this.no.onclick = handlers.onNo;
