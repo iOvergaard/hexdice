@@ -1,9 +1,10 @@
 {
-  "date": "2026-11-17T11:38:31.840Z",
+  "date": "2026-11-17T13:13:27.410Z",
   "games": 2000,
   "rules": {
     "lossRule": "drawAttrition",
-    "eliminationBonus": 1
+    "eliminationBonus": 1,
+    "reinforcement": "random"
   },
   "normalVsEasy": {
     "games": 1000,
@@ -44,5 +45,5 @@
   "roundCapHits": 0,
   "attacks": 431703,
   "ties": 13973,
-  "durationMs": 13902
+  "durationMs": 14661
 }
