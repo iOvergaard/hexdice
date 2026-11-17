@@ -40,7 +40,7 @@ This section is the complete, authoritative rule set. It's our design, not a par
 **Board**
 - Hex grid, default 44 × 33 cells. Territories are contiguous blobs of cells; the rest is sea. One continent with bays and peninsulas and open sea around it (Jacob's choice, 16-11-2026): about 33–40% land, no land on the grid edge.
 - Default 30 territories. Every territory has ≥ 6 cells. The territory adjacency graph is connected (one landmass), and no single territory is the only link between two regions larger than 3 territories (such bridges made endgames drag for 100+ rounds).
-- **Rivers** (prototype 17-11-2026, from Jacob): 2 one-cell-wide rivers of 10–17 cells run from the coast inland, never touching lakes or each other, each with one ford (a land cell drawn as a bridge). Water blocks adjacency, so territories can only meet across a river at its ford.
+- **Rivers** (added 17-11-2026, from Jacob): 2 one-cell-wide rivers of 10–17 cells run from the coast inland, never touching lakes or each other, each with one ford (a land cell drawn as a bridge). Water blocks adjacency, so territories can only meet across a river at its ford.
 - **Lakes** (added 16-11-2026, from Jacob): 3 inland lakes of 4–9 cells (they may merge), never touching the open sea. Territories can't border across water, so lakes create chokepoints and defensible spots.
 - Two territories are adjacent if any of their cells share an edge.
 
