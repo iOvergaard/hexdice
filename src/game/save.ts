@@ -8,11 +8,13 @@ export interface RestoredGame {
   config: GameConfig;
   actions: Action[];
   state: GameState;
+  /** The AI's random state when the game was saved, so the AIs carry on as if never interrupted; null in older saves. */
+  aiRngState: number | null;
 }
 
-/** The engine is deterministic, so config + action log is the whole game. */
-export function serialise(config: GameConfig, actions: readonly Action[]): string {
-  return JSON.stringify({ v: VERSION, config, actions });
+/** The engine is deterministic, so config + action log is the whole game; the AI's random state keeps the AIs on course. */
+export function serialise(config: GameConfig, actions: readonly Action[], aiRngState?: number): string {
+  return JSON.stringify({ v: VERSION, config, actions, ai: aiRngState });
 }
 
 function isAction(a: unknown): a is Action {
@@ -25,14 +27,15 @@ function isAction(a: unknown): a is Action {
 export function restore(raw: string | null): RestoredGame | null {
   if (!raw) return null;
   try {
-    const data = JSON.parse(raw) as { v?: unknown; config?: unknown; actions?: unknown } | null;
+    const data = JSON.parse(raw) as { v?: unknown; config?: unknown; actions?: unknown; ai?: unknown } | null;
     if (!data || data.v !== VERSION || typeof data.config !== 'object' || data.config === null || !Array.isArray(data.actions)) return null;
     const config = data.config as GameConfig;
     if (!Number.isInteger(config.seed) || !Array.isArray(config.seats) || !data.actions.every(isAction)) return null;
     const actions = data.actions as Action[];
     let state = createGame(config);
     for (const action of actions) state = applyAction(state, action).state;
-    return state.winner === null ? { config, actions, state } : null;
+    const aiRngState = Number.isInteger(data.ai) ? (data.ai as number) >>> 0 : null;
+    return state.winner === null ? { config, actions, state, aiRngState } : null;
   } catch {
     return null;
   }

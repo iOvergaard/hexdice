@@ -101,7 +101,7 @@ export class Controller {
   private save(): void {
     if (!this.persist || this.mode !== 'play' || !this.config) return;
     try {
-      localStorage.setItem(SAVE_KEY, serialise(this.config, this.actionLog));
+      localStorage.setItem(SAVE_KEY, serialise(this.config, this.actionLog, this.aiRng.state));
     } catch {
       // Ignore: resuming is a convenience.
     }
@@ -111,6 +111,7 @@ export class Controller {
     this.newGame({ players: 0, aiLevel: 'normal' }, saved.config.seed, saved.config);
     this.state = saved.state;
     this.actionLog = [...saved.actions];
+    if (saved.aiRngState !== null) this.aiRng = new Rng(saved.aiRngState);
     this.begin();
   }
 

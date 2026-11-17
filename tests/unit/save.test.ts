@@ -36,6 +36,12 @@ describe('save', () => {
     expect(restore(serialise(config, []))!.state).toEqual(createGame(config));
   });
 
+  it('keeps the AI random state, and tolerates saves without one', () => {
+    const config = makeConfig(defaultSeats(3), 11);
+    expect(restore(serialise(config, [], 123456789))?.aiRngState).toBe(123456789);
+    expect(restore(JSON.stringify({ v: 1, config, actions: [] }))?.aiRngState).toBeNull();
+  });
+
   it('gives null for missing and corrupt saves', () => {
     expect(restore(null)).toBeNull();
     expect(restore('')).toBeNull();

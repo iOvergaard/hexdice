@@ -55,3 +55,38 @@ test('a finished game leaves nothing to continue', async ({ page }) => {
   await expect(page.getByTestId('title')).toBeVisible();
   await expect(page.getByTestId('continue')).toHaveCount(0);
 });
+
+test('continuing plays out exactly like never reloading', async ({ page }) => {
+  const snap = () =>
+    page.evaluate(() => {
+      const s = window.__hexdice!.state()!;
+      return { territories: s.territories.map((t) => [t.owner, t.dice]), current: s.current, round: s.round };
+    });
+  const turn = () => page.evaluate(async () => {
+    await window.__hexdice!.endTurn();
+    await window.__hexdice!.idle();
+  });
+  const start = async () => {
+    await page.goto('/?seed=77&players=4&ai=easy&speed=instant');
+    await page.waitForFunction(() => !!window.__hexdice?.state());
+    await page.evaluate(() => window.__hexdice!.idle());
+  };
+
+  // Easy AIs draw random numbers, so this also proves the AI's random state survives the reload.
+  // Two turns straight through.
+  await start();
+  await turn();
+  await turn();
+  const straight = await snap();
+
+  // One turn, reload, continue, then the second turn: the AIs must make the same moves.
+  await page.evaluate(() => localStorage.clear());
+  await start();
+  await turn();
+  await page.goto('/');
+  await page.getByTestId('continue').click();
+  await page.waitForFunction(() => !!window.__hexdice?.state());
+  await page.evaluate(() => window.__hexdice!.idle());
+  await turn();
+  expect(await snap()).toEqual(straight);
+});
