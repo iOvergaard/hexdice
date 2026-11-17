@@ -234,13 +234,14 @@
   cursor: default;
 }
 
-/* Owner wash over the painted terrain; opacity on the element so fill and bleed stroke do not double up. */
+/* Owner wash over the painted terrain; opacity on the element so fill and bleed stroke do not double up.
+   0.5 keeps every pair of owners at least ΔE 28 apart on the meadow (17-11-2026). */
 .board .fill {
   fill: var(--c);
   stroke: var(--c);
   stroke-width: 3;
   stroke-linejoin: round;
-  opacity: 0.44;
+  opacity: 0.5;
 }
 
 .board .borders {

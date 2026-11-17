@@ -1,9 +1,9 @@
 /** Eight fills that differ in lightness as well as hue, tuned to read as a wash on meadow green and as dice on ink. */
 export const PALETTE: readonly string[] = [
   '#f5b82e', // amber
-  '#e5472d', // vermilion
+  '#ff4a1c', // vermilion (hotter, clear of rose and umber)
   '#2fc4d9', // cyan
-  '#9065f0', // violet
+  '#c060ff', // violet (purpler, clear of royal blue)
   '#f4f0dc', // ivory
   '#f06aa8', // rose
   '#2b63d9', // royal blue
