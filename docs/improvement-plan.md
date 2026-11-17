@@ -23,3 +23,18 @@ F3 and F4 go to two builder agents in their own worktrees; I do the rest and rev
 - **Hard AI**: worth it once the rules settle, otherwise it gets retuned for every rule change.
 - **Visual regression screenshots in CI**: macOS and CI's Linux render fonts differently, so baselines would need to be generated on Linux. Possible, but more moving parts than it's worth right now.
 - **Real-device checks** (iPhone sound and silent switch, touch feel): needs your phone.
+
+## Results (17-11-2026)
+
+| # | Outcome |
+|---|---|
+| Gate | **Game-length gate in CI:** 8-player p90 ≤ 45, p99 ≤ 80, ≤ 2% past 60 rounds over 1,000 games. Today: 35 / 54 / 0.6%. Fails half-stack (p99 239) and attrition (never ends). |
+| T1 | **Keyboard e2e:** Space ends your turn, Space skips AI turns, Escape deselects. 3 tests, desktop. |
+| T2 | Dropped (see above). |
+| T3 | **`npm run pacing`:** Normal 17 s for a heavy first round (22 AI attacks), Fast 7 s. |
+| F1 | **Seat compensation:** worst seat was 33.6 points off fair (2 players), 14.7 (3), 4.6 (8); now within ~2–3 points at every size, checked on a second seed set. |
+| F2 | **Owner colours:** vermilion `#ff4a1c`, violet `#c060ff`, wash 50%: closest pair ΔE 16.6 → 28.5, contrast on the dark plates kept ≥ 2.9:1. |
+| F3 | **Win-chance badges** on every legal target while you have a selection (▲ ≥ 60%, ◆ 40–59%, ▼ < 40%). Unit + e2e tests. |
+| F4 | **Continue game** after a reload or tab kill, including the AI's random state, so a continued game plays out exactly as if never interrupted (e2e compares both, with Easy AIs). |
+
+Gates on the final main: 128 unit tests, 2,000-game simulation, 64 browser tests (4 desktop-only skips on the phone project).
