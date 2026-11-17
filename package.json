@@ -13,6 +13,7 @@
     "test": "vitest run",
     "check": "tsc && vitest run",
     "sim": "tsx scripts/sim.ts",
+    "pacing": "tsx scripts/pacing.ts",
     "e2e": "playwright test"
   },
   "devDependencies": {

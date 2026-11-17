@@ -9,6 +9,7 @@ npm run dev                  # http://localhost:5180 (browser pane: .claude/laun
 npm run check                # tsc + Vitest            (gate 1)
 npm run sim -- --games 500   # headless AI vs AI + game length (gate 2; CI runs 2000)
 npm run e2e                  # Playwright desktop+phone (gate 3), own dev server on E2E_PORT (default 5190)
+npm run pacing               # seconds you wait between turns per speed; needs `npm run dev` running
 npm run build
 ```
 
