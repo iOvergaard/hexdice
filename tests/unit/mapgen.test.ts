@@ -105,23 +105,26 @@ describe('generateMap', () => {
   });
 
   it('board and territories agree', () => {
-    for (const [, m] of maps) {
+    for (const [seed, m] of maps) {
       expect(m.board.width).toBe(W);
       expect(m.board.height).toBe(H);
       expect(m.board.cellTerritory).toHaveLength(W * H);
+      // Count mismatches, then assert once: a per-cell expect over 1,000 maps is ~1.5M assertions and times out on CI.
       const owner = new Map<number, number>();
+      let duplicates = 0;
       for (const t of m.territories) {
         for (const c of t.cells) {
-          expect(owner.has(c)).toBe(false);
+          if (owner.has(c)) duplicates++;
           owner.set(c, t.id);
         }
       }
-      m.board.cellTerritory.forEach((t, cell) => expect(t).toBe(owner.get(cell) ?? -1));
+      const mismatched = m.board.cellTerritory.filter((t, cell) => t !== (owner.get(cell) ?? -1)).length;
+      expect({ duplicates, mismatched }, `seed ${seed}`).toEqual({ duplicates: 0, mismatched: 0 });
     }
   });
 
   it('adjacency matches shared edges', () => {
-    for (const [, m] of maps) {
+    for (const [seed, m] of maps) {
       const expected = m.territories.map(() => new Set<number>());
       m.board.cellTerritory.forEach((t, cell) => {
         if (t === -1) return;
@@ -130,10 +133,9 @@ describe('generateMap', () => {
           if (u !== -1 && u !== t) expected[t]!.add(u);
         }
       });
-      m.territories.forEach((t, i) => {
-        expect(t.neighbours).toEqual([...expected[i]!].sort((a, b) => a - b));
-        for (const n of t.neighbours) expect(m.territories[n]!.neighbours).toContain(i);
-      });
+      const wrong = m.territories.filter((t, i) => t.neighbours.join() !== [...expected[i]!].sort((a, b) => a - b).join()).map((t) => t.id);
+      const asymmetric = m.territories.filter((t, i) => t.neighbours.some((n) => !m.territories[n]!.neighbours.includes(i))).map((t) => t.id);
+      expect({ wrong, asymmetric }, `seed ${seed}`).toEqual({ wrong: [], asymmetric: [] });
     }
   });
 
