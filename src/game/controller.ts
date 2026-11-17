@@ -8,12 +8,14 @@ import { createGame } from '../engine/setup';
 import type { Action, AiLevel, GameConfig, GameEvent, GameState, Speed, TerritoryId } from '../engine/types';
 import { createGameScreen, showTitle, type GameScreen, type TitleOptions } from '../ui/screens';
 import { nextSelection, targetsFor } from '../ui/selection';
+import { restore, serialise, type RestoredGame } from './save';
 import { loadSoundOn, Sound } from './sound';
 import { cuesFor } from './sound-cues';
 import { AI_PLACE_MS, AI_ROLL_MS, ELIMINATION_MS, PAUSE_MS, PLACE_MS, ROLL_MS } from './timing';
 import type { UrlParams } from './url-params';
 
 const TITLE_KEY = 'hexdice:title';
+const SAVE_KEY = 'hexdice:save';
 const DEFAULT_TITLE: TitleOptions = { players: 8, aiLevel: 'normal' };
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
@@ -38,6 +40,22 @@ function saveTitle(opts: TitleOptions): void {
   }
 }
 
+function readSave(): RestoredGame | null {
+  try {
+    return restore(localStorage.getItem(SAVE_KEY));
+  } catch {
+    return null;
+  }
+}
+
+function clearSave(): void {
+  try {
+    localStorage.removeItem(SAVE_KEY);
+  } catch {
+    // Ignore: resuming is a convenience.
+  }
+}
+
 /** Owns the game state and runs one action at a time; events animate in order before the next action. */
 export class Controller {
   private screen: GameScreen | null = null;
@@ -52,6 +70,8 @@ export class Controller {
   private paused = false;
   private autoplay = false;
   private replayable = true;
+  /** False after the debug load(): its action log is not the whole game. */
+  private persist = true;
   private selected: TerritoryId | null = null;
   /** Bumped whenever the running game is abandoned (quit, replay, load); stale async work bails out. */
   private gen = 0;
@@ -74,8 +94,24 @@ export class Controller {
       this.newGame(opts, this.params.seed ?? randomSeed());
       this.begin();
     } else {
-      this.toTitle();
+      this.toTitle(readSave());
     }
+  }
+
+  private save(): void {
+    if (!this.persist || this.mode !== 'play' || !this.config) return;
+    try {
+      localStorage.setItem(SAVE_KEY, serialise(this.config, this.actionLog));
+    } catch {
+      // Ignore: resuming is a convenience.
+    }
+  }
+
+  private resume(saved: RestoredGame): void {
+    this.newGame({ players: 0, aiLevel: 'normal' }, saved.config.seed, saved.config);
+    this.state = saved.state;
+    this.actionLog = [...saved.actions];
+    this.begin();
   }
 
   // ---- debug / test surface ----
@@ -109,6 +145,7 @@ export class Controller {
     this.actionLog = [];
     this.eventLog = [];
     this.replayable = false;
+    this.persist = false;
     this.aiRng = new Rng(state.rngState ^ 0x9e3779b9);
     this.paused = false;
     this.watching = false;
@@ -130,7 +167,8 @@ export class Controller {
   }
 
   // ---- screen flow ----
-  private toTitle(): void {
+  private toTitle(saved: RestoredGame | null = null): void {
+    if (!saved) clearSave();
     this.gen++;
     this.sound.stopAll();
     this.skipping = false;
@@ -146,13 +184,16 @@ export class Controller {
         this.preview(opts);
       },
       { on: this.sound.isOn(), toggle: () => this.toggleSound() },
+      saved ? () => this.resume(saved) : undefined,
     );
   }
 
-  private newGame(opts: TitleOptions, seed: number): void {
+  private newGame(opts: TitleOptions, seed: number, config?: GameConfig): void {
+    clearSave();
+    this.persist = true;
     this.gen++;
     this.skipping = false;
-    this.config = makeConfig(defaultSeats(opts.players - 1, opts.aiLevel), seed);
+    this.config = config ?? makeConfig(defaultSeats(opts.players - 1, opts.aiLevel), seed);
     this.state = createGame(this.config);
     this.actionLog = [];
     this.eventLog = [];
@@ -202,6 +243,7 @@ export class Controller {
   }
 
   private begin(): void {
+    this.save();
     this.turnCue();
     this.renderAll();
     this.kick();
@@ -331,6 +373,7 @@ export class Controller {
     const { state: next, events } = applyAction(before, action);
     if (record) {
       this.actionLog.push(action);
+      this.save();
       this.eventLog.push(...events);
     }
     const byAi = this.autoplay || before.players[before.current]!.kind === 'ai';
@@ -452,6 +495,7 @@ export class Controller {
 
   // ---- end of game and replay ----
   private finishGame(): void {
+    clearSave();
     this.busy = false;
     this.skipping = false;
     this.mode = 'play';
