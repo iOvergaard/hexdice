@@ -380,36 +380,46 @@
 
 /* ---------- roll strip ---------- */
 
+/* A fixed height for messages and rolls alike, so the board below never jumps. */
 .roll {
-  --die: 34px;
+  --die: 28px;
   position: relative;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 8px;
-  min-height: 112px;
+  height: 124px;
   padding: 10px 12px;
   background: var(--panel);
   border-radius: 14px;
 }
 
 .roll-side {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: 'who who' 'dice dice' 'sum cost';
+  align-items: baseline;
+  column-gap: 8px;
+  row-gap: 4px;
   min-width: 0;
-  padding: 6px 8px;
+  padding: 4px 8px;
   border-radius: 10px;
   border: 2px solid transparent;
   transition: opacity 0.2s;
 }
 
 .roll-attacker {
-  align-items: flex-end;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: 'who who' 'dice dice' 'cost sum';
   text-align: right;
 }
 
+.roll-attacker .roll-who {
+  justify-self: end;
+}
+
 .roll-who {
+  grid-area: who;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -435,6 +445,7 @@
 }
 
 .roll-dice {
+  grid-area: dice;
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
@@ -473,11 +484,26 @@
 }
 
 .roll-sum {
+  grid-area: sum;
   min-height: 1.15em;
   font-size: 1.5rem;
   font-weight: 800;
   line-height: 1.15;
   font-variant-numeric: tabular-nums;
+}
+
+.roll-cost {
+  grid-area: cost;
+  min-height: 1.2em;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.roll-side.is-loser .roll-cost {
+  color: #ff8a7a;
 }
 
 .roll-mid {
@@ -497,7 +523,7 @@
 }
 
 .roll-side.is-winner .roll-sum {
-  font-size: 2rem;
+  font-size: 1.7rem;
 }
 
 .roll-side.is-winner .roll-sum::after {
@@ -551,6 +577,10 @@
 
 .board .layer-placements {
   pointer-events: none;
+}
+
+.placement.is-loss {
+  fill: #ff8a7a;
 }
 
 .placement {
@@ -829,7 +859,7 @@
   /* One fixed height for dice and messages alike, so the board never jumps; 8 dice fit on one row. */
   .roll {
     --die: 16px;
-    min-height: 80px;
+    height: 96px;
     padding: 6px 8px;
     gap: 4px;
   }

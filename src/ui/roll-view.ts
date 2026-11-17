@@ -1,3 +1,4 @@
+import { diceAfterFailedAttack } from '../engine/rules';
 import type { AttackRolledEvent, GameState, Player } from '../engine/types';
 import { emblemPath, playerColour } from './identity';
 
@@ -59,6 +60,8 @@ interface Side {
   who: HTMLElement;
   dice: HTMLElement;
   sum: HTMLElement;
+  /** What the roll cost this side, shown once the dice settle. */
+  cost: HTMLElement;
 }
 
 function makeSide(role: 'defender' | 'attacker'): Side {
@@ -72,8 +75,11 @@ function makeSide(role: 'defender' | 'attacker'): Side {
   const sum = document.createElement('div');
   sum.className = 'roll-sum';
   sum.dataset.testid = `roll-${role}-sum`;
-  el.append(who, dice, sum);
-  return { el, who, dice, sum };
+  const cost = document.createElement('div');
+  cost.className = 'roll-cost';
+  cost.dataset.testid = `roll-${role}-cost`;
+  el.append(who, dice, sum, cost);
+  return { el, who, dice, sum, cost };
 }
 
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -120,6 +126,7 @@ export class RollView {
     for (const s of [this.attacker, this.defender]) {
       s.el.classList.remove('is-winner', 'is-loser');
       s.sum.textContent = '';
+      s.cost.textContent = '';
     }
     this.mid.textContent = 'vs';
 
@@ -134,7 +141,13 @@ export class RollView {
       this.attacker.el.classList.toggle('is-loser', !event.success);
       this.defender.el.classList.toggle('is-winner', !event.success);
       this.defender.el.classList.toggle('is-loser', event.success);
-      this.mid.textContent = event.success ? 'Captured' : 'Held';
+      const a = event.attackRolls.length;
+      const d = event.defendRolls.length;
+      const draw = event.attackSum === event.defendSum;
+      const left = event.success ? 1 : diceAfterFailedAttack(state.config, a, d, draw);
+      this.attacker.cost.textContent = event.success ? `${a - 1} moved in` : `${a} → ${left}`;
+      this.defender.cost.textContent = event.success ? `lost ${d}` : `kept ${d}`;
+      this.mid.textContent = event.success ? 'Captured' : draw ? 'Draw' : 'Held';
       this.root.classList.remove('is-rolling');
       this.root.classList.add('is-settled');
       const done = this.finish;
@@ -187,6 +200,7 @@ export class RollView {
       s.who.replaceChildren();
       s.dice.replaceChildren();
       s.sum.textContent = '';
+      s.cost.textContent = '';
     }
     this.mid.textContent = '';
   }

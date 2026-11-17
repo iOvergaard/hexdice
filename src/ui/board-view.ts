@@ -18,8 +18,9 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 const HEX = 20;
 const PAD = 10;
 const TOKEN_TOP = 34;
-/** Tokens grow a little when the board is rotated, since the whole map is drawn smaller there. */
-const PORTRAIT_UNIT_SCALE = 1.2;
+/** Units are drawn larger than their base art; more so on a rotated board, where the whole map is drawn smaller. */
+const UNIT_SCALE = 1.15;
+const PORTRAIT_UNIT_SCALE = 1.35;
 
 function svg<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, string | number> = {}, cls?: string): SVGElementTagNameMap[K] {
   const el = document.createElementNS(SVG_NS, tag);
@@ -191,7 +192,7 @@ export class BoardView {
     for (const id of placed) counts.set(id, (counts.get(id) ?? 0) + 1);
     const labels: SVGElement[] = [];
     const pulsed: SVGElement[] = [];
-    const scale = this.rotated ? PORTRAIT_UNIT_SCALE : 1;
+    const scale = this.rotated ? PORTRAIT_UNIT_SCALE : UNIT_SCALE;
     for (const [id, count] of counts) {
       const geo = this.geometry[id];
       const node = this.nodes[id];
@@ -201,6 +202,7 @@ export class BoardView {
       const p = this.tokenAt[id] ?? this.toView(geo.centre);
       const label = svg('text', { x: n(p.x), y: n(p.y - (TOKEN_TOP + 4) * scale), 'text-anchor': 'middle' }, 'placement');
       label.dataset.testid = `placement-${id}`;
+      label.style.fontSize = `${n(40 * scale)}px`;
       label.style.setProperty('--dur', `${durationMs}ms`);
       label.textContent = `+${count}`;
       this.placeLayer.append(label);
@@ -210,6 +212,26 @@ export class BoardView {
       setTimeout(() => {
         for (const l of labels) l.remove();
         for (const t of pulsed) t.classList.remove('is-placed');
+        resolve();
+      }, durationMs),
+    );
+  }
+
+  /** Floats a red "−N" over a territory whose attack failed. Resolves when the label is gone. */
+  showLoss(territory: TerritoryId, lost: number, durationMs: number): Promise<void> {
+    const geo = this.geometry[territory];
+    if (durationMs <= 0 || lost <= 0 || !geo) return Promise.resolve();
+    const scale = this.rotated ? PORTRAIT_UNIT_SCALE : UNIT_SCALE;
+    const p = this.tokenAt[territory] ?? this.toView(geo.centre);
+    const label = svg('text', { x: n(p.x), y: n(p.y - (TOKEN_TOP + 4) * scale), 'text-anchor': 'middle' }, 'placement is-loss');
+    label.dataset.testid = `loss-${territory}`;
+    label.style.fontSize = `${n(44 * scale)}px`;
+    label.style.setProperty('--dur', `${durationMs}ms`);
+    label.textContent = `−${lost}`;
+    this.placeLayer.append(label);
+    return new Promise((resolve) =>
+      setTimeout(() => {
+        label.remove();
         resolve();
       }, durationMs),
     );
@@ -250,7 +272,7 @@ export class BoardView {
 
   /** Puts tokens at their territory centres, then nudges overlapping ones apart (at most ~1.6 hexes). */
   private placeTokens(): void {
-    const s = this.rotated ? PORTRAIT_UNIT_SCALE : 1;
+    const s = this.rotated ? PORTRAIT_UNIT_SCALE : UNIT_SCALE;
     const pos = this.geometry.map((geo) => this.toView(geo.centre));
     const home = pos.map((p) => ({ ...p }));
     const boxes = this.nodes.map((node) => {

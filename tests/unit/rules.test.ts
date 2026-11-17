@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Rng } from '../../src/engine/rng';
 import { applyAction, isLegalAttack, largestGroup, legalAttacks } from '../../src/engine/rules';
 import { IllegalActionError } from '../../src/engine/types';
-import type { AttackRolledEvent, GameEvent, GameState } from '../../src/engine/types';
+import type { AttackRolledEvent, GameEvent, GameState, LossRule } from '../../src/engine/types';
 import { buildState } from '../fixtures/state';
 
 /** Line 0-1-2-3-4: P0 owns 0 and 2, P1 owns 1, 3 and 4. */
@@ -141,7 +141,7 @@ describe('applyAction', () => {
   });
 
   /** First seed whose a-vs-d attack matches the outcome, with its result. */
-  function firstAttack(ad: number, dd: number, lossRule: 'classic' | 'attrition', outcome: 'draw' | 'loss') {
+  function firstAttack(ad: number, dd: number, lossRule: LossRule, outcome: 'draw' | 'loss') {
     for (let seed = 1; seed <= 20_000; seed++) {
       const s = buildState({ owners: [0, 1], dice: [ad, dd], edges: [[0, 1]], seed, rules: { lossRule } });
       const result = applyAction(s, { type: 'attack', from: 0, to: 1 });
@@ -182,6 +182,22 @@ describe('applyAction', () => {
       if (result.state.territories[1]!.owner === 0) return result.state;
     }
     throw new Error('8 vs 1 never won');
+  }
+
+  for (const [rule, ad, dd, outcome, expected] of [
+    ['drawAttrition', 6, 4, 'draw', 4],
+    ['drawAttrition', 8, 8, 'draw', 7],
+    ['drawAttrition', 7, 5, 'loss', 1],
+    ['halfStack', 6, 4, 'draw', 3],
+    ['halfStack', 7, 5, 'loss', 3],
+    ['halfStack', 8, 8, 'loss', 4],
+    ['halfStack', 2, 2, 'draw', 1],
+  ] as const) {
+    it(`${rule}: ${ad} vs ${dd} ${outcome} leaves the attacker ${expected}`, () => {
+      const { state } = firstAttack(ad, dd, rule, outcome);
+      expect(state.territories[0]!.dice).toBe(expected);
+      expect(state.territories[1]).toMatchObject({ owner: 1, dice: dd });
+    });
   }
 
   it('knocking out a player earns a bonus die every turn', () => {

@@ -10,8 +10,9 @@ export type Speed = 'slow' | 'normal' | 'fast' | 'instant';
 /**
  * What a failed attack (a loss, or a draw since ties go to the defender) costs the attacking stack.
  * 'classic': it drops to 1. 'attrition': it drops to the defender's dice, losing at least 1, never below 1.
+ * 'drawAttrition': attrition on a draw, classic on a clear loss. 'halfStack': it loses half, rounded up, never below 1.
  */
-export type LossRule = 'classic' | 'attrition';
+export type LossRule = 'classic' | 'attrition' | 'drawAttrition' | 'halfStack';
 
 export interface RulesConfig {
   gridWidth: number;

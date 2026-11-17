@@ -49,7 +49,7 @@ export function chooseNormal(state: GameState, _rng: Rng): Action {
     if (dst.owner === top) bonus += 0.06 * (topGroup - largestGroup(after, top));
     if (state.territories.filter((t) => t.owner === dst.owner).length === 1) bonus += 0.3;
     // Cost of losing scales with the dice the loss rule takes off the stack.
-    const lost = src.dice - diceAfterFailedAttack(state.config, src.dice, dst.dice);
+    const lost = src.dice - diceAfterFailedAttack(state.config, src.dice, dst.dice, false);
     const risk = (1 - p) * ((lost + 1) / max);
     const score = p + bonus - risk;
     if (best === null || score > best.score) best = { from: a.from, to: a.to, score };

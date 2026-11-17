@@ -19,7 +19,7 @@ const games = Number(arg('games', '500'));
 const baseSeed = Number(arg('seed', '1'));
 const out = arg('out', 'playtest/sim-latest.json');
 const lossRule = arg('loss-rule', 'classic') as LossRule;
-if (lossRule !== 'classic' && lossRule !== 'attrition') throw new Error(`unknown --loss-rule ${lossRule}`);
+if (!['classic', 'attrition', 'drawAttrition', 'halfStack'].includes(lossRule)) throw new Error(`unknown --loss-rule ${lossRule}`);
 const eliminationBonus = Number(arg('elimination-bonus', '1'));
 
 let crashes = 0;

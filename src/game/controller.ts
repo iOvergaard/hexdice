@@ -311,6 +311,11 @@ export class Controller {
     }
     this.state = next;
     this.renderAll();
+    if (roll && !roll.success) {
+      // Not awaited: the label fades on its own and shouldn't slow the game down.
+      const lost = before.territories[roll.from]!.dice - next.territories[roll.from]!.dice;
+      void this.screen!.board.showLoss(roll.from, lost, (byAi ? AI_PLACE_MS : PLACE_MS)[speed] * 1.5);
+    }
     const reinforced = events.find((e) => e.type === 'reinforced');
     if (reinforced) {
       const name = next.players[reinforced.player]?.name ?? '';

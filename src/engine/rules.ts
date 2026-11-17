@@ -10,9 +10,19 @@ export function isLegalAttack(state: GameState, from: TerritoryId, to: Territory
   return src.owner === state.current && dst.owner !== state.current && src.dice >= 2 && src.neighbours.includes(to);
 }
 
-/** Dice left on the attacking territory after a failed attack, per the loss rule. */
-export function diceAfterFailedAttack(rules: RulesConfig, attackDice: number, defendDice: number): number {
-  return rules.lossRule === 'attrition' ? Math.max(1, Math.min(attackDice - 1, defendDice)) : 1;
+/** Dice left on the attacking territory after a failed attack (a draw or a clear loss), per the loss rule. */
+export function diceAfterFailedAttack(rules: RulesConfig, attackDice: number, defendDice: number, draw: boolean): number {
+  const attrition = Math.max(1, Math.min(attackDice - 1, defendDice));
+  switch (rules.lossRule) {
+    case 'attrition':
+      return attrition;
+    case 'drawAttrition':
+      return draw ? attrition : 1;
+    case 'halfStack':
+      return Math.max(1, Math.floor(attackDice / 2));
+    default:
+      return 1;
+  }
 }
 
 export function legalAttacks(state: GameState): Array<{ from: TerritoryId; to: TerritoryId }> {
@@ -96,7 +106,7 @@ function resolveAttack(s: GameState, from: TerritoryId, to: TerritoryId, rng: Rn
   events.push({ type: 'attackRolled', attacker, defender, from, to, attackRolls, defendRolls, attackSum, defendSum, success });
 
   if (!success) {
-    src.dice = diceAfterFailedAttack(s.config, src.dice, dst.dice);
+    src.dice = diceAfterFailedAttack(s.config, src.dice, dst.dice, attackSum === defendSum);
     return;
   }
 

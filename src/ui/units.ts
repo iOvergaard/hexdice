@@ -55,12 +55,12 @@ function cluster(id: number, n: number): string {
 }
 
 function stack(id: number, n: number): string {
-  const w = 20;
-  const h = 17;
-  const step = n > 1 ? Math.min(9, 30 / (n - 1)) : 0;
-  let out = '<ellipse class="u-ground" cx="-13" cy="24" rx="18" ry="3.6"/>';
+  const w = 26;
+  const h = 22;
+  const step = n > 1 ? Math.min(11, 40 / (n - 1)) : 0;
+  let out = '<ellipse class="u-ground" cx="-16" cy="24" rx="21" ry="4"/>';
   for (let i = 0; i < n; i++) {
-    const x = -13 - w / 2 + (i % 2 === 0 ? -1 : 1.4);
+    const x = -16 - w / 2 + (i % 2 === 0 ? -1 : 1.4);
     const y = 22 - h - i * step;
     out += `<rect class="u-die" x="${f(x)}" y="${f(y)}" width="${w}" height="${h}" rx="2.6"/>`;
     if (i === n - 1) out += `<path class="u-pip" d="${pips(x, y, w, h, face(id, i))}"/>`;
@@ -104,7 +104,7 @@ export function createUnits(variant: UnitVariant, id: number): UnitView {
   const stackLayout = variant === 'stack';
   // Keeps the whole token tappable, whatever the dice shapes leave empty.
   const plate = stackLayout
-    ? el('rect', 'units-hit', { x: -38, y: -27, width: 78, height: 54, rx: 13 })
+    ? el('rect', 'units-hit', { x: -34, y: -36, width: 72, height: 64, rx: 13 })
     : el('rect', 'token-plate', { x: -36, y: -29, width: 72, height: 58, rx: 13 });
   const art = el('g', 'units-art');
   const emblem = el('path', 'token-emblem');
