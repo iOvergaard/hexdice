@@ -9,6 +9,7 @@ export interface HudOptions {
   skip: 'turn' | 'end' | null;
   speed: Speed;
   mode: 'play' | 'replay';
+  sound: boolean;
 }
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -43,6 +44,8 @@ export class Hud {
   private readonly speed: HTMLSelectElement;
   private readonly endTurn: HTMLButtonElement;
   private readonly quit: HTMLButtonElement;
+  private readonly sound: HTMLButtonElement;
+  private soundHandler: () => void = () => {};
   private endTurnHandler: () => void = () => {};
   private speedHandler: (speed: Speed) => void = () => {};
   private quitHandler: () => void = () => {};
@@ -67,18 +70,23 @@ export class Hud {
     this.quit.type = 'button';
     this.quit.dataset.testid = 'quit';
 
+    this.sound = el('button', 'btn btn-quiet', 'Sound');
+    this.sound.type = 'button';
+    this.sound.dataset.testid = 'sound';
+
     this.endTurn = el('button', 'btn btn-primary end-turn', 'End turn');
     this.endTurn.type = 'button';
     this.endTurn.dataset.testid = 'end-turn';
 
     const secondary = el('div', 'controls-secondary');
-    secondary.append(this.round, speedLabel, this.quit);
+    secondary.append(this.round, speedLabel, this.sound, this.quit);
     controls.append(secondary, this.endTurn);
     container.append(this.chips, controls);
 
     this.endTurn.addEventListener('click', () => this.endTurnHandler());
     this.speed.addEventListener('change', () => this.speedHandler(this.speed.value as Speed));
     this.quit.addEventListener('click', () => this.quitHandler());
+    this.sound.addEventListener('click', () => this.soundHandler());
   }
 
   onEndTurn(h: () => void): void {
@@ -89,6 +97,9 @@ export class Hud {
   }
   onQuit(h: () => void): void {
     this.quitHandler = h;
+  }
+  onSoundToggle(h: () => void): void {
+    this.soundHandler = h;
   }
 
   render(state: GameState, opts: HudOptions): void {
@@ -132,6 +143,8 @@ export class Hud {
 
     this.round.textContent = `Round ${state.round}`;
     this.speed.value = opts.speed;
+    this.sound.textContent = opts.sound ? 'Sound on' : 'Sound off';
+    this.sound.setAttribute('aria-pressed', String(opts.sound));
     this.endTurn.disabled = !opts.canEndTurn && opts.skip === null;
     this.endTurn.textContent = opts.skip === 'turn' ? 'Skip to my turn' : opts.skip === 'end' ? 'Skip to the end' : 'End turn';
     this.endTurn.hidden = opts.mode === 'replay';

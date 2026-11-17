@@ -7,6 +7,7 @@ import { createGame } from '../engine/setup';
 import type { Action, AiLevel, GameConfig, GameEvent, GameState, Speed, TerritoryId } from '../engine/types';
 import { createGameScreen, showTitle, type GameScreen, type TitleOptions } from '../ui/screens';
 import { nextSelection, targetsFor } from '../ui/selection';
+import { Sound } from './sound';
 import { AI_PLACE_MS, AI_ROLL_MS, ELIMINATION_MS, PAUSE_MS, PLACE_MS, ROLL_MS } from './timing';
 import type { UrlParams } from './url-params';
 
@@ -53,6 +54,7 @@ export class Controller {
   /** Bumped whenever the running game is abandoned (quit, replay, load); stale async work bails out. */
   private gen = 0;
   private running = -1;
+  readonly sound = new Sound();
 
   constructor(
     private readonly root: HTMLElement,
@@ -97,6 +99,7 @@ export class Controller {
   }
   load(state: GameState): void {
     this.gen++;
+    this.sound.stopAll();
     this.skipping = false;
     this.config = state.config;
     this.state = state;
@@ -126,6 +129,7 @@ export class Controller {
   // ---- screen flow ----
   private toTitle(): void {
     this.gen++;
+    this.sound.stopAll();
     this.skipping = false;
     this.busy = false;
     this.screen = null;
@@ -206,6 +210,10 @@ export class Controller {
       this.speed = s;
     });
     screen.hud.onQuit(() => this.toTitle());
+    screen.hud.onSoundToggle(() => {
+      this.sound.setOn(!this.sound.isOn());
+      this.renderAll();
+    });
     return screen;
   }
 
@@ -255,6 +263,7 @@ export class Controller {
       skip: this.canSkip() ? (s.players.some((p) => p.kind === 'human' && p.alive) && !this.autoplay ? 'turn' : 'end') : null,
       speed: this.speed,
       mode: this.mode,
+      sound: this.sound.isOn(),
     });
   }
 
@@ -303,11 +312,16 @@ export class Controller {
       this.eventLog.push(...events);
     }
     const byAi = this.autoplay || before.players[before.current]!.kind === 'ai';
+    // Per-attack sounds follow the animation: none at Instant (incl. skipping) and none in replay.
+    const chatter = this.mode === 'play';
     const roll = events.find((e) => e.type === 'attackRolled');
     if (roll) {
       this.renderBoard(false, { from: roll.from, to: roll.to }, before);
-      await this.screen!.roll.show(roll, before, (byAi ? AI_ROLL_MS : ROLL_MS)[speed]);
+      const ms = (byAi ? AI_ROLL_MS : ROLL_MS)[speed];
+      if (chatter && ms > 0) this.sound.dice(ms, roll.attackRolls.length + roll.defendRolls.length, byAi);
+      await this.screen!.roll.show(roll, before, ms);
       if (gen !== this.gen) return;
+      if (chatter && ms > 0) this.sound.cue(roll.success ? 'capture' : roll.attackSum === roll.defendSum ? 'draw' : 'held', byAi);
     }
     this.state = next;
     this.renderAll();
@@ -328,6 +342,7 @@ export class Controller {
       const detail = `by ${by}${bonus > 0 ? ` · ${by === 'you' ? 'you now get' : 'now gets'} +${bonus} ${bonus === 1 ? 'die' : 'dice'} per turn` : ''}`;
       const ms = ELIMINATION_MS[speed];
       const at = this.screen!.board.verticalPosition(roll.to) < 0.5 ? 0.72 : 0.28;
+      if (ms > 0) this.sound.knockout(ms);
       await Promise.all([this.screen!.board.showBurst(roll.to, loser.identity, ms), this.screen!.banner.show(title, detail, loser.identity, ms, at)]);
       if (gen !== this.gen) return;
     }
@@ -338,13 +353,22 @@ export class Controller {
       if (reinforced.bonus > 0) parts.push(`+${reinforced.bonus} knockout bonus`);
       if (reinforced.reserve > 0) parts.push(`${reinforced.reserve} in reserve`);
       this.screen!.roll.message(parts.join(' · '));
-      await this.screen!.board.showPlacements(reinforced.placed, (byAi ? AI_PLACE_MS : PLACE_MS)[speed]);
+      const placeMs = (byAi ? AI_PLACE_MS : PLACE_MS)[speed];
+      if (chatter && !byAi && placeMs > 0) this.sound.place(reinforced.placed.length, placeMs);
+      await this.screen!.board.showPlacements(reinforced.placed, placeMs);
       if (gen !== this.gen) return;
     }
-    if (events.some((e) => e.type === 'turnStarted')) this.turnCue();
+    if (events.some((e) => e.type === 'turnStarted')) {
+      this.turnCue();
+      // Plays at every speed: it's what tells you "Skip to my turn" has arrived.
+      const s = this.state!;
+      const p = s.players[s.current]!;
+      if (chatter && !this.autoplay && s.winner === null && p.kind === 'human' && p.alive) this.sound.cue('yourTurn');
+    }
     if (record && !this.watching && !this.autoplay && this.humansAllOut(events)) {
       this.paused = true;
       this.renderAll();
+      this.sound.cue('lose');
       this.screen!.overlay.show(this.humans() === 1 ? 'You were eliminated' : 'All human players were eliminated', {
         onTitle: () => this.toTitle(),
         onReplay: null,
@@ -420,6 +444,8 @@ export class Controller {
     const s = this.state!;
     const winner = s.players[s.winner!]!;
     const title = this.humans() === 1 && winner.kind === 'human' ? 'You win' : `${winner.name} wins`;
+    // Watching the rest: you already heard your defeat.
+    if (!this.autoplay && !this.watching) this.sound.cue(winner.kind === 'human' ? 'win' : 'lose');
     this.screen!.overlay.show(title, {
       onTitle: () => this.toTitle(),
       onReplay: this.replayable ? () => void this.replay() : null,
@@ -429,6 +455,7 @@ export class Controller {
 
   private async replay(): Promise<void> {
     const gen = ++this.gen;
+    this.sound.stopAll();
     this.skipping = false;
     const log = [...this.actionLog];
     const screen = this.screen!;
