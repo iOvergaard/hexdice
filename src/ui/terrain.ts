@@ -1,5 +1,5 @@
 // Procedural painted-landscape terrain for the board. Pure string building (no DOM), deterministic from the seed.
-import { DIRS, cellCorner, neighbour, neighbours } from '../engine/hex';
+import { DIRS, cellCentre, cellCorner, neighbour, neighbours } from '../engine/hex';
 import type { Point } from '../engine/hex';
 import { Rng } from '../engine/rng';
 import type { Board, Territory } from '../engine/types';
@@ -44,6 +44,55 @@ function circle(cx: number, cy: number, r: number): string {
 
 function ellipse(cx: number, cy: number, rx: number, ry: number): string {
   return `M${f1(cx - rx)} ${f1(cy)}a${f1(rx)} ${f1(ry)} 0 1 0 ${f1(2 * rx)} 0a${f1(rx)} ${f1(ry)} 0 1 0 ${f1(-2 * rx)} 0z`;
+}
+
+/**
+ * Rivers as smooth water lines from just past the mouth to the source, with a small bridge at each ford.
+ * The one-cell channels vanish under the smoothed coast otherwise, and a river nobody can see blocks nothing visibly.
+ */
+export function buildRivers(board: Board, hex: number, pad: number): string {
+  const fords = new Set(board.fords ?? []);
+  let water = '';
+  let bridges = '';
+  for (const course of board.rivers ?? []) {
+    if (course.length < 2) continue;
+    const pts = course.map((c) => {
+      const p = cellCentre(c, board.width, hex);
+      return { x: p.x + pad, y: p.y + pad };
+    });
+    // Start a little out at sea so the river visibly meets the coast.
+    pts.unshift({ x: pts[0]!.x + (pts[0]!.x - pts[1]!.x) * 0.9, y: pts[0]!.y + (pts[0]!.y - pts[1]!.y) * 0.9 });
+    // Catmull-Rom through the cell centres, as cubic Béziers.
+    let d = `M${f1(pts[0]!.x)} ${f1(pts[0]!.y)}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(0, i - 1)]!;
+      const p1 = pts[i]!;
+      const p2 = pts[i + 1]!;
+      const p3 = pts[Math.min(pts.length - 1, i + 2)]!;
+      d += `C${f1(p1.x + (p2.x - p0.x) / 6)} ${f1(p1.y + (p2.y - p0.y) / 6)} ${f1(p2.x - (p3.x - p1.x) / 6)} ${f1(p2.y - (p3.y - p1.y) / 6)} ${f1(p2.x)} ${f1(p2.y)}`;
+    }
+    water +=
+      `<path d="${d}" fill="none" stroke="${SHORE}" stroke-width="${f1(hex * 1.25)}" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>` +
+      `<path d="${d}" fill="none" stroke="${SEA_TONES[2]}" stroke-width="${f1(hex * 0.95)}" stroke-linecap="round" stroke-linejoin="round"/>` +
+      `<path d="${d}" fill="none" stroke="${SEA_TONES[4]}" stroke-width="${f1(hex * 0.32)}" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>`;
+    course.forEach((cell, i) => {
+      if (!fords.has(cell)) return;
+      const p = pts[i + 1]!;
+      const a = pts[i]!;
+      const b = pts[Math.min(pts.length - 1, i + 2)]!;
+      const angle = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
+      const w = hex * 0.85;
+      const l = hex * 1.05;
+      let planks = '';
+      for (let k = -2; k <= 2; k++) planks += `M${f1(-w / 2)} ${f1((k * l) / 2.6)}h${f1(w)}`;
+      bridges +=
+        `<g transform="translate(${f1(p.x)} ${f1(p.y)}) rotate(${f1(angle)})">` +
+        `<rect x="${f1(-w / 2)}" y="${f1(-l)}" width="${f1(w)}" height="${f1(l * 2)}" rx="2" fill="#a8783f" stroke="#5e4022" stroke-width="1.6"/>` +
+        `<path d="${planks}" stroke="#5e4022" stroke-width="1.1"/>` +
+        `</g>`;
+    });
+  }
+  return water || bridges ? `<g class="rivers">${water}${bridges}</g>` : '';
 }
 
 /** One Chaikin pass then a quadratic B-spline through the midpoints: smooth, closed, and cheap in path bytes. */

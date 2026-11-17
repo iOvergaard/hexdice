@@ -66,6 +66,24 @@ function lakes(cellTerritory: number[]): number[][] {
   return result;
 }
 
+
+/** Territory pairs that face each other across one water cell but don't touch: what water actually blocks. */
+function acrossWaterPairs(m: ReturnType<typeof generateMap>): number {
+  const ct = m.board.cellTerritory;
+  const pairs = new Set<string>();
+  for (let c = 0; c < ct.length; c++) {
+    if (ct[c] !== -1) continue;
+    const shores = [...new Set(neighbours(c, W, H).map((n) => ct[n]!).filter((t) => t >= 0))];
+    for (let i = 0; i < shores.length; i++) {
+      for (let j = i + 1; j < shores.length; j++) {
+        const [a, b] = [shores[i]!, shores[j]!].sort((x, y) => x - y);
+        if (!m.territories[a!]!.neighbours.includes(b!)) pairs.add(`${a}-${b}`);
+      }
+    }
+  }
+  return pairs.size;
+}
+
 describe('generateMap', () => {
   it('generates exactly territoryCount territories', () => {
     for (const [, m] of maps) {
@@ -232,6 +250,26 @@ describe('generateMap', () => {
         expect(sizes.filter((s) => s > 3).length, `seed ${seed} cut ${cut}`).toBeLessThanOrEqual(1);
       }
     }
+  });
+
+  it('rivers keep a ford of land, with water on both sides', () => {
+    for (const [seed, m] of maps) {
+      const fords = m.board.fords ?? [];
+      expect(fords.length, `seed ${seed}`).toBe(DEFAULT_RULES.riverCount * DEFAULT_RULES.fordsPerRiver);
+      for (const f of fords) {
+        expect(m.board.cellTerritory[f], `seed ${seed} ford ${f}`).not.toBe(-1);
+        const water = neighbours(f, W, H).filter((n) => m.board.cellTerritory[n] === -1);
+        const opposite = water.some((a) => water.some((b) => a !== b && !neighbours(a, W, H).includes(b)));
+        expect(opposite, `seed ${seed} ford ${f}`).toBe(true);
+      }
+    }
+  });
+
+  it('rivers separate at least twice as many territory pairs as lakes alone', () => {
+    const seeds = SEEDS.slice(0, 200);
+    const withRivers = seeds.reduce((sum, s) => sum + acrossWaterPairs(maps.get(s)!), 0);
+    const lakesOnly = seeds.reduce((sum, s) => sum + acrossWaterPairs(generateMap({ ...DEFAULT_RULES, riverCount: 0 }, new Rng(s))), 0);
+    expect(withRivers / lakesOnly).toBeGreaterThanOrEqual(2);
   });
 
   it('is deterministic', () => {

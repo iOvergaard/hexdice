@@ -2,7 +2,7 @@ import { DIRS, boardPixelSize, cellCentre, cellCorner, edgeCorners, neighbour } 
 import type { Point } from '../engine/hex';
 import type { Board, GameState, Territory, TerritoryId } from '../engine/types';
 import { darken, pipColour, playerColour } from './identity';
-import { FRAME_CLIP_ID, LAND_CLIP_ID, buildTerrain } from './terrain';
+import { FRAME_CLIP_ID, LAND_CLIP_ID, buildRivers, buildTerrain } from './terrain';
 import { createUnits, unitVariant } from './units';
 import type { UnitView } from './units';
 
@@ -356,7 +356,7 @@ export class BoardView {
     this.defs.insertAdjacentHTML('beforeend', terrain.defs);
     this.seaLayer.innerHTML = terrain.sea;
     this.groundLayer.innerHTML = terrain.ground;
-    this.overLayer.innerHTML = terrain.over;
+    this.overLayer.innerHTML = buildRivers(board, HEX, PAD) + terrain.over;
 
     state.territories.forEach((_t, id) => {
       const geo = this.geometry[id]!;
