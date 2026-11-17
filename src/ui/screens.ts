@@ -58,7 +58,7 @@ export interface TitleSound {
   toggle: () => boolean;
 }
 
-export function showTitle(root: HTMLElement, initial: TitleOptions, onStart: (opts: TitleOptions) => void, sound?: TitleSound): void {
+export function showTitle(root: HTMLElement, initial: TitleOptions, onStart: (opts: TitleOptions) => void, sound?: TitleSound, onContinue?: () => void): void {
   let players = Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, initial.players));
   let aiLevel = initial.aiLevel;
 
@@ -110,6 +110,12 @@ export function showTitle(root: HTMLElement, initial: TitleOptions, onStart: (op
   sync();
 
   const actions = el('div', 'title-actions');
+  if (onContinue) {
+    const cont = button('Continue game', 'continue', 'btn btn-primary btn-big');
+    cont.addEventListener('click', onContinue);
+    actions.append(cont);
+    start.className = 'btn btn-big';
+  }
   actions.append(start);
   if (sound) {
     const toggle = soundToggle();
