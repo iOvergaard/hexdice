@@ -87,9 +87,10 @@ tests/unit/   Vitest      tests/e2e/   Playwright
 - **One engine API:** `createGame(config, seed)`, `legalAttacks(state)`, `applyAction(state, action) → { state, events }`. Pure functions; human and AI submit the same `Action` (`attack` / `endTurn`).
 - **Events drive the UI:** `attackRolled`, `territoryCaptured`, `playerEliminated`, `reinforced`, `turnStarted`, `gameOver`. The UI renders state and animates events; it never computes rules.
 - **Turn flow** *(my call)*: the controller applies one action at a time. Its events animate in order, and the next action (AI move or human click) is only taken once they've finished. Input is locked during AI turns. Speed setting: slow / normal / fast / instant (instant = zero-length animations, used by tests). After you're eliminated, the AI loop keeps running at the chosen speed until game over. "New game" is always available.
+- **Sound** (added 17-11-2026, from Jacob; see `docs/sound-proposal.md`): synthesised cues on one native Web Audio context, no assets and no dependency. `cuesFor(events, …)` in `src/game/sound-cues.ts` decides which sounds an action makes, and the controller plays them alongside the animations. No animation means no sound, so Instant and skipping are silent. AI rolls are quiet at Slow and Normal and silent from Fast, and a replay keeps only knockouts and the final sting. The your-turn chime and the win/lose stings play at every speed. Audio starts on the first tap or key press. A speaker toggle in the HUD and on the title screen is remembered as `hexdice:sound` (on by default). The iOS silent switch is respected.
 - **Randomness:** seeded PRNG (mulberry32-style, no dependency) whose state lives inside `GameState`. State is plain JSON, so replays and repro files come free.
-- **URL params:** `?seed=42&players=6&ai=normal&speed=instant` start a game directly (used by tests and repro links).
-- **Debug hook** (dev builds only): `__hexdice.state()`, `.attack(from, to)`, `.endTurn()`, `.autoplay(true)`.
+- **URL params:** `?seed=42&players=6&ai=normal&speed=instant` start a game directly (used by tests and repro links). `&sound=off` mutes that visit without changing the remembered setting.
+- **Debug hook** (dev builds only): `__hexdice.state()`, `.attack(from, to)`, `.endTurn()`, `.autoplay(true)`, `.sounds()` (the cues that played).
 - **Dependencies:** vite, typescript, vitest, @playwright/test, tsx. Nothing at runtime.
 
 **UI v0.1** (screen flow from your reference screenshots, 16-11-2026; our own visual style throughout, no copied logo, dice art or typography):

@@ -1,6 +1,8 @@
 # Sound: proposal
 
-17-11-2026 · Research plus a throwaway spike on branch `claude/sound-research-fe86cf` (based on `main` at `eb118df`). Nothing here is decided yet: the open questions are at the end.
+17-11-2026 · Research plus a throwaway spike on branch `claude/sound-research-fe86cf` (based on `main` at `eb118df`).
+
+**Decided 17-11-2026** (Jacob: "sounds great"). See *Decisions* at the end. Tasks 1–4 and 6 of the plan are built on the same branch: `src/game/sound-cues.ts` (the rules), `src/game/sound.ts` (the player), `src/ui/sound-toggle.ts`, and the tests in `tests/unit/sound-cues.test.ts` and `tests/e2e/sound.spec.ts`. The text below is the proposal as written; where a decision changed it, the decision wins.
 
 ## Recommendation in short
 
@@ -26,7 +28,7 @@ Priority: **must** = without it, sound isn't worth adding; **should** = clearly 
 | AI reinforcement | — | none | skip |
 | UI taps (select, buttons) | — | none | skip (open question 6) |
 
-**AI rolls are the volume problem.** At Fast with autoplay, the spike logged 89 rolls in 25 seconds (about 3.5 per second). The spike plays AI rolls at about 40% volume. Whether they should be quieter still, or silent at Fast, is open question 2.
+**AI rolls are the volume problem.** At Fast with autoplay, the spike logged 89 rolls in 25 seconds (about 3.5 per second). The spike plays AI rolls at about 40% volume. **Decided:** quiet at Slow and Normal, silent from Fast.
 
 ## 2. Approach
 
@@ -51,7 +53,7 @@ Priority: **must** = without it, sound isn't worth adding; **should** = clearly 
 1. **Per-attack sounds follow the animation duration.** No sound when `ms === 0`. That covers Instant, "Skip to my turn"/"Skip to the end" (which run at `instant`) and the e2e runs at `speed=instant`. Nothing has to treat these cases specially.
 2. **The dice are scheduled on the audio clock.** `sound.dice(ms, …)` schedules the rattle across `0.7 × ms` and the landing clack at `0.7 × ms`, matching the split in `RollView.show()` (`roll-view.ts:164`). The result sting plays once `roll.show()` resolves. Real build: export that 0.7 so the two can't drift apart.
 3. **The your-turn chime ignores speed.** It plays once per round, so it can't machine-gun.
-4. **Replay** (spike): no dice or results, only knockouts and the final sting, so a replay plays as a highlight reel (open question 3).
+4. **Replay** (spike): no dice or results, only knockouts and the final sting, so a replay plays as a highlight reel (decided).
 5. **Abandoning a game** (`toTitle`, `replay`, `load` bump `gen`) calls `sound.stopAll()`, so a roll that's still scheduled doesn't keep rattling on the title screen.
 6. **Reduced motion:** there's no tumble, so only the landing clack plays. Sound is its own setting; reduced motion doesn't mute it.
 
@@ -80,7 +82,7 @@ Only CC0 or our own synthesis. Checked on 17-11-2026:
 
 **Autoplay.** Chrome: "If an AudioContext is created before the document receives a user gesture, it will be created in the 'suspended' state, and you will need to call resume() after the user gesture" ([Chrome autoplay policy](https://developer.chrome.com/blog/autoplay)). The HTML spec lists the events that count as a gesture: `keydown` (except Esc), `mousedown`, `pointerdown` from a mouse, `pointerup` from touch or pen, and `touchend` ([HTML spec, activation-triggering input event](https://html.spec.whatwg.org/multipage/interaction.html#activation-triggering-input-event)). The board taps on `pointerup` (`board-view.ts:125`), so a tap on the board counts. The spike creates the context inside the first of those events (capture phase, on `document`). On every later gesture it calls `resume()` if the context isn't running, which also covers a context that iOS suspended during an interruption (a phone call or an app switch). Title → Start is the first gesture in normal play; a `?seed=` link starts at the first board tap.
 
-**iOS Safari: the silent switch.** Web Audio on iOS is muted by the ringer/silent switch, while `<audio>`/`<video>` elements aren't. A WebKit engineer confirmed the default audio session type is `ambient`, and that since iOS 17 `navigator.audioSession.type = "playback"` changes that ([WebKit bug 237322](https://bugs.webkit.org/show_bug.cgi?id=237322), comment 6, 25-09-2024). I recommend keeping the default: a casual game should respect the silent switch and mix with whatever the player is listening to (open question 4). Not tested on a device.
+**iOS Safari: the silent switch.** Web Audio on iOS is muted by the ringer/silent switch, while `<audio>`/`<video>` elements aren't. A WebKit engineer confirmed the default audio session type is `ambient`, and that since iOS 17 `navigator.audioSession.type = "playback"` changes that ([WebKit bug 237322](https://bugs.webkit.org/show_bug.cgi?id=237322), comment 6, 25-09-2024). I recommend keeping the default: a casual game should respect the silent switch and mix with whatever the player is listening to (decided). Not tested on a device.
 
 **Mute toggle.**
 - One toggle in the HUD and on the title screen, stored as `hexdice:sound` = `on`/`off`. It uses the same try/catch pattern as `hexdice:title` (`controller.ts:19-37`).
@@ -102,22 +104,24 @@ One PR, roughly 250–350 lines including tests:
 2. **Pure `cuesFor(events, { speed, byAi, mode })`** plus Vitest cases for Instant, skip, replay, AI vs human, and the your-turn chime. *S*
 3. **Controller wiring** as in the spike, with `stopAll()` wherever `gen` is bumped. *S*
 4. **Icon toggle** in the HUD and on the title screen, `hexdice:sound`, and `?sound=off`. *S*
-5. **Listening pass** (you): synthesised dice vs Kenney Casino Audio dice. If the samples win: 2–4 MP3s in `public/sounds/` plus `CREDITS.md`, loaded with `fetch` + `decodeAudioData` after the first gesture. *S–M*
+5. **Listening pass** (you), *not now: synthesised only for the time being*: synthesised dice vs Kenney Casino Audio dice. If the samples win: 2–4 MP3s in `public/sounds/` plus `CREDITS.md`, loaded with `fetch` + `decodeAudioData` after the first gesture. *S–M*
 6. **Gates:**
    - `check`, plus `e2e` with one attack asserting the cue log, and mute.
    - Hands-on on desktop and on a real iPhone: silent switch on and off, an interruption from an app switch, and the toggle at phone width.
    - *S*
 
-## Open questions for Jacob
+## Decisions (17-11-2026)
 
-1. **Dice sound:** synthesised only, or Kenney samples for the dice? This needs your ears; I can't hear the output.
-2. **AI rolls:** quiet (spike, ~40%), or silent at Fast?
-3. **Replay:** only knockouts and the final sting (spike), full sound, or silent?
-4. **iOS silent switch:** respect it (my recommendation), or override it with `audioSession.type = "playback"`?
-5. **First visit:** sound on by default (my recommendation; it can't start before a tap anyway), or off until switched on?
-6. **UI taps:** none (my recommendation), or a soft tick when you select a territory?
+1. **Dice sound:** synthesised only. No samples for now and no `public/sounds/`.
+2. **AI rolls:** quiet (about 40%) at Slow and Normal, silent at Fast. Instant and skipping are silent.
+3. **Replay:** a highlight reel, with knockouts and the final sting only.
+4. **iOS silent switch:** respected (the default audio session is kept).
+5. **First visit:** sound on by default. It still only starts after the first tap or key press.
+6. **UI taps:** none.
 
 ## How the spike was checked
+
+(The build's own checks are in `playtest/17-11-2026-sound.md`.)
 
 Done in the in-app browser (Chromium) at `?seed=42&players=4`, with real clicks so that the gesture counts. The cue log only records a cue when the `AudioContext` is `running`, so each entry below means the cue was scheduled on a running context.
 

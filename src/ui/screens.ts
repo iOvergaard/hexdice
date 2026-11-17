@@ -4,6 +4,7 @@ import { BoardView } from './board-view';
 import { Hud } from './hud';
 import { PALETTE, emblemPath, playerColour } from './identity';
 import { RollView } from './roll-view';
+import { soundToggle } from './sound-toggle';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -51,7 +52,13 @@ function emblemRow(): SVGSVGElement {
   return s;
 }
 
-export function showTitle(root: HTMLElement, initial: TitleOptions, onStart: (opts: TitleOptions) => void): void {
+/** The title's sound toggle: toggle() flips the setting and returns the new state. */
+export interface TitleSound {
+  on: boolean;
+  toggle: () => boolean;
+}
+
+export function showTitle(root: HTMLElement, initial: TitleOptions, onStart: (opts: TitleOptions) => void, sound?: TitleSound): void {
   let players = Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, initial.players));
   let aiLevel = initial.aiLevel;
 
@@ -102,7 +109,16 @@ export function showTitle(root: HTMLElement, initial: TitleOptions, onStart: (op
   }
   sync();
 
-  screen.append(playersWrap, aiWrap, start);
+  const actions = el('div', 'title-actions');
+  actions.append(start);
+  if (sound) {
+    const toggle = soundToggle();
+    toggle.set(sound.on);
+    toggle.el.addEventListener('click', () => toggle.set(sound.toggle()));
+    actions.append(toggle.el);
+  }
+
+  screen.append(playersWrap, aiWrap, actions);
   root.replaceChildren(screen);
 }
 

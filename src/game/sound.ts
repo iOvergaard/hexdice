@@ -1,10 +1,10 @@
-// SPIKE for docs/sound-proposal.md: synthesised cues on one native AudioContext. Throwaway, not meant for merge as is.
+import { reducedMotion, TUMBLE_SHARE } from '../ui/roll-view';
+import type { Cues, RollResult, Sting } from './sound-cues';
 
 const KEY = 'hexdice:sound';
 
-export type Cue = 'capture' | 'held' | 'draw' | 'yourTurn' | 'win' | 'lose';
-
-function loadOn(): boolean {
+/** Sound is on unless the player switched it off. */
+export function loadSoundOn(): boolean {
   try {
     return localStorage.getItem(KEY) !== 'off';
   } catch {
@@ -12,27 +12,31 @@ function loadOn(): boolean {
   }
 }
 
-function saveOn(on: boolean): void {
+function saveSoundOn(on: boolean): void {
   try {
     localStorage.setItem(KEY, on ? 'on' : 'off');
   } catch {
-    // Remembering the choice is a convenience.
+    // Ignore: remembering the choice is a convenience.
   }
 }
 
-const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const LEVEL = 0.6;
 
+/**
+ * Synthesised cues on one AudioContext, created on the first user gesture (browsers keep audio locked until then).
+ * The default iOS audio session is kept, so the silent switch mutes it.
+ */
 export class Sound {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private noise: AudioBuffer | null = null;
   private readonly live = new Set<AudioScheduledSourceNode>();
-  private on = loadOn();
-  /** Cues started, for tests and the spike's hands-on check. */
+  /** Cues that reached a running context; dev builds only, read through window.__hexdice.sounds(). */
   readonly log: string[] = [];
 
-  constructor() {
-    // Activation-triggering events (HTML spec): the context may only start inside one of these.
+  constructor(private on: boolean) {
+    // The context may only start inside an activation-triggering event (HTML spec); later gestures also resume it
+    // after an interruption such as a call or an app switch.
     const wake = (): void => this.wake();
     for (const type of ['pointerdown', 'pointerup', 'keydown', 'touchend'] as const) {
       document.addEventListener(type, wake, { capture: true, passive: true });
@@ -45,14 +49,14 @@ export class Sound {
 
   setOn(on: boolean): void {
     this.on = on;
-    saveOn(on);
+    saveSoundOn(on);
     if (!on) this.stopAll();
-    if (this.master) this.master.gain.value = on ? 0.6 : 0;
-    // The toggle's own click is a user gesture, so the context can start right here.
+    if (this.master) this.master.gain.value = on ? LEVEL : 0;
+    // The toggle's own click is a gesture, so the context can start right here.
     if (on) this.wake();
   }
 
-  /** Stops everything still scheduled, e.g. when the game is abandoned mid-roll. */
+  /** Stops everything still scheduled, e.g. when a game is abandoned mid-roll. */
   stopAll(): void {
     for (const n of this.live) {
       try {
@@ -64,58 +68,51 @@ export class Sound {
     this.live.clear();
   }
 
-  /** Dice tumble then land, timed to the roll strip: it tumbles for 70% of the roll and settles at the end. */
-  dice(durationMs: number, count: number, quiet: boolean): void {
+  /** Rattle while the roll strip tumbles, then one clack per die (up to 5) as they land. */
+  dice(cue: NonNullable<Cues['dice']>): void {
     const c = this.ready('dice');
     if (!c) return;
     const t0 = c.currentTime;
-    const tumble = (durationMs * 0.7) / 1000;
-    const level = quiet ? 0.35 : 0.8;
-    if (!reducedMotion()) {
+    const level = cue.quiet ? 0.35 : 0.8;
+    const still = reducedMotion();
+    const tumble = still ? 0 : (cue.durationMs * TUMBLE_SHARE) / 1000;
+    if (!still) {
       const clicks = Math.max(3, Math.min(28, Math.round(tumble / 0.035)));
-      for (let i = 0; i < clicks; i++) this.clack(t0 + Math.random() * tumble, 2200 + Math.random() * 2600, 0.012 + Math.random() * 0.012, level * (0.4 + Math.random() * 0.5));
+      for (let i = 0; i < clicks; i++) {
+        this.clack(t0 + Math.random() * tumble, 2200 + Math.random() * 2600, 0.012 + Math.random() * 0.012, level * (0.4 + Math.random() * 0.5));
+      }
     }
-    const land = t0 + (reducedMotion() ? 0 : tumble);
-    for (let i = 0; i < Math.min(count, 5); i++) this.clack(land + i * 0.014 + Math.random() * 0.01, 1400 + Math.random() * 900, 0.03, level);
+    for (let i = 0; i < Math.min(cue.dice, 5); i++) {
+      this.clack(t0 + tumble + i * 0.014 + Math.random() * 0.01, 1400 + Math.random() * 900, 0.03, level);
+    }
   }
 
-  /** The roll's outcome, played as the strip settles. */
-  cue(cue: Cue, quiet = false): void {
-    const c = this.ready(cue);
+  /** The roll's outcome, as the strip settles. */
+  result(cue: NonNullable<Cues['result']>): void {
+    const c = this.ready(cue.cue);
     if (!c) return;
     const t = c.currentTime;
-    const v = quiet ? 0.4 : 1;
-    switch (cue) {
-      case 'capture':
+    const v = cue.quiet ? 0.4 : 1;
+    const kinds: Record<RollResult, () => void> = {
+      capture: () => {
         this.tone(t, 523, 0.09, 'triangle', 0.35 * v);
         this.tone(t + 0.08, 784, 0.14, 'triangle', 0.35 * v);
-        break;
-      case 'held':
-        this.sweep(t, 150, 70, 0.18, 'sine', 0.6 * v);
-        break;
-      case 'draw':
+      },
+      held: () => this.sweep(t, 150, 70, 0.18, 'sine', 0.6 * v),
+      draw: () => {
         this.tone(t, 392, 0.1, 'square', 0.12 * v);
         this.tone(t + 0.11, 392, 0.1, 'square', 0.12 * v);
-        break;
-      case 'yourTurn':
-        this.tone(t, 659, 0.16, 'sine', 0.3);
-        this.tone(t + 0.13, 988, 0.28, 'sine', 0.3);
-        break;
-      case 'win':
-        [523, 659, 784, 1047].forEach((f, i) => this.tone(t + i * 0.12, f, 0.3, 'triangle', 0.3));
-        break;
-      case 'lose':
-        [392, 330, 262].forEach((f, i) => this.tone(t + i * 0.18, f, 0.35, 'sine', 0.35));
-        break;
-    }
+      },
+    };
+    kinds[cue.cue]();
   }
 
-  /** The knockout "big bang": a filtered noise blast over a falling boom, held as long as the visual. */
-  knockout(durationMs: number): void {
+  /** The knockout "big bang": a noise blast closing down over a falling boom, as long as the visual (at most 1.4 s). */
+  knockout(cue: NonNullable<Cues['knockout']>): void {
     const c = this.ready('knockout');
-    if (!c || !this.noise) return;
+    if (!c) return;
     const t = c.currentTime;
-    const len = Math.min(durationMs / 1000, 1.4);
+    const len = Math.min(cue.durationMs / 1000, 1.4);
     const src = c.createBufferSource();
     src.buffer = this.noise;
     src.loop = true;
@@ -132,14 +129,30 @@ export class Sound {
     this.sweep(t, 110, 35, len * 0.8, 'sine', 0.9);
   }
 
-  /** Soft plinks spread over the placement animation. */
-  place(count: number, durationMs: number): void {
+  /** Soft plinks spread over your reinforcement placements. */
+  place(cue: NonNullable<Cues['place']>): void {
     const c = this.ready('place');
     if (!c) return;
     const t = c.currentTime;
-    const n = Math.min(count, 12);
-    const span = Math.max(0.05, (durationMs / 1000) * 0.6);
+    const n = Math.min(cue.count, 12);
+    const span = Math.max(0.05, (cue.durationMs / 1000) * 0.6);
     for (let i = 0; i < n; i++) this.tone(t + (i / n) * span, 880 + i * 40, 0.06, 'sine', 0.12);
+  }
+
+  yourTurn(): void {
+    const c = this.ready('yourTurn');
+    if (!c) return;
+    const t = c.currentTime;
+    this.tone(t, 659, 0.16, 'sine', 0.3);
+    this.tone(t + 0.13, 988, 0.28, 'sine', 0.3);
+  }
+
+  sting(sting: Sting): void {
+    const c = this.ready(sting);
+    if (!c) return;
+    const t = c.currentTime;
+    if (sting === 'win') [523, 659, 784, 1047].forEach((f, i) => this.tone(t + i * 0.12, f, 0.3, 'triangle', 0.3));
+    else [392, 330, 262].forEach((f, i) => this.tone(t + i * 0.18, f, 0.35, 'sine', 0.35));
   }
 
   // ---- plumbing ----
@@ -151,20 +164,19 @@ export class Sound {
       if (!Ctor) return;
       this.ctx = new Ctor();
       this.master = this.ctx.createGain();
-      this.master.gain.value = 0.6;
+      this.master.gain.value = LEVEL;
       this.master.connect(this.ctx.destination);
       const buf = this.ctx.createBuffer(1, this.ctx.sampleRate, this.ctx.sampleRate);
       const data = buf.getChannelData(0);
       for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
       this.noise = buf;
     }
-    // Also brings it back after an iOS interruption (call, app switch).
-    if (this.ctx.state !== 'running') void this.ctx.resume();
+    if (this.ctx.state !== 'running') void this.ctx.resume().catch(() => {});
   }
 
   private ready(name: string): AudioContext | null {
     if (!this.on || !this.ctx || !this.master || this.ctx.state !== 'running') return null;
-    this.log.push(name);
+    if (import.meta.env.DEV) this.log.push(name);
     return this.ctx;
   }
 
