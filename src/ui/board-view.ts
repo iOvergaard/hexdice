@@ -22,8 +22,8 @@ const HEX = 20;
 const PAD = 10;
 const TOKEN_TOP = 34;
 /** Units are drawn larger than their base art; more so on a rotated board, where the whole map is drawn smaller. */
-const UNIT_SCALE = 1.15;
-const PORTRAIT_UNIT_SCALE = 1.35;
+const UNIT_SCALE = 1.35;
+const PORTRAIT_UNIT_SCALE = 1.5;
 
 function svg<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, string | number> = {}, cls?: string): SVGElementTagNameMap[K] {
   const el = document.createElementNS(SVG_NS, tag);
@@ -444,9 +444,10 @@ export class BoardView {
       maxX = Math.max(maxX, c.x);
       maxY = Math.max(maxY, c.y);
     });
-    const margin = HEX * 2.4;
+    const margin = HEX * 1.4;
     const x0 = Math.max(0, minX + PAD - margin);
-    const y0 = Math.max(0, minY + PAD - margin);
+    // Extra room above: units stand on their territory and reach about a hex above its centre.
+    const y0 = Math.max(0, minY + PAD - margin - HEX * 1.2);
     this.crop = { x: x0, y: y0, w: Math.min(this.mapW, maxX + PAD + margin) - x0, h: Math.min(this.mapH, maxY + PAD + margin) - y0 };
 
     const terrain = buildTerrain(board, state.territories, state.config.seed, HEX, PAD, this.mapW, this.mapH);

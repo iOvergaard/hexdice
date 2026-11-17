@@ -173,7 +173,7 @@
 /* ---------- game layout ---------- */
 
 .game {
-  max-width: 1100px;
+  max-width: 1800px;
   margin: 0 auto;
   padding: 10px var(--gutter) 14px;
   display: flex;
@@ -1185,4 +1185,68 @@
 
 .odds-icon {
   fill: #fff;
+}
+
+/* ---------- wide screens: give the map the height ---------- */
+
+@media (min-width: 720px) {
+  /* Wide screens: the roll strip is one slim row (who, dice, sum over cost) so the map gets the height. */
+  .roll {
+    --die: 24px;
+    height: 76px;
+    padding: 6px 12px;
+  }
+  .roll-side {
+    grid-template-columns: auto auto auto;
+    grid-template-areas: 'who dice sum' 'who dice cost';
+    justify-content: start;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 0;
+    padding: 2px 10px;
+  }
+  .roll-attacker {
+    grid-template-areas: 'sum dice who' 'cost dice who';
+    justify-content: end;
+  }
+  .roll-dice {
+    flex-wrap: nowrap;
+  }
+  .roll-sum {
+    line-height: 1.05;
+  }
+}
+
+/* Players and controls share one row when there is room for both; the chips go compact (emblem and number). */
+@media (min-width: 1180px) {
+  .hud {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .hud .chips {
+    flex: 1 1 auto;
+    grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+    padding-top: 8px;
+  }
+  .hud .chip-name {
+    display: none;
+  }
+  .hud .chip.is-you .chip-name {
+    display: block;
+    position: absolute;
+    top: -10px;
+    left: 8px;
+    padding: 0 6px;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    border-radius: 6px;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .hud .controls {
+    flex: none;
+    flex-wrap: nowrap;
+    margin-top: 0;
+  }
 }
