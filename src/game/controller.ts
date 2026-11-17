@@ -194,7 +194,8 @@ export class Controller {
     this.persist = true;
     this.gen++;
     this.skipping = false;
-    this.config = config ?? makeConfig(defaultSeats(opts.players - 1, opts.aiLevel), seed);
+    const rules = this.params.reinforcement ? { reinforcement: this.params.reinforcement } : {};
+    this.config = config ?? makeConfig(defaultSeats(opts.players - 1, opts.aiLevel), seed, rules);
     this.state = createGame(this.config);
     this.actionLog = [];
     this.eventLog = [];

@@ -21,6 +21,7 @@ export const DEFAULT_RULES: Readonly<RulesConfig> = {
   maxDice: 8,
   maxReserve: 64,
   lossRule: 'drawAttrition',
+  reinforcement: 'random',
   eliminationBonus: 1,
   startingDiceFactor: 3,
   seatCompensation: true,

@@ -215,6 +215,43 @@ describe('applyAction', () => {
     expect(r?.type === 'reinforced' && r.placed.length).toBe(2);
   });
 
+  /** P0 owns an interior t0 behind a border t1 that faces P1's t2 (and P1 keeps t3 so nobody has won). */
+  function frontState(reinforcement: 'random' | 'frontline' | 'weighted', borderDice: number, seed: number) {
+    return buildState({
+      owners: [0, 0, 1, 1],
+      dice: [1, borderDice, 1, 1],
+      edges: [[0, 1], [1, 2], [2, 3]],
+      seed,
+      rules: { reinforcement },
+    });
+  }
+
+  it('frontline reinforcement only places dice on territories facing an enemy', () => {
+    for (let seed = 1; seed <= 50; seed++) {
+      const r = applyAction(frontState('frontline', 1, seed), { type: 'endTurn' }).events.find((e) => e.type === 'reinforced');
+      expect(r?.type === 'reinforced' && r.placed).toEqual([1, 1]);
+    }
+  });
+
+  it('frontline overflow goes to the reserve when the front is full', () => {
+    const { state, events } = applyAction(frontState('frontline', 8, 1), { type: 'endTurn' });
+    expect(events.find((e) => e.type === 'reinforced')).toMatchObject({ placed: [], reserve: 2 });
+    expect(state.territories[0]!.dice).toBe(1);
+  });
+
+  it('weighted reinforcement favours the front about three to one', () => {
+    let front = 0;
+    let total = 0;
+    for (let seed = 1; seed <= 400; seed++) {
+      const r = applyAction(frontState('weighted', 1, seed), { type: 'endTurn' }).events.find((e) => e.type === 'reinforced');
+      if (r?.type !== 'reinforced') continue;
+      total += r.placed.length;
+      front += r.placed.filter((t) => t === 1).length;
+    }
+    expect(front / total).toBeGreaterThan(0.68);
+    expect(front / total).toBeLessThan(0.82);
+  });
+
   it('capturing the last territory eliminates the player', () => {
     for (let seed = 1; seed <= 50; seed++) {
       const s = buildState({

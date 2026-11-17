@@ -136,10 +136,16 @@ function reinforce(s: GameState, rng: Rng, events: GameEvent[]): void {
   let remaining = group + bonus + player.reserve;
   const placed: TerritoryId[] = [];
   const max = s.config.maxDice;
-  const open: Territory[] = s.territories.filter((t) => t.owner === player.id && t.dice < max);
+  const rule = s.config.reinforcement;
+  const facesEnemy = (t: Territory) => t.neighbours.some((n) => s.territories[n]!.owner !== player.id);
+  const open: Territory[] = s.territories.filter((t) => t.owner === player.id && t.dice < max && (rule !== 'frontline' || facesEnemy(t)));
+  // With equal weights this draws exactly as before, so 'random' games are unchanged.
+  const weight = (t: Territory) => (rule === 'weighted' && facesEnemy(t) ? 3 : 1);
 
   while (remaining > 0 && open.length > 0) {
-    const i = rng.int(open.length);
+    let r = rng.int(open.reduce((sum, t) => sum + weight(t), 0));
+    let i = 0;
+    while (r >= weight(open[i]!)) r -= weight(open[i++]!);
     const t = open[i]!;
     t.dice++;
     placed.push(t.id);
