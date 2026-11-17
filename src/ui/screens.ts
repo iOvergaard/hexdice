@@ -304,7 +304,7 @@ export function createGameScreen(root: HTMLElement): GameScreen {
   const rollSlot = el('div', 'roll-slot');
   const boardWrap = el('div', 'board-wrap');
   const barSlot = el('div', 'bar-slot');
-  const hudContainer = el('div');
+  const hudContainer = el('div', 'hud');
   screen.append(rollSlot, boardWrap, barSlot);
   barSlot.append(hudContainer);
   root.replaceChildren(screen);
