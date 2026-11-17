@@ -1,5 +1,6 @@
 import { chooseAction } from '../ai';
 import { makeConfig, randomSeed } from '../engine/config';
+import { winProbability } from '../engine/odds';
 import { Rng } from '../engine/rng';
 import { applyAction, isLegalAttack, largestGroup } from '../engine/rules';
 import { defaultSeats } from '../engine/seats';
@@ -262,7 +263,16 @@ export class Controller {
       targets: this.selected === null ? [] : targetsFor(state, this.selected, this.canAttack),
       attack,
       interactive,
+      odds: interactive && this.selected !== null ? this.oddsFor(state, this.selected) : undefined,
     });
+  }
+
+  private oddsFor(state: GameState, from: TerritoryId): Map<TerritoryId, number> {
+    const odds = new Map<TerritoryId, number>();
+    for (const to of targetsFor(state, from, this.canAttack)) {
+      odds.set(to, winProbability(state.territories[from]!.dice, state.territories[to]!.dice));
+    }
+    return odds;
   }
 
   private renderAll(): void {
