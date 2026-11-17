@@ -82,7 +82,10 @@ function makeSide(role: 'defender' | 'attacker'): Side {
   return { el, who, dice, sum, cost };
 }
 
-const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+export const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/** Share of a roll spent tumbling; the dice land then and the result shows at the end. Sound times its rattle to it. */
+export const TUMBLE_SHARE = 0.7;
 
 export class RollView {
   private readonly root: HTMLElement;
@@ -161,7 +164,7 @@ export class RollView {
         settle();
         return;
       }
-      const tumbleMs = durationMs * 0.7;
+      const tumbleMs = durationMs * TUMBLE_SHARE;
       if (!reducedMotion()) {
         const shuffle = () => {
           this.paintDice(this.attacker, att, event.attackRolls, true);

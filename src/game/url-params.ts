@@ -6,6 +6,8 @@ export interface UrlParams {
   players: number | null;
   aiLevel: AiLevel | null;
   speed: Speed | null;
+  /** ?sound=off|on overrides the remembered setting for this visit (tests, repro links). */
+  sound: boolean | null;
 }
 
 const AI_LEVELS: readonly string[] = ['easy', 'normal'];
@@ -17,11 +19,13 @@ export function parseUrlParams(search: string): UrlParams {
   const playersRaw = q.get('players');
   const ai = q.get('ai');
   const speed = q.get('speed');
+  const sound = q.get('sound');
   const players = playersRaw !== null && /^\d+$/.test(playersRaw) ? Number(playersRaw) : null;
   return {
     seed: seedRaw !== null && /^\d+$/.test(seedRaw) ? Number(seedRaw) >>> 0 : null,
     players: players === null ? null : Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, players)),
     aiLevel: ai !== null && AI_LEVELS.includes(ai) ? (ai as AiLevel) : null,
     speed: speed !== null && SPEEDS.includes(speed) ? (speed as Speed) : null,
+    sound: sound === 'on' ? true : sound === 'off' ? false : null,
   };
 }

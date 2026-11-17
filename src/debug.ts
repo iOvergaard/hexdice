@@ -10,6 +10,7 @@ export interface HexdiceDebug {
   autoplay(on: boolean): void;
   load(state: GameState): void;
   idle(): Promise<void>;
+  sounds(): string[];
 }
 
 declare global {
@@ -29,5 +30,6 @@ export function installDebug(c: Controller): void {
     autoplay: (on) => c.setAutoplay(on),
     load: (state) => c.load(state),
     idle: () => c.idle(),
+    sounds: () => [...c.sound.log],
   };
 }

@@ -7,6 +7,8 @@ import { createGame } from '../engine/setup';
 import type { Action, AiLevel, GameConfig, GameEvent, GameState, Speed, TerritoryId } from '../engine/types';
 import { createGameScreen, showTitle, type GameScreen, type TitleOptions } from '../ui/screens';
 import { nextSelection, targetsFor } from '../ui/selection';
+import { loadSoundOn, Sound } from './sound';
+import { cuesFor } from './sound-cues';
 import { AI_PLACE_MS, AI_ROLL_MS, ELIMINATION_MS, PAUSE_MS, PLACE_MS, ROLL_MS } from './timing';
 import type { UrlParams } from './url-params';
 
@@ -53,12 +55,14 @@ export class Controller {
   /** Bumped whenever the running game is abandoned (quit, replay, load); stale async work bails out. */
   private gen = 0;
   private running = -1;
+  readonly sound: Sound;
 
   constructor(
     private readonly root: HTMLElement,
     private readonly params: UrlParams,
   ) {
     this.speed = params.speed ?? 'normal';
+    this.sound = new Sound(params.sound ?? loadSoundOn());
     document.addEventListener('keydown', (e) => this.onKey(e));
   }
 
@@ -97,6 +101,7 @@ export class Controller {
   }
   load(state: GameState): void {
     this.gen++;
+    this.sound.stopAll();
     this.skipping = false;
     this.config = state.config;
     this.state = state;
@@ -126,15 +131,21 @@ export class Controller {
   // ---- screen flow ----
   private toTitle(): void {
     this.gen++;
+    this.sound.stopAll();
     this.skipping = false;
     this.busy = false;
     this.screen = null;
     this.state = null;
-    showTitle(this.root, loadTitle(), (opts) => {
-      saveTitle(opts);
-      this.newGame(opts, randomSeed());
-      this.preview(opts);
-    });
+    showTitle(
+      this.root,
+      loadTitle(),
+      (opts) => {
+        saveTitle(opts);
+        this.newGame(opts, randomSeed());
+        this.preview(opts);
+      },
+      { on: this.sound.isOn(), toggle: () => this.toggleSound() },
+    );
   }
 
   private newGame(opts: TitleOptions, seed: number): void {
@@ -206,7 +217,16 @@ export class Controller {
       this.speed = s;
     });
     screen.hud.onQuit(() => this.toTitle());
+    screen.hud.onSoundToggle(() => {
+      this.toggleSound();
+      this.renderAll();
+    });
     return screen;
+  }
+
+  private toggleSound(): boolean {
+    this.sound.setOn(!this.sound.isOn());
+    return this.sound.isOn();
   }
 
   // ---- rendering ----
@@ -255,6 +275,7 @@ export class Controller {
       skip: this.canSkip() ? (s.players.some((p) => p.kind === 'human' && p.alive) && !this.autoplay ? 'turn' : 'end') : null,
       speed: this.speed,
       mode: this.mode,
+      sound: this.sound.isOn(),
     });
   }
 
@@ -303,11 +324,15 @@ export class Controller {
       this.eventLog.push(...events);
     }
     const byAi = this.autoplay || before.players[before.current]!.kind === 'ai';
+    const humans = this.autoplay ? [] : before.players.filter((p) => p.kind === 'human' && p.alive).map((p) => p.id);
+    const cues = cuesFor(events, { speed, byAi, mode: this.mode, humans });
     const roll = events.find((e) => e.type === 'attackRolled');
     if (roll) {
       this.renderBoard(false, { from: roll.from, to: roll.to }, before);
+      if (cues.dice) this.sound.dice(cues.dice);
       await this.screen!.roll.show(roll, before, (byAi ? AI_ROLL_MS : ROLL_MS)[speed]);
       if (gen !== this.gen) return;
+      if (cues.result) this.sound.result(cues.result);
     }
     this.state = next;
     this.renderAll();
@@ -328,6 +353,7 @@ export class Controller {
       const detail = `by ${by}${bonus > 0 ? ` · ${by === 'you' ? 'you now get' : 'now gets'} +${bonus} ${bonus === 1 ? 'die' : 'dice'} per turn` : ''}`;
       const ms = ELIMINATION_MS[speed];
       const at = this.screen!.board.verticalPosition(roll.to) < 0.5 ? 0.72 : 0.28;
+      if (cues.knockout) this.sound.knockout(cues.knockout);
       await Promise.all([this.screen!.board.showBurst(roll.to, loser.identity, ms), this.screen!.banner.show(title, detail, loser.identity, ms, at)]);
       if (gen !== this.gen) return;
     }
@@ -338,10 +364,13 @@ export class Controller {
       if (reinforced.bonus > 0) parts.push(`+${reinforced.bonus} knockout bonus`);
       if (reinforced.reserve > 0) parts.push(`${reinforced.reserve} in reserve`);
       this.screen!.roll.message(parts.join(' · '));
+      if (cues.place) this.sound.place(cues.place);
       await this.screen!.board.showPlacements(reinforced.placed, (byAi ? AI_PLACE_MS : PLACE_MS)[speed]);
       if (gen !== this.gen) return;
     }
     if (events.some((e) => e.type === 'turnStarted')) this.turnCue();
+    if (cues.yourTurn) this.sound.yourTurn();
+    if (cues.sting) this.sound.sting(cues.sting);
     if (record && !this.watching && !this.autoplay && this.humansAllOut(events)) {
       this.paused = true;
       this.renderAll();
@@ -429,6 +458,7 @@ export class Controller {
 
   private async replay(): Promise<void> {
     const gen = ++this.gen;
+    this.sound.stopAll();
     this.skipping = false;
     const log = [...this.actionLog];
     const screen = this.screen!;
