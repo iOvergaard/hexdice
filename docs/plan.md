@@ -57,6 +57,7 @@ This section is the complete, authoritative rule set. It's our design, not a par
   - Loss: source drops to 1; target unchanged.
 - A player who loses their last territory is eliminated; their reserve is discarded.
 - **Reinforcement (end of turn):** amount = number of territories in the player's largest connected group of own territories, plus their reserve, plus the **knockout bonus**: +1 die per turn, permanently, for each opponent the player has eliminated (`eliminationBonus`, added 16-11-2026, from Jacob). Dice are placed one at a time on random own territories with < 8 dice. Leftovers go to the reserve, capped at 64.
+  Where the dice land is the `reinforcement` setting (17-11-2026): `random` (default: any own territory with room), `frontline` (only territories facing an enemy; overflow to the reserve) or `weighted` (those three times as likely). Try one with `?reinforce=frontline`. Simulated (8 players, all-Normal): frontline halves game length (median 22 → 12 rounds, 99% within 22 instead of 54), keeps skill expression (Normal beats Easy 90%), and gives more comebacks (the halfway leader wins 62% instead of 77%).
 - **Game over:** one player owns every territory. If you're eliminated: defeat screen with "watch the rest" or "new game".
 
 **Odds:** the engine precomputes the exact win probability for every a-vs-d dice matchup (1–8 each). AI uses it; the UI can show it later.

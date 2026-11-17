@@ -5,7 +5,7 @@ import { Rng } from '../src/engine/rng';
 import { applyAction, isLegalAttack } from '../src/engine/rules';
 import { aiSeats } from '../src/engine/seats';
 import { createGame } from '../src/engine/setup';
-import type { AiLevel, GameState, LossRule } from '../src/engine/types';
+import type { AiLevel, GameState, LossRule, ReinforcementRule } from '../src/engine/types';
 import { LENGTH_LIMITS, lengthFailures, lengthStats } from './stats';
 
 const ROUND_CAP = 1000;
@@ -22,6 +22,8 @@ const out = arg('out', 'playtest/sim-latest.json');
 const lossRule = arg('loss-rule', DEFAULT_RULES.lossRule) as LossRule;
 if (!['classic', 'attrition', 'drawAttrition', 'halfStack'].includes(lossRule)) throw new Error(`unknown --loss-rule ${lossRule}`);
 const eliminationBonus = Number(arg('elimination-bonus', '1'));
+const reinforcement = arg('reinforcement', DEFAULT_RULES.reinforcement) as ReinforcementRule;
+if (!['random', 'frontline', 'weighted'].includes(reinforcement)) throw new Error(`unknown --reinforcement ${reinforcement}`);
 
 let crashes = 0;
 let illegalActions = 0;
@@ -37,7 +39,7 @@ interface Result {
 
 function play(levels: AiLevel[], seed: number): Result {
   try {
-    let state = createGame(makeConfig(aiSeats(levels), seed, { lossRule, eliminationBonus }));
+    let state = createGame(makeConfig(aiSeats(levels), seed, { lossRule, eliminationBonus, reinforcement }));
     const rng = new Rng(seed ^ 0x9e3779b9);
     while (state.winner === null) {
       if (state.round > ROUND_CAP) {
@@ -96,7 +98,7 @@ const tooLong = lengthFailures(lengths);
 const result = {
   date: new Date().toISOString(),
   games,
-  rules: { lossRule, eliminationBonus },
+  rules: { lossRule, eliminationBonus, reinforcement },
   normalVsEasy: { games: duelGames, normalWins, winRate },
   eightPlayer: { games: eightGames, avgRounds: eightGames ? roundSum / eightGames : 0, maxRounds, winsBySeat },
   gameLength: { ...lengths, limits: LENGTH_LIMITS, failures: tooLong },
@@ -109,7 +111,7 @@ const result = {
 };
 writeFileSync(out, JSON.stringify(result, null, 2) + '\n');
 
-console.log(`Rules: lossRule=${lossRule} eliminationBonus=${eliminationBonus}; ${attacks} attacks, ${ties} draws (${((ties / Math.max(1, attacks)) * 100).toFixed(1)}%)`);
+console.log(`Rules: lossRule=${lossRule} eliminationBonus=${eliminationBonus} reinforcement=${reinforcement}; ${attacks} attacks, ${ties} draws (${((ties / Math.max(1, attacks)) * 100).toFixed(1)}%)`);
 console.log(`Normal vs Easy: ${normalWins}/${duelGames} (${(winRate * 100).toFixed(1)}%)`);
 console.log(`8-player: avg ${result.eightPlayer.avgRounds.toFixed(1)} rounds, max ${maxRounds}, wins by seat [${winsBySeat.join(', ')}]`);
 console.log(

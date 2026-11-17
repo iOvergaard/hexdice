@@ -1,5 +1,5 @@
 import { MAX_PLAYERS, MIN_PLAYERS } from '../engine/config';
-import type { AiLevel, Speed } from '../engine/types';
+import type { AiLevel, ReinforcementRule, Speed } from '../engine/types';
 
 export interface UrlParams {
   seed: number | null;
@@ -8,10 +8,13 @@ export interface UrlParams {
   speed: Speed | null;
   /** ?sound=off|on overrides the remembered setting for this visit (tests, repro links). */
   sound: boolean | null;
+  /** ?reinforce=random|frontline|weighted tries a reinforcement rule (prototype). */
+  reinforcement: ReinforcementRule | null;
 }
 
 const AI_LEVELS: readonly string[] = ['easy', 'normal'];
 const SPEEDS: readonly string[] = ['slow', 'normal', 'fast', 'instant'];
+const REINFORCEMENTS: readonly string[] = ['random', 'frontline', 'weighted'];
 
 export function parseUrlParams(search: string): UrlParams {
   const q = new URLSearchParams(search);
@@ -20,6 +23,7 @@ export function parseUrlParams(search: string): UrlParams {
   const ai = q.get('ai');
   const speed = q.get('speed');
   const sound = q.get('sound');
+  const reinforce = q.get('reinforce');
   const players = playersRaw !== null && /^\d+$/.test(playersRaw) ? Number(playersRaw) : null;
   return {
     seed: seedRaw !== null && /^\d+$/.test(seedRaw) ? Number(seedRaw) >>> 0 : null,
@@ -27,5 +31,6 @@ export function parseUrlParams(search: string): UrlParams {
     aiLevel: ai !== null && AI_LEVELS.includes(ai) ? (ai as AiLevel) : null,
     speed: speed !== null && SPEEDS.includes(speed) ? (speed as Speed) : null,
     sound: sound === 'on' ? true : sound === 'off' ? false : null,
+    reinforcement: reinforce !== null && REINFORCEMENTS.includes(reinforce) ? (reinforce as ReinforcementRule) : null,
   };
 }

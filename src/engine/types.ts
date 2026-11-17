@@ -13,6 +13,11 @@ export type Speed = 'slow' | 'normal' | 'fast' | 'instant';
  * 'drawAttrition': attrition on a draw, classic on a clear loss. 'halfStack': it loses half, rounded up, never below 1.
  */
 export type LossRule = 'classic' | 'attrition' | 'drawAttrition' | 'halfStack';
+/**
+ * Where reinforcement dice land. 'random': any own territory with room. 'frontline': only territories facing an enemy
+ * (overflow goes to the reserve). 'weighted': territories facing an enemy are three times as likely.
+ */
+export type ReinforcementRule = 'random' | 'frontline' | 'weighted';
 
 export interface RulesConfig {
   gridWidth: number;
@@ -34,6 +39,7 @@ export interface RulesConfig {
   maxDice: number;
   maxReserve: number;
   lossRule: LossRule;
+  reinforcement: ReinforcementRule;
   /** Extra dice per reinforcement, permanently, for each opponent the player has knocked out. */
   eliminationBonus: number;
   /** Starting dice per player: floor(startingDiceFactor * territoryCount / players). */
