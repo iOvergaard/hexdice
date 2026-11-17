@@ -38,6 +38,8 @@ export interface RulesConfig {
   eliminationBonus: number;
   /** Starting dice per player: floor(startingDiceFactor * territoryCount / players). */
   startingDiceFactor: number;
+  /** Adjust each seat's starting dice by turn order (`SEAT_COMPENSATION`), so where you sit doesn't decide the game. */
+  seatCompensation: boolean;
 }
 
 export interface SeatConfig {

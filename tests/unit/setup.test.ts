@@ -1,11 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import { makeConfig } from '../../src/engine/config';
 import { aiSeats, defaultSeats } from '../../src/engine/seats';
-import { createGame } from '../../src/engine/setup';
+import { SEAT_COMPENSATION, createGame } from '../../src/engine/setup';
 
 const game = (players: number, seed = 1) => createGame(makeConfig(defaultSeats(players - 1), seed));
 
 describe('createGame', () => {
+  it('compensates seats by turn order', () => {
+    for (const [n, base] of [[8, 11], [4, 22], [2, 45]] as const) {
+      for (let seed = 1; seed <= 20; seed++) {
+        const s = game(n, seed);
+        s.players.forEach((p, seat) => {
+          const total = s.territories.filter((t) => t.owner === p.id).reduce((a, t) => a + t.dice, 0);
+          expect(total, `${n} players, seat ${seat}`).toBe(base + SEAT_COMPENSATION[n]![seat]!);
+        });
+      }
+    }
+  });
+
+  it('has a compensation for every table size, one entry per seat', () => {
+    for (let n = 2; n <= 8; n++) expect(SEAT_COMPENSATION[n]).toHaveLength(n);
+  });
+
   it('rejects fewer than 2 or more than 8 seats', () => {
     expect(() => createGame(makeConfig(defaultSeats(1).slice(0, 1), 1))).toThrow(RangeError);
     expect(() => createGame(makeConfig(aiSeats(Array(9).fill('easy')), 1))).toThrow(RangeError);
@@ -35,10 +51,10 @@ describe('createGame', () => {
     }
   });
 
-  it('starting dice are equal per player', () => {
+  it('starting dice are equal per player without seat compensation', () => {
     for (const [n, total] of [[8, 11], [4, 22], [2, 45]] as const) {
       for (let seed = 1; seed <= 20; seed++) {
-        const s = game(n, seed);
+        const s = createGame(makeConfig(defaultSeats(n - 1), seed, { seatCompensation: false }));
         for (const p of s.players) {
           expect(s.territories.filter((t) => t.owner === p.id).reduce((a, t) => a + t.dice, 0)).toBe(total);
         }

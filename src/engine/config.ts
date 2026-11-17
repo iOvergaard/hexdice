@@ -23,6 +23,7 @@ export const DEFAULT_RULES: Readonly<RulesConfig> = {
   lossRule: 'drawAttrition',
   eliminationBonus: 1,
   startingDiceFactor: 3,
+  seatCompensation: true,
 };
 
 export function makeConfig(seats: SeatConfig[], seed: number, overrides: Partial<RulesConfig> = {}): GameConfig {

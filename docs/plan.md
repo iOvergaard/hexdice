@@ -48,6 +48,7 @@ This section is the complete, authoritative rule set. It's our design, not a par
 - Players: 2–8, default 8 (you + 7 AI). Seat order is random, then fixed *(my call: fair on average)*.
 - Territories are dealt at random, as evenly as possible.
 - Every player starts with the same total dice, T = floor(3 × territories ÷ players) (30 territories, 8 players → 11). Each territory gets 1 die; the player's remaining dice are placed on random own territories, max 8 per territory.
+- **Seat compensation** (17-11-2026): moving first is a big edge in small games (2 players: the first seat won 84% of AI-vs-AI games) and moving last in big ones (8 players: the last seat won 17%). Starting dice are adjusted by seat in turn order (`SEAT_COMPENSATION` in `src/engine/setup.ts`; 2 players: first seat −7; 8 players: +1 for the fifth seat, −1 for the last two). Tuned and checked on separate seed sets: every seat within about 2–3 points of a fair share. Setting: `seatCompensation`.
 
 **A turn**
 - The active player makes any number of attacks, then ends the turn.
