@@ -1142,3 +1142,45 @@
     transform: translate(-50%, -50%);
   }
 }
+
+/* ---------- win-chance badges ---------- */
+
+.board .layer-odds {
+  pointer-events: none;
+}
+
+.odds-pill {
+  fill: #1b1f2a;
+  stroke: #fff;
+  stroke-width: 2.5px;
+}
+
+.odds-text {
+  fill: #fff;
+  font-family: var(--font);
+  font-weight: 500;
+}
+
+.odds-good .odds-pill {
+  fill: #1f6b3a;
+}
+
+.odds-good .odds-text {
+  font-weight: 800;
+}
+
+.odds-risky .odds-pill {
+  fill: #8a5a00;
+}
+
+.odds-risky .odds-text {
+  font-weight: 700;
+}
+
+.odds-poor .odds-pill {
+  fill: #8f2a22;
+}
+
+.odds-icon {
+  fill: #fff;
+}

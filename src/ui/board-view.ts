@@ -1,6 +1,7 @@
 import { DIRS, boardPixelSize, cellCentre, cellCorner, edgeCorners, neighbour } from '../engine/hex';
 import type { Point } from '../engine/hex';
 import type { Board, GameState, Territory, TerritoryId } from '../engine/types';
+import { formatOdds } from './odds-badge';
 import { darken, pipColour, playerColour } from './identity';
 import { FRAME_CLIP_ID, LAND_CLIP_ID, buildRivers, buildTerrain } from './terrain';
 import { createUnits, unitVariant } from './units';
@@ -11,6 +12,8 @@ export interface BoardViewState {
   targets: TerritoryId[];
   attack: { from: TerritoryId; to: TerritoryId } | null;
   interactive: boolean;
+  /** Target territory to attack win probability (0..1); drawn as badges at the targets' tokens. */
+  odds?: ReadonlyMap<TerritoryId, number>;
 }
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -85,6 +88,9 @@ export class BoardView {
   // Tokens sit above every fill, border and highlight so neighbours never cover them, and stay upright when the map rotates.
   private readonly tokenLayer: SVGGElement;
   private readonly placeLayer: SVGGElement;
+  private readonly oddsLayer: SVGGElement;
+  private odds: ReadonlyMap<TerritoryId, number> = new Map();
+  private selected: TerritoryId | null = null;
   private readonly variant = unitVariant(typeof location === 'undefined' ? '' : location.search);
   private board: Board | null = null;
   private geometry: Geometry[] = [];
@@ -118,7 +124,8 @@ export class BoardView {
     this.world.append(this.seaLayer, this.groundLayer, this.landLayer, this.overLayer, this.hlLayer);
     this.tokenLayer = svg('g', {}, 'layer-tokens');
     this.placeLayer = svg('g', {}, 'layer-placements');
-    this.root.append(this.defs, this.world, this.tokenLayer, this.placeLayer);
+    this.oddsLayer = svg('g', {}, 'layer-odds');
+    this.root.append(this.defs, this.world, this.tokenLayer, this.oddsLayer, this.placeLayer);
     this.defs.append(hatch);
     container.append(this.root);
 
@@ -138,6 +145,8 @@ export class BoardView {
   render(state: GameState, view: BoardViewState): void {
     if (this.board !== state.board) this.build(state);
     this.interactive = view.interactive;
+    this.odds = view.odds ?? new Map();
+    this.selected = view.selected;
 
     const targets = new Set(view.targets);
     this.root.classList.toggle('is-locked', !view.interactive);
@@ -364,6 +373,48 @@ export class BoardView {
     }
     this.tokenAt = pos;
     pos.forEach((p, id) => this.nodes[id]?.token.setAttribute('transform', `translate(${n(p.x)} ${n(p.y)}) scale(${s})`));
+    this.drawOdds(boxes, s);
+  }
+
+  /** One pill per target under its token, flipped above when that would cover the selected token. */
+  private drawOdds(boxes: ({ x: number; y: number; w: number; h: number } | null)[], s: number): void {
+    this.oddsLayer.replaceChildren();
+    const sel = this.selected !== null ? boxes[this.selected] : null;
+    const selAt = this.selected !== null ? this.tokenAt[this.selected] : null;
+    const k = s / UNIT_SCALE;
+    const h = 34 * k;
+    const fs = 24 * k;
+    for (const [id, p] of this.odds) {
+      const at = this.tokenAt[id];
+      const box = boxes[id];
+      if (!at || !box) continue;
+      const { text, band } = formatOdds(p);
+      const w = text.length * 0.62 * fs + 38 * k;
+      const cx = at.x + box.x + box.w / 2;
+      const hits = (cy: number): boolean =>
+        !!sel && !!selAt &&
+        Math.abs(cx - (selAt.x + sel.x + sel.w / 2)) < w / 2 + sel.w / 2 &&
+        Math.abs(cy - (selAt.y + sel.y + sel.h / 2)) < h / 2 + sel.h / 2;
+      const below = at.y + box.y + box.h + h * 0.55;
+      const above = at.y + box.y - h * 0.55;
+      const cy = hits(below) && !hits(above) ? above : below;
+      const g = svg('g', { transform: `translate(${n(cx)} ${n(cy)})` }, `odds odds-${band}`);
+      g.dataset.testid = `odds-${id}`;
+      g.dataset.band = band;
+      g.append(svg('rect', { x: n(-w / 2), y: n(-h / 2), width: n(w), height: n(h), rx: n(h / 2) }, 'odds-pill'));
+      const ix = -w / 2 + 16 * k;
+      const r = 6 * k;
+      const shape =
+        band === 'good' ? `M${n(ix - r)} ${n(r * 0.7)}L${n(ix)} ${n(-r)}L${n(ix + r)} ${n(r * 0.7)}Z`
+        : band === 'poor' ? `M${n(ix - r)} ${n(-r * 0.7)}L${n(ix)} ${n(r)}L${n(ix + r)} ${n(-r * 0.7)}Z`
+        : `M${n(ix - r)} 0L${n(ix)} ${n(-r)}L${n(ix + r)} 0L${n(ix)} ${n(r)}Z`;
+      g.append(svg('path', { d: shape }, 'odds-icon'));
+      const label = svg('text', { x: n(w / 2 - 11 * k), y: 0, 'text-anchor': 'end', 'dominant-baseline': 'central' }, 'odds-text');
+      label.style.fontSize = `${n(fs)}px`;
+      label.textContent = text;
+      g.append(label);
+      this.oddsLayer.append(g);
+    }
   }
 
   private build(state: GameState): void {
@@ -375,6 +426,7 @@ export class BoardView {
     this.landLayer.replaceChildren();
     this.tokenLayer.replaceChildren();
     this.placeLayer.replaceChildren();
+    this.oddsLayer.replaceChildren();
     this.hlLayer.replaceChildren();
 
     const size = boardPixelSize(board.width, board.height, HEX);
