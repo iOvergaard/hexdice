@@ -216,12 +216,63 @@ export class GameOverOverlay {
   }
 }
 
+/** The "big bang" banner when a player is knocked out: slams in over the board, then clears itself. */
+export class EliminationBanner {
+  private readonly el: HTMLElement;
+  private readonly title: HTMLElement;
+  private readonly detail: HTMLElement;
+  private timer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor(container: HTMLElement) {
+    this.el = el('div', 'elimination');
+    this.el.dataset.testid = 'elimination-banner';
+    this.el.hidden = true;
+    this.el.setAttribute('role', 'status');
+    this.el.setAttribute('aria-live', 'assertive');
+    const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    s.setAttribute('viewBox', '-12 -12 24 24');
+    s.setAttribute('class', 'emblem elimination-emblem');
+    s.setAttribute('aria-hidden', 'true');
+    s.append(document.createElementNS('http://www.w3.org/2000/svg', 'path'));
+    this.title = el('p', 'elimination-title');
+    this.detail = el('p', 'elimination-detail');
+    this.el.append(s, this.title, this.detail);
+    container.append(this.el);
+  }
+
+  /** `at` is the banner's vertical centre as a fraction of the board, so it can stay clear of the blast. */
+  show(title: string, detail: string, identity: number, durationMs: number, at = 0.5): Promise<void> {
+    this.hide();
+    if (durationMs <= 0) return Promise.resolve();
+    this.el.style.setProperty('--at', `${Math.round(at * 100)}%`);
+    this.el.style.setProperty('--c', playerColour(identity));
+    this.el.style.setProperty('--dur', `${durationMs}ms`);
+    this.el.querySelector('path')!.setAttribute('d', emblemPath(identity, 10));
+    this.title.textContent = title;
+    this.detail.textContent = detail;
+    this.el.hidden = false;
+    return new Promise((resolve) => {
+      this.timer = setTimeout(() => {
+        this.hide();
+        resolve();
+      }, durationMs);
+    });
+  }
+
+  hide(): void {
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = null;
+    this.el.hidden = true;
+  }
+}
+
 export interface GameScreen {
   board: BoardView;
   roll: RollView;
   hud: Hud;
   preview: PreviewPrompt;
   overlay: GameOverOverlay;
+  banner: EliminationBanner;
 }
 
 /** Layout, top to bottom: roll strip, board, player bar and controls. */
@@ -240,6 +291,7 @@ export function createGameScreen(root: HTMLElement): GameScreen {
     roll: new RollView(rollSlot),
     board: new BoardView(boardWrap),
     overlay: new GameOverOverlay(boardWrap),
+    banner: new EliminationBanner(boardWrap),
     hud: new Hud(hudContainer),
     preview: new PreviewPrompt(barSlot, hudContainer),
   };

@@ -217,6 +217,52 @@ export class BoardView {
     );
   }
 
+  /** Where a territory's token sits vertically on screen, from 0 (top of the board) to 1 (bottom). */
+  verticalPosition(territory: TerritoryId): number {
+    const token = this.nodes[territory]?.token.getBoundingClientRect();
+    const board = this.root.getBoundingClientRect();
+    if (!token || board.height === 0) return 0.5;
+    return (token.top + token.height / 2 - board.top) / board.height;
+  }
+
+  /** The board half of an elimination: shockwave rings and flying dice in the loser's colour, and a short shake. */
+  showBurst(territory: TerritoryId, identity: number, durationMs: number): Promise<void> {
+    const geo = this.geometry[territory];
+    if (durationMs <= 0 || !geo) return Promise.resolve();
+    const p = this.tokenAt[territory] ?? this.toView(geo.centre);
+    const burst = svg('g', { transform: `translate(${n(p.x)} ${n(p.y)})` }, 'burst');
+    burst.dataset.testid = 'elimination-burst';
+    burst.style.setProperty('--c', playerColour(identity));
+    burst.style.setProperty('--dur', `${durationMs}ms`);
+    burst.append(svg('circle', { r: HEX * 1.4 }, 'burst-flash'));
+    for (let i = 0; i < 3; i++) {
+      const ring = svg('circle', { r: HEX * 1.2 }, 'burst-ring');
+      ring.style.animationDelay = `${i * 140}ms`;
+      burst.append(ring);
+    }
+    // Cosmetic only, so Math.random is fine here.
+    for (let i = 0; i < 16; i++) {
+      const angle = (i / 16) * Math.PI * 2 + Math.random() * 0.4;
+      const dist = HEX * (4 + Math.random() * 4);
+      const die = svg('rect', { x: -6, y: -6, width: 12, height: 12, rx: 3 }, 'burst-die');
+      die.style.setProperty('--dx', `${n(Math.cos(angle) * dist)}px`);
+      die.style.setProperty('--dy', `${n(Math.sin(angle) * dist)}px`);
+      die.style.setProperty('--spin', `${Math.round(Math.random() * 540 - 270)}deg`);
+      burst.append(die);
+    }
+    this.placeLayer.append(burst);
+    this.root.classList.remove('is-shaking');
+    void this.root.getBoundingClientRect();
+    this.root.classList.add('is-shaking');
+    return new Promise((resolve) =>
+      setTimeout(() => {
+        burst.remove();
+        this.root.classList.remove('is-shaking');
+        resolve();
+      }, durationMs),
+    );
+  }
+
   /** Floats a red "−N" over a territory whose attack failed. Resolves when the label is gone. */
   showLoss(territory: TerritoryId, lost: number, durationMs: number): Promise<void> {
     const geo = this.geometry[territory];

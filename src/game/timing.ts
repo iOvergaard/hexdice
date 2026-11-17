@@ -14,3 +14,6 @@ export const PLACE_MS: Record<Speed, number> = { slow: 1200, normal: 700, fast: 
 
 /** Same for AI reinforcements. */
 export const AI_PLACE_MS: Record<Speed, number> = { slow: 700, normal: 350, fast: 150, instant: 0 };
+
+/** How long the game holds for a player's elimination (burst and banner), per speed. */
+export const ELIMINATION_MS: Record<Speed, number> = { slow: 2600, normal: 1900, fast: 1100, instant: 0 };

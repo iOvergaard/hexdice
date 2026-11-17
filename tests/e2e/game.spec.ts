@@ -130,6 +130,42 @@ test('autoplay reaches game over and replay runs', async ({ page }, info) => {
   expect(replayed.territories.map((t) => [t.owner, t.dice])).toEqual(finalState.territories.map((t) => [t.owner, t.dice]));
 });
 
+test('a knockout shows a big bang', async ({ page }, info) => {
+  await page.goto('/?seed=5&players=3&speed=slow');
+  await ready(page);
+  // Your 8-dice territory borders an AI's only territory (1 die): the attack can't fail and knocks it out.
+  const { from, to } = await page.evaluate(() => {
+    const s: GameState = structuredClone(window.__hexdice!.state()!);
+    const human = s.players.find((p) => p.kind === 'human')!.id;
+    const [victim, other] = s.players.filter((p) => p.kind === 'ai').map((p) => p.id);
+    const source = s.territories.find((t) => t.neighbours.length > 0)!;
+    const target = s.territories[source.neighbours[0]!]!;
+    s.territories.forEach((t) => {
+      t.owner = other!;
+      t.dice = 2;
+    });
+    source.owner = human;
+    source.dice = 8;
+    target.owner = victim!;
+    target.dice = 1;
+    s.players.forEach((p) => (p.alive = true));
+    s.current = human;
+    window.__hexdice!.load(s);
+    return { from: source.id, to: target.id };
+  });
+  await page.getByTestId(`token-${from}`).click();
+  await page.getByTestId(`token-${to}`).click();
+  const banner = page.getByTestId('elimination-banner');
+  await expect(banner).toBeVisible({ timeout: 5_000 });
+  await expect(banner).toContainText('eliminated');
+  await expect(banner).toContainText('by you · you now get +1 die per turn');
+  await expect(page.getByTestId('elimination-burst')).toHaveCount(1);
+  await page.waitForTimeout(250);
+  await shot(page, info, 'knockout');
+  await expect(banner).toBeHidden({ timeout: 6_000 });
+  await expect(page.getByTestId('elimination-burst')).toHaveCount(0);
+});
+
 test('eliminated player can watch the rest', async ({ page }, info) => {
   test.setTimeout(120_000);
   await page.goto('/?seed=5&players=3&speed=instant');

@@ -7,7 +7,7 @@ import { createGame } from '../engine/setup';
 import type { Action, AiLevel, GameConfig, GameEvent, GameState, Speed, TerritoryId } from '../engine/types';
 import { createGameScreen, showTitle, type GameScreen, type TitleOptions } from '../ui/screens';
 import { nextSelection, targetsFor } from '../ui/selection';
-import { AI_PLACE_MS, AI_ROLL_MS, PAUSE_MS, PLACE_MS, ROLL_MS } from './timing';
+import { AI_PLACE_MS, AI_ROLL_MS, ELIMINATION_MS, PAUSE_MS, PLACE_MS, ROLL_MS } from './timing';
 import type { UrlParams } from './url-params';
 
 const TITLE_KEY = 'hexdice:title';
@@ -315,6 +315,21 @@ export class Controller {
       // Not awaited: the label fades on its own and shouldn't slow the game down.
       const lost = before.territories[roll.from]!.dice - next.territories[roll.from]!.dice;
       void this.screen!.board.showLoss(roll.from, lost, (byAi ? AI_PLACE_MS : PLACE_MS)[speed] * 1.5);
+    }
+    const out = events.find((e) => e.type === 'playerEliminated');
+    if (out && roll) {
+      // The big bang: the game deliberately holds here so a knockout lands.
+      const loser = next.players[out.player]!;
+      const winner = next.players[out.by]!;
+      const solo = this.humans() === 1;
+      const title = solo && loser.kind === 'human' ? 'You were eliminated' : `${loser.name} eliminated`;
+      const bonus = winner.knockouts * next.config.eliminationBonus;
+      const by = solo && winner.kind === 'human' ? 'you' : winner.name;
+      const detail = `by ${by}${bonus > 0 ? ` · ${by === 'you' ? 'you now get' : 'now gets'} +${bonus} ${bonus === 1 ? 'die' : 'dice'} per turn` : ''}`;
+      const ms = ELIMINATION_MS[speed];
+      const at = this.screen!.board.verticalPosition(roll.to) < 0.5 ? 0.72 : 0.28;
+      await Promise.all([this.screen!.board.showBurst(roll.to, loser.identity, ms), this.screen!.banner.show(title, detail, loser.identity, ms, at)]);
+      if (gen !== this.gen) return;
     }
     const reinforced = events.find((e) => e.type === 'reinforced');
     if (reinforced) {
