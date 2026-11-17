@@ -6,6 +6,7 @@ import { applyAction, isLegalAttack } from '../src/engine/rules';
 import { aiSeats } from '../src/engine/seats';
 import { createGame } from '../src/engine/setup';
 import type { AiLevel, GameState, LossRule } from '../src/engine/types';
+import { LENGTH_LIMITS, lengthFailures, lengthStats } from './stats';
 
 const ROUND_CAP = 1000;
 const MIN_WIN_RATE = 0.7;
@@ -79,21 +80,26 @@ for (let i = 0; i < duelGames; i++) {
 const winsBySeat = new Array<number>(8).fill(0);
 let roundSum = 0;
 let maxRounds = 0;
+const eightRounds: number[] = [];
 for (let i = 0; i < eightGames; i++) {
   const r = play(Array.from({ length: 8 }, () => 'normal' as const), baseSeed + 100000 + i);
   roundSum += r.rounds;
   maxRounds = Math.max(maxRounds, r.rounds);
+  eightRounds.push(r.rounds);
   if (r.winner !== null) winsBySeat[r.winner]!++;
 }
 
 const durationMs = Date.now() - started;
 const winRate = duelGames === 0 ? 0 : normalWins / duelGames;
+const lengths = lengthStats(eightRounds);
+const tooLong = lengthFailures(lengths);
 const result = {
   date: new Date().toISOString(),
   games,
   rules: { lossRule, eliminationBonus },
   normalVsEasy: { games: duelGames, normalWins, winRate },
   eightPlayer: { games: eightGames, avgRounds: eightGames ? roundSum / eightGames : 0, maxRounds, winsBySeat },
+  gameLength: { ...lengths, limits: LENGTH_LIMITS, failures: tooLong },
   crashes,
   illegalActions,
   roundCapHits,
@@ -106,9 +112,14 @@ writeFileSync(out, JSON.stringify(result, null, 2) + '\n');
 console.log(`Rules: lossRule=${lossRule} eliminationBonus=${eliminationBonus}; ${attacks} attacks, ${ties} draws (${((ties / Math.max(1, attacks)) * 100).toFixed(1)}%)`);
 console.log(`Normal vs Easy: ${normalWins}/${duelGames} (${(winRate * 100).toFixed(1)}%)`);
 console.log(`8-player: avg ${result.eightPlayer.avgRounds.toFixed(1)} rounds, max ${maxRounds}, wins by seat [${winsBySeat.join(', ')}]`);
+console.log(
+  `Game length (8-player): p50 ${lengths.p50}, p90 ${lengths.p90} (≤ ${LENGTH_LIMITS.maxP90}), p99 ${lengths.p99} (≤ ${LENGTH_LIMITS.maxP99}), ` +
+    `${(lengths.over60Share * 100).toFixed(1)}% past 60 rounds (≤ ${LENGTH_LIMITS.maxOver60Share * 100}%)`,
+);
 console.log(`crashes ${crashes}, illegal ${illegalActions}, cap hits ${roundCapHits}, ${(durationMs / 1000).toFixed(1)} s`);
 
-if (crashes > 0 || illegalActions > 0 || roundCapHits > 0 || winRate < MIN_WIN_RATE) {
+for (const f of tooLong) console.error(`Game length gate: ${f}`);
+if (crashes > 0 || illegalActions > 0 || roundCapHits > 0 || winRate < MIN_WIN_RATE || tooLong.length > 0) {
   console.error('SIM FAILED');
   process.exit(1);
 }

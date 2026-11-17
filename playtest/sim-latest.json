@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-17T09:16:28.831Z",
+  "date": "2026-11-17T11:13:16.456Z",
   "games": 500,
   "rules": {
     "lossRule": "drawAttrition",
@@ -25,10 +25,24 @@
       42
     ]
   },
+  "gameLength": {
+    "games": 250,
+    "p50": 23,
+    "p90": 33,
+    "p99": 52,
+    "max": 120,
+    "over60Share": 0.008,
+    "limits": {
+      "maxP90": 45,
+      "maxP99": 80,
+      "maxOver60Share": 0.02
+    },
+    "failures": []
+  },
   "crashes": 0,
   "illegalActions": 0,
   "roundCapHits": 0,
   "attacks": 110751,
   "ties": 3506,
-  "durationMs": 3937
+  "durationMs": 3863
 }

@@ -7,7 +7,7 @@ Browser dice-conquest strategy game, run locally. Our own game in the genre: nev
 ```bash
 npm run dev                  # http://localhost:5180 (browser pane: .claude/launch.json "hexdice")
 npm run check                # tsc + Vitest            (gate 1)
-npm run sim -- --games 500   # headless AI vs AI       (gate 2)
+npm run sim -- --games 500   # headless AI vs AI + game length (gate 2; CI runs 2000)
 npm run e2e                  # Playwright desktop+phone (gate 3), own dev server on E2E_PORT (default 5190)
 npm run build
 ```
@@ -50,6 +50,8 @@ scripts/sim.ts · tests/unit (Vitest) · tests/e2e (Playwright) · tests/fixture
 | Rules or AI | `check`, `sim`, short hands-on |
 | UI or flow | `check`, `e2e`, hands-on |
 | Anything else | `check` at least |
+
+The simulation fails on any crash, illegal move or 1,000-round cap hit, Normal beating Easy under 70%, or eight-player games running long: p90 over 45 rounds, p99 over 80, or more than 2% past 60 (`scripts/stats.ts`). The length limits sit about 50% above today's numbers and caught every rule that caused endless standoffs.
 
 A hands-on report goes in `playtest/DD-MM-YYYY-<change>.md` with screenshots and every scenario marked verified, partly verified or not testable (with why). Bug reports carry the seed and the action log (`__hexdice.actions()`).
 

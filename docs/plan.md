@@ -112,7 +112,7 @@ Click own territory (≥ 2 dice) to select and highlight valid targets; click a 
 | Gate | Command | Passes when |
 |---|---|---|
 | 1. Unit | `npm run check` (tsc + Vitest) | Engine invariants hold: territory count constant, dice always 1–8 per territory, adjacency symmetric, attack/reinforcement/elimination/victory correct on fixture maps, odds table matches brute force. |
-| 2. Simulation | `npm run sim -- --games 500` | 0 crashes, 0 illegal actions, every game ends before a 1,000-turn cap, Normal beats Easy in ≥ 70% of 1v1 games (seat order alternated). If it falls short, the AI gets tuned; the threshold only moves with your OK. Stats (game length, seat win rates) saved to `playtest/sim-latest.json` so balance shifts show up between changes. |
+| 2. Simulation | `npm run sim -- --games 500` | 0 crashes, 0 illegal actions, every game ends before a 1,000-turn cap, Normal beats Easy in ≥ 70% of 1v1 games (seat order alternated). If it falls short, the AI gets tuned; the threshold only moves with your OK. Since 17-11-2026 also a game-length gate on eight-player games: p90 ≤ 45 rounds, p99 ≤ 80, at most 2% past 60 (CI runs 2,000 games). Stats (game length, seat win rates) saved to `playtest/sim-latest.json` so balance shifts show up between changes. |
 | 3. E2E | `npm run e2e` (Playwright) | Seeded game: a real attack by clicking territories, end turn, AI turn completes, HUD updates; plus a full game on autoplay to a game-over screen. Runs at desktop size and at phone size with touch. Screenshots saved. |
 | 4. Hands-on | Me, in the browser pane (you can watch) | I play real turns and write `playtest/DD-MM-YYYY-<change>.md`: screenshots, what felt off, and every scenario marked verified / partly verified / not testable (with why). |
 
