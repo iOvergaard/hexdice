@@ -102,7 +102,7 @@ describe('applyAction', () => {
     it(`attack outcomes, ${ad} vs ${dd}`, () => {
       let wins = 0;
       for (let seed = 1; seed <= 300; seed++) {
-        const s = buildState({ owners: [0, 1, 1], dice: [ad, dd, 1], edges: [[0, 1], [1, 2]], seed });
+        const s = buildState({ owners: [0, 1, 1], dice: [ad, dd, 1], edges: [[0, 1], [1, 2]], seed, rules: { lossRule: 'classic' } });
         const { state, events } = applyAction(s, { type: 'attack', from: 0, to: 1 });
         const e = rolled(events);
         expect(e.attackRolls).toHaveLength(ad);

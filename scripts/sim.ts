@@ -1,6 +1,6 @@
 import { writeFileSync } from 'node:fs';
 import { chooseAction } from '../src/ai';
-import { makeConfig } from '../src/engine/config';
+import { DEFAULT_RULES, makeConfig } from '../src/engine/config';
 import { Rng } from '../src/engine/rng';
 import { applyAction, isLegalAttack } from '../src/engine/rules';
 import { aiSeats } from '../src/engine/seats';
@@ -18,7 +18,7 @@ function arg(name: string, fallback: string): string {
 const games = Number(arg('games', '500'));
 const baseSeed = Number(arg('seed', '1'));
 const out = arg('out', 'playtest/sim-latest.json');
-const lossRule = arg('loss-rule', 'classic') as LossRule;
+const lossRule = arg('loss-rule', DEFAULT_RULES.lossRule) as LossRule;
 if (!['classic', 'attrition', 'drawAttrition', 'halfStack'].includes(lossRule)) throw new Error(`unknown --loss-rule ${lossRule}`);
 const eliminationBonus = Number(arg('elimination-bonus', '1'));
 

@@ -16,7 +16,7 @@ export const DEFAULT_RULES: Readonly<RulesConfig> = {
   lakeSizeMax: 9,
   maxDice: 8,
   maxReserve: 64,
-  lossRule: 'classic',
+  lossRule: 'drawAttrition',
   eliminationBonus: 1,
   startingDiceFactor: 3,
 };

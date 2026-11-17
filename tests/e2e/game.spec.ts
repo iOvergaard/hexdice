@@ -1,5 +1,6 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
-import type { GameEvent, GameState } from '../../src/engine/types';
+import { diceAfterFailedAttack } from '../../src/engine/rules';
+import type { AttackRolledEvent, GameEvent, GameState } from '../../src/engine/types';
 import type { HexdiceDebug } from '../../src/debug';
 
 declare global {
@@ -59,8 +60,15 @@ test('attacks by tapping', async ({ page }, info) => {
   await expect(page.getByTestId('roll-attacker-sum')).not.toBeEmpty();
   await expect(page.getByTestId('roll-defender-sum')).not.toBeEmpty();
   await page.evaluate(() => window.__hexdice!.idle());
-  const dice = await page.evaluate((id) => window.__hexdice!.state()!.territories[id]!.dice, from);
-  expect(dice).toBe(1);
+  const after = await page.evaluate((id) => {
+    const h = window.__hexdice!;
+    const roll = h.events().find((e) => e.type === 'attackRolled') as AttackRolledEvent;
+    return { dice: h.state()!.territories[id]!.dice, config: h.state()!.config, roll };
+  }, from);
+  const { roll } = after;
+  const draw = roll.attackSum === roll.defendSum;
+  const expected = roll.success ? 1 : diceAfterFailedAttack(after.config, roll.attackRolls.length, roll.defendRolls.length, draw);
+  expect(after.dice).toBe(expected);
   expect(await page.evaluate(() => window.__hexdice!.actions().length)).toBe(1);
   await shot(page, info, 'after-attack');
 });
