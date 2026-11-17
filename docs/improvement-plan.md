@@ -7,7 +7,7 @@ Jacob asked for an autonomous pass over tests, CI and game features. This is wha
 | # | Item | Why | How it's proven |
 |---|---|---|---|
 | T1 | **Keyboard e2e:** Space ends your turn and skips during AI turns, Esc deselects | Never tested by hand or e2e (playtest 16-11) | New `tests/e2e/keyboard.spec.ts`, desktop |
-| T2 | **Cache Playwright's Chromium in CI** | Every run downloads ~100 MB; a cache keyed on the Playwright version skips that | CI run time before/after |
+| ~~T2~~ | ~~Cache Playwright's Chromium in CI~~ | **Dropped:** the install step takes 20 s, mostly system packages a cache can't skip; it would save ~10 s of a ~2 min run | Measured from the last CI run |
 | T3 | **Pacing script in the repo** (`npm run pacing`) | My wait-between-turns measurement lived in a scratchpad; it found the 26–37 s waits | Script prints seconds per round at each speed |
 | F1 | **Seat balance** | In 8-player games the last two seats win 16–17% each against the fair 12.5% (simulator, every run since 16-11) | Tune a starting-dice compensation in the simulator until every seat sits within ±2.5 points of 12.5%; unit test for the rule |
 | F2 | **Owner colours on the painted map** | Blue vs cyan and violet vs grey-violet are hard to tell apart on green land (playtest 16-11) | Colour distance (ΔE) of every pair of washed colours, minimum raised; screenshots |
