@@ -26,6 +26,11 @@ export interface RulesConfig {
   lakeCount: number;
   lakeSizeMin: number;
   lakeSizeMax: number;
+  /** One-cell-wide rivers from the coast inland, each riverLengthMin..riverLengthMax cells, crossable only at fords. */
+  riverCount: number;
+  riverLengthMin: number;
+  riverLengthMax: number;
+  fordsPerRiver: number;
   maxDice: number;
   maxReserve: number;
   lossRule: LossRule;
@@ -56,6 +61,10 @@ export interface Board {
   height: number;
   /** cellTerritory[cell] = owning territory id, or -1 for sea. Length width * height. */
   cellTerritory: TerritoryId[];
+  /** Land cells left in rivers as crossings, for drawing. */
+  fords?: CellIndex[];
+  /** Each river's cells from mouth to source, fords included, for drawing. */
+  rivers?: CellIndex[][];
 }
 
 export interface Territory {

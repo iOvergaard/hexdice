@@ -27,11 +27,15 @@ function tryGenerate(rules: RulesConfig, rng: Rng): { board: Board; territories:
   const span = rules.landRatioMax - rules.landRatioMin;
   const ratio = rules.landRatioMin + span * 0.25 + rng.next() * span * 0.5;
   const lakeSizes = Array.from({ length: rules.lakeCount }, () => rules.lakeSizeMin + rng.int(rules.lakeSizeMax - rules.lakeSizeMin + 1));
-  // Grow extra land for the lakes so the land ratio still holds once they are carved out.
-  const landTarget = Math.round(ratio * total) + lakeSizes.reduce((a, b) => a + b, 0);
+  // Grow extra land for lakes and rivers so the land ratio still holds once they are carved out.
+  const riverCells = rules.riverCount * Math.round((rules.riverLengthMin + rules.riverLengthMax) / 2);
+  const landTarget = Math.round(ratio * total) + lakeSizes.reduce((a, b) => a + b, 0) + riverCells;
   const isLand = shapeContinent(W, H, landTarget, nbrs, rng);
   if (!isLand) return null;
   if (!carveLakes(isLand, lakeSizes, nbrs, rng)) return null;
+  const carved = carveRivers(isLand, rules, nbrs, W, rng);
+  if (!carved) return null;
+  const { fords, rivers } = carved;
   const land: CellIndex[] = [];
   for (let c = 0; c < total; c++) if (isLand[c]) land.push(c);
   if (land.length < territoryCount * minTerritoryCells) return null;
@@ -89,6 +93,8 @@ function tryGenerate(rules: RulesConfig, rng: Rng): { board: Board; territories:
     claimed += s;
   }
   if (claimed / total < rules.landRatioMin || claimed / total > rules.landRatioMax) return null;
+  // A ford no territory grew into would read as water: the river would have no crossing.
+  if (fords.some((f) => cellTerritory[f] === -1)) return null;
 
   const cellsOf: CellIndex[][] = seeds.map(() => []);
   const adj: Set<number>[] = seeds.map(() => new Set<number>());
@@ -121,7 +127,7 @@ function tryGenerate(rules: RulesConfig, rng: Rng): { board: Board; territories:
     neighbours: [...adj[id]!].sort((a, b) => a - b),
     centre: interiorCell(cells, cellTerritory, id, nbrs),
   }));
-  return { board: { width: W, height: H, cellTerritory }, territories };
+  return { board: { width: W, height: H, cellTerritory, fords, rivers }, territories };
 }
 
 /**
@@ -152,6 +158,104 @@ function hasNarrowBridge(adj: Set<number>[]): boolean {
     }
   }
   return false;
+}
+
+/**
+ * Carves rivers: one-cell-wide water lines from the coast towards the interior that never touch lakes, the sea or each
+ * other, then turns one cell back into land as a ford. A connected line of water blocks adjacency on a hex grid, so a
+ * river is a defensible line crossable only at its ford. Returns fords and river courses, or null to retry the map.
+ */
+function carveRivers(
+  isLand: Uint8Array,
+  rules: RulesConfig,
+  nbrs: CellIndex[][],
+  W: number,
+  rng: Rng,
+): { fords: CellIndex[]; rivers: CellIndex[][] } | null {
+  const total = isLand.length;
+  const fords: CellIndex[] = [];
+  const rivers: CellIndex[][] = [];
+  for (let r = 0; r < rules.riverCount; r++) {
+    // Open sea is the water reachable from the grid edge; rivers start on its shore.
+    const sea = new Uint8Array(total);
+    const stack: CellIndex[] = [];
+    for (let c = 0; c < total; c++) {
+      if (!isLand[c] && nbrs[c]!.length < 6) {
+        sea[c] = 1;
+        stack.push(c);
+      }
+    }
+    while (stack.length > 0) {
+      for (const n of nbrs[stack.pop()!]!) {
+        if (!isLand[n] && !sea[n]) {
+          sea[n] = 1;
+          stack.push(n);
+        }
+      }
+    }
+    // Rivers head for the cell deepest inland.
+    const depth = new Int32Array(total).fill(-1);
+    const queue: CellIndex[] = [];
+    for (let c = 0; c < total; c++) {
+      if (!isLand[c]) {
+        depth[c] = 0;
+        queue.push(c);
+      }
+    }
+    for (let i = 0; i < queue.length; i++) {
+      for (const n of nbrs[queue[i]!]!) {
+        if (depth[n] === -1) {
+          depth[n] = depth[queue[i]!]! + 1;
+          queue.push(n);
+        }
+      }
+    }
+    let target = 0;
+    for (let c = 0; c < total; c++) if (depth[c]! > depth[target]!) target = c;
+    const mouths: CellIndex[] = [];
+    for (let c = 0; c < total; c++) {
+      if (isLand[c] && nbrs[c]!.some((n) => sea[n]) && nbrs[c]!.filter((n) => isLand[n]).length >= 3) mouths.push(c);
+    }
+    if (mouths.length === 0) return null;
+
+    const length = rules.riverLengthMin + rng.int(rules.riverLengthMax - rules.riverLengthMin + 1);
+    let path: CellIndex[] | null = null;
+    for (let attempt = 0; attempt < 12 && !path; attempt++) {
+      const walk = [rng.pick(mouths)];
+      const inPath = new Set(walk);
+      while (walk.length < length) {
+        const cur = walk[walk.length - 1]!;
+        // One cell wide: a step may touch only the cell it comes from, never other water or earlier river cells.
+        const options = nbrs[cur]!.filter(
+          (n) => isLand[n] && !inPath.has(n) && nbrs[n]!.every((m) => m === cur || (isLand[m] && !inPath.has(m))),
+        );
+        if (options.length === 0) break;
+        let best = options[0]!;
+        let bestScore = -Infinity;
+        for (const o of options) {
+          // Enough noise to meander instead of running straight along a hex row.
+          const score = -hexDistance(o, target, W) + rng.next() * 2.6;
+          if (score > bestScore) {
+            best = o;
+            bestScore = score;
+          }
+        }
+        walk.push(best);
+        inPath.add(best);
+      }
+      if (walk.length >= rules.riverLengthMin) path = walk;
+    }
+    if (!path) return null;
+    for (const c of path) isLand[c] = 0;
+    rivers.push(path);
+    for (let k = 0; k < rules.fordsPerRiver; k++) {
+      const mid = Math.round((path.length * (k + 1)) / (rules.fordsPerRiver + 1)) + rng.int(3) - 1;
+      const at = Math.min(path.length - 3, Math.max(2, mid));
+      isLand[path[at]!] = 1;
+      fords.push(path[at]!);
+    }
+  }
+  return { fords, rivers };
 }
 
 /** Turns interior land into lakes. Lake cells stay at least one land cell away from the open sea. */
