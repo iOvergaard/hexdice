@@ -42,6 +42,11 @@ describe('save', () => {
     expect(restore(JSON.stringify({ v: 1, config, actions: [] }))?.aiRngState).toBeNull();
   });
 
+  it('replays saves from before the last stand without it', () => {
+    const { lastStandDice: _, ...old } = makeConfig(defaultSeats(3), 11);
+    expect(restore(JSON.stringify({ v: 1, config: old, actions: [] }))?.config.lastStandDice).toBe(0);
+  });
+
   it('replays saves from before the connection bonus without it', () => {
     const { connectionBonus: _, ...old } = makeConfig(defaultSeats(3), 11);
     expect(restore(JSON.stringify({ v: 1, config: old, actions: [] }))?.config.connectionBonus).toBe('off');

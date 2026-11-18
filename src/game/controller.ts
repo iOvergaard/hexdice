@@ -437,6 +437,14 @@ export class Controller {
       await this.screen!.board.showPlacements(reinforced.placed, (byAi ? AI_PLACE_MS : PLACE_MS)[speed]);
       if (gen !== this.gen) return;
     }
+    const stand = events.find((e) => e.type === 'lastStand');
+    if (stand) {
+      // The label goes on their biggest territory, where it's easiest to see.
+      const at = next.territories.filter((t) => t.owner === stand.player).reduce((a, b) => (b.cells.length > a.cells.length ? b : a)).id;
+      this.screen!.roll.message(`Last stand · ${next.players[stand.player]!.name} +${next.config.lastStandDice} on each territory`);
+      await this.screen!.board.showLastStand(at, stand.placed, (byAi ? AI_PLACE_MS : PLACE_MS)[speed] * 2);
+      if (gen !== this.gen) return;
+    }
     if (events.some((e) => e.type === 'turnStarted')) this.turnCue();
     if (cues.yourTurn) this.sound.yourTurn();
     if (cues.sting) this.sound.sting(cues.sting);

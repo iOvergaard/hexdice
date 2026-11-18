@@ -432,3 +432,59 @@ describe('turn order', () => {
     expect(events.at(-1)).toEqual({ type: 'turnStarted', player: 0, round: 2 });
   });
 });
+
+describe('last stand', () => {
+  /** Line 0-1-2-3-4: P0 owns 0–2, P1 owns 3–4, P2 was knocked out this turn. */
+  const final = (dice = [3, 3, 3, 4, 1], rules = {}) =>
+    buildState({ owners: [0, 0, 0, 1, 1], dice, edges: [[0, 1], [1, 2], [2, 3], [3, 4]], players: 3, rules });
+  const stands = (events: GameEvent[]) => events.filter((e) => e.type === 'lastStand');
+
+  it('gives the smaller of the last two a die on each territory when the turn ends', () => {
+    const { state, events } = applyAction(final(), { type: 'endTurn' });
+    expect(stands(events)).toEqual([{ type: 'lastStand', player: 1, placed: [3, 4] }]);
+    expect(state.territories.slice(3).map((t) => t.dice)).toEqual([5, 2]);
+    expect(state.finalStarted).toBe(true);
+  });
+
+  it('comes after the reinforcements and before the next turn', () => {
+    const types = applyAction(final(), { type: 'endTurn' }).events.map((e) => e.type);
+    expect(types).toEqual(['reinforced', 'lastStand', 'turnStarted']);
+  });
+
+  it('happens once a game', () => {
+    const { state } = applyAction(final(), { type: 'endTurn' });
+    expect(stands(applyAction(state, { type: 'endTurn' }).events)).toEqual([]);
+  });
+
+  it('lists one territory per die gained, and stops at the dice cap', () => {
+    const { state, events } = applyAction(final([3, 3, 3, 5, 7], { lastStandDice: 2 }), { type: 'endTurn' });
+    expect(stands(events)[0]).toMatchObject({ placed: [3, 3, 4] });
+    expect(state.territories.slice(3).map((t) => t.dice)).toEqual([7, 8]);
+    expect(stands(applyAction(final([3, 3, 3, 8, 8]), { type: 'endTurn' }).events)[0]).toMatchObject({ placed: [] });
+  });
+
+  it('goes to nobody when the last two hold as many territories each, and never comes later', () => {
+    const even = buildState({ owners: [0, 0, 1, 1], dice: [3, 3, 3, 3], edges: [[0, 1], [1, 2], [2, 3]], players: 3 });
+    const { state, events } = applyAction(even, { type: 'endTurn' });
+    expect(stands(events)).toEqual([]);
+    expect(state.finalStarted).toBe(true);
+  });
+
+  it('waits while three or more players are in', () => {
+    const three = buildState({ owners: [0, 0, 1, 2], dice: [3, 3, 3, 3], edges: [[0, 1], [1, 2], [2, 3]] });
+    const { state, events } = applyAction(three, { type: 'endTurn' });
+    expect(stands(events)).toEqual([]);
+    expect(state.finalStarted).toBe(false);
+  });
+
+  it('never comes in a game that started with two players', () => {
+    const duel = buildState({ owners: [0, 0, 0, 1, 1], dice: [3, 3, 3, 4, 1], edges: [[0, 1], [1, 2], [2, 3], [3, 4]] });
+    expect(stands(applyAction(duel, { type: 'endTurn' }).events)).toEqual([]);
+  });
+
+  it('is off at 0 dice', () => {
+    const { state, events } = applyAction(final(undefined, { lastStandDice: 0 }), { type: 'endTurn' });
+    expect(stands(events)).toEqual([]);
+    expect(state.territories.slice(3).map((t) => t.dice)).toEqual([4, 1]);
+  });
+});

@@ -78,6 +78,7 @@ export function applyAction(state: GameState, action: Action): ActionResult {
     resolveAttack(next, action.from, action.to, rng, events);
   } else {
     reinforce(next, rng, events);
+    lastStand(next, events);
     advanceTurn(next, events);
   }
 
@@ -198,6 +199,23 @@ function reinforce(s: GameState, rng: Rng, events: GameEvent[]): void {
 
   player.reserve = Math.min(s.config.maxReserve, remaining);
   events.push({ type: 'reinforced', player: player.id, largestGroup: group, bonus, placed, reserve: player.reserve });
+}
+
+/** Mutates the (already cloned) state: the first time a turn ends with two players left, the smaller one gains dice. */
+function lastStand(s: GameState, events: GameEvent[]): void {
+  const alive = s.players.filter((p) => p.alive);
+  if (s.finalStarted || alive.length !== 2) return;
+  s.finalStarted = true;
+  const [a, b] = alive.map((p) => s.territories.filter((t) => t.owner === p.id)) as [Territory[], Territory[]];
+  if (s.config.lastStandDice <= 0 || a.length === b.length) return;
+  const own = a.length < b.length ? a : b;
+  const placed: TerritoryId[] = [];
+  for (const t of own) {
+    const gain = Math.min(s.config.lastStandDice, s.config.maxDice - t.dice);
+    t.dice += gain;
+    for (let i = 0; i < gain; i++) placed.push(t.id);
+  }
+  events.push({ type: 'lastStand', player: own[0]!.owner, placed });
 }
 
 /** Mutates the (already cloned) state: hands play to the next alive player. */

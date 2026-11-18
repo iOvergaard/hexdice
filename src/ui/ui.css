@@ -633,7 +633,8 @@
   fill: #ff8a7a;
 }
 
-.placement.is-link {
+.placement.is-link,
+.placement.is-stand {
   fill: #ffd34d;
 }
 

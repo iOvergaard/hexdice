@@ -63,6 +63,7 @@ export function buildState(spec: GraphSpec): GameState {
     round: 1,
     rngState: seed,
     winner: null,
+    finalStarted: playerCount <= 2,
   };
 }
 
@@ -122,5 +123,6 @@ export function fixtureBoardState(seed = 7, playerCount = 8): GameState {
     round: 3,
     rngState: rng.state,
     winner: null,
+    finalStarted: false,
   };
 }
