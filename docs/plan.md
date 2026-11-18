@@ -98,6 +98,7 @@ tests/unit/   Vitest      tests/e2e/   Playwright
 
 **UI v0.1** (screen flow from your reference screenshots, 16-11-2026; our own visual style throughout, no copied logo, dice art or typography):
 - **Title screen:** game name, player-count chips "2 players" … "8 players" (total including you; default 8, last choice remembered), AI level, Start.
+- **How to play** (added 18-11-2026, from Jacob): a panel opened from the title screen and from the ? in the game bar. Its text is built from the rules in play (`helpSections(rules)` in `src/ui/how-to-play.ts`), so `?reinforce=` and `?link=` change what it says. It is a native modal dialog: Escape, the backdrop, × and Got it close it, and Space doesn't end your turn behind it.
 - **Board preview:** the generated board with owners and starting dice, "Play this board?" Yes / No. No generates a new board (new seed). The seed is shown small, for repro.
 - **Game screen, top to bottom:**
   - **Roll strip** (on top so it stays in view on phones; your call, to be confirmed in playtests). The defender is on the left and the attacker, the active player, is **always on the right**. Each side shows its dice faces (pips, in the player's colour, with their emblem) and its sum. The dice tumble briefly, then settle; the winning side is emphasised. The attacking territory and its target are highlighted on the board meanwhile.
