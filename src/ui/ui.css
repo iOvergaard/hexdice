@@ -337,10 +337,11 @@
   stroke-width: 0.7;
 }
 
+/* A cool sky tint, so the top still reads on near-white dice (ivory). */
 .u-top {
-  fill: color-mix(in srgb, var(--c) 62%, #fff);
-  stroke: rgba(15, 16, 35, 0.4);
-  stroke-width: 0.6;
+  fill: color-mix(in srgb, var(--c) 60%, #dfe8ff);
+  stroke: rgba(15, 16, 35, 0.55);
+  stroke-width: 0.8;
   stroke-linejoin: round;
 }
 

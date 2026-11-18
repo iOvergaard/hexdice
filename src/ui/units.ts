@@ -60,16 +60,16 @@ export function stackSplit(n: number): number[] {
 }
 
 // Dice in a 3/4 view (oblique, not isometric): front face W by H, side and top faces sheared DX right and DY up.
-const W = 17;
-const H = 15;
+const W = 19;
+const H = 17;
 const DX = 5;
 const DY = 4.5;
 /** Each die sits STEP above the one below, a little less than H so the seams overlap. */
-const STEP = 13;
+const STEP = 14;
 const GAP = 2;
 /** Where the dice stand. */
 const BASE = 24;
-const PILL_W = 30;
+const PILL_W = 26;
 const PILL_GAP = 4;
 
 function stacksWidth(n: number): number {

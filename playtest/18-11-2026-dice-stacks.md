@@ -7,13 +7,15 @@ Jacob asked for territories with 4 or more dice to show two stacks, for more roo
 
 ## What changed
 
-- **Dice look:** cubes in a 3/4 view (oblique, not isometric): front face in the owner's colour, a darker side face, a lighter top face on the top die of each stack, and pips on that top die only. The emblem-and-count pill stays beside the dice.
+- **Dice look:** cubes in a 3/4 view (oblique, not isometric): front face in the owner's colour, a darker side face, a lighter, slightly cool top face on the top die of each stack, and pips on that top die only. The emblem-and-count pill stays beside the dice.
 - **Two stacks:** up to 3 dice stand in one stack. 4 to 8 split into two stacks side by side, the left one never shorter: 2+2, 3+2, 3+3, 4+3, 4+4. The token re-centres on its territory as it widens.
 - **Compact territories** (`src/engine/mapgen.ts`): each territory now grows into the free frontier hex nearest its seed (plus up to 1 hex of random spread) instead of a random frontier hex. Two relaxation passes then move every seed to its territory's middle and regrow. Grid, territory count and `DEFAULT_RULES` are unchanged, but **every seed gives a different map than before**.
 
 ## Options shown to Jacob
 
 Die looks A (today's flat die, two stacks), B (flat with a darker base lip) and C (cube). Map options A (today's generator), B (compact, same grid) and C (compact on a 56×42 grid with dice scaled to keep their screen size). Jacob picked **die C and map B**.
+
+**Polish after an art review** (Jacob: "Polish first"): the pill had become louder than the dice, and the ivory player's top face vanished. Dice grew from 17×15 to 19×17 units, the pill slimmed from 30 to 26, and the top face got a cool tint and a crisper seam. A two-stack token is still 80 units wide.
 
 ![Die looks, desktop](screens/dice-stacks-options-dice-desktop.png)
 ![Die looks, phone](screens/dice-stacks-options-dice-phone.png)
@@ -22,6 +24,7 @@ Die looks A (today's flat die, two stacks), B (flat with a darker base lip) and 
 
 ## The result
 
+![Before and after the polish, desktop](screens/dice-stacks-polish-desktop.png)
 ![Every count from 1 to 8, desktop](screens/dice-stacks-desktop-counts.png)
 ![Zoomed, desktop](screens/dice-stacks-desktop-zoom.png)
 ![Every count from 1 to 8, phone](screens/dice-stacks-phone-counts.png)
@@ -49,11 +52,11 @@ Same 6 seeds (4242, 777, 42, 1, 2026, 31337), 8 players, scripted with `elementF
 
 | | main, dealt | branch, dealt | main, all 8 | branch, all 8 |
 |---|---|---|---|---|
-| Desktop: smallest own share / p10 | 0.55–0.77 / 0.76–0.91 | 0.66–0.92 / 0.91–0.94 | 0.49–0.77 / 0.75–0.89 | 0.63–0.84 / 0.83–0.88 |
-| Phone: smallest own share / p10 | 0.54–0.70 / 0.71–0.88 | 0.80–0.93 / 0.89–0.95 | 0.53–0.69 / 0.71–0.85 | 0.57–0.76 / 0.77–0.84 |
+| Desktop: smallest own share / p10 | 0.55–0.77 / 0.76–0.91 | 0.66–0.92 / 0.91–0.94 | 0.49–0.77 / 0.75–0.89 | 0.67–0.82 / 0.81–0.84 |
+| Phone: smallest own share / p10 | 0.54–0.70 / 0.71–0.88 | 0.80–0.93 / 0.89–0.95 | 0.53–0.69 / 0.71–0.85 | 0.51–0.74 / 0.72–0.81 |
 | Territories under 50% own share | 0 | 0 | 1 (desktop, seed 42) | 0 |
 | Token pairs whose tap areas overlap, desktop | 0 | 0 | 0 | 0 |
-| Token pairs whose tap areas overlap, phone | 0–1 | 0–2 | 0–1 | 0–3 |
+| Token pairs whose tap areas overlap, phone | 0–1 | 0–2 | 0–1 | 0–6 |
 
 The two columns use different maps for the same seed, so this compares the overall spread, not territory by territory.
 
@@ -67,7 +70,7 @@ The two columns use different maps for the same seed, so this compares the overa
 | Selection, targets, odds badges, attack | Verified: screenshots on desktop and phone; the selected token still enlarges and the badges sit under the targets |
 | Reinforcement "+N" label above the token | Verified: phone and desktop at Slow speed |
 | Thin territories | Verified: 20% → 8% with no inner hex (table above); about 2 per map remain on narrow coasts and between rivers |
-| Tokens don't overlap each other | Partly verified: none on desktop. On the phone, with every territory at 8 dice, up to 3 pairs overlap per board; on seed 2026 a pill covers the top die of the stack below it, though both counts stay readable. Dealt boards: at most 2 pairs, touching by under 1 px |
+| Tokens don't overlap each other | Partly verified: none on desktop. On the phone, with every territory at 8 dice, up to 6 pairs' tap areas overlap per board, most by 1–2 px; on seed 2026 a pill covers the top of the stack below it by 14 px (10 px before the polish), though both counts stay readable. Dealt boards: at most 2 pairs, touching by under 1 px |
 | Game length on the new maps | Verified: sim below |
 | e2e tests that rely on seeded maps | Verified: all pass on the new maps |
 | Real phone, touch feel | Not testable here: Chromium emulation only |
