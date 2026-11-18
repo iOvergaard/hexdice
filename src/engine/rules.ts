@@ -110,10 +110,12 @@ function resolveAttack(s: GameState, from: TerritoryId, to: TerritoryId, rng: Rn
     return;
   }
 
+  const joined = s.config.connectionBonus === 'off' ? [] : groupSizesAround(s, attacker, to);
   dst.owner = attacker;
   dst.dice = src.dice - 1;
   src.dice = 1;
   events.push({ type: 'territoryCaptured', territory: to, previousOwner: defender, newOwner: attacker, dice: dst.dice });
+  if (joined.length >= 2) linkBonus(s, attacker, to, joined, events);
 
   if (!s.territories.some((t) => t.owner === defender)) {
     const loser = s.players[defender]!;
@@ -126,6 +128,40 @@ function resolveAttack(s: GameState, from: TerritoryId, to: TerritoryId, rng: Rn
     s.winner = attacker;
     events.push({ type: 'gameOver', winner: attacker });
   }
+}
+
+/** Sizes of the player's separate groups that touch a territory: the groups a capture there would join. */
+function groupSizesAround(s: GameState, player: PlayerId, at: TerritoryId): number[] {
+  const seen = new Set<TerritoryId>();
+  const sizes: number[] = [];
+  for (const start of s.territories[at]!.neighbours) {
+    if (s.territories[start]!.owner !== player || seen.has(start)) continue;
+    let size = 0;
+    const stack = [start];
+    seen.add(start);
+    while (stack.length > 0) {
+      size++;
+      for (const n of s.territories[stack.pop()!]!.neighbours) {
+        if (n !== at && s.territories[n]!.owner === player && !seen.has(n)) {
+          seen.add(n);
+          stack.push(n);
+        }
+      }
+    }
+    sizes.push(size);
+  }
+  return sizes;
+}
+
+/** Mutates the (already cloned) state: the connection bonus for a capture that joined two or more groups. */
+function linkBonus(s: GameState, player: PlayerId, at: TerritoryId, joined: number[], events: GameEvent[]): void {
+  const bonus = s.config.connectionBonus === 'flat' ? 2 * (joined.length - 1) : joined.reduce((a, b) => a + b, 0) - Math.max(...joined);
+  const t = s.territories[at]!;
+  const onBoard = Math.min(bonus, s.config.maxDice - t.dice);
+  t.dice += onBoard;
+  const p = s.players[player]!;
+  p.reserve = Math.min(s.config.maxReserve, p.reserve + bonus - onBoard);
+  events.push({ type: 'linked', player, territory: at, groups: joined.length, bonus, toReserve: bonus - onBoard });
 }
 
 /** Mutates the (already cloned) state: places largest group + reserve dice for the current player. */

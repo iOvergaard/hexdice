@@ -18,6 +18,11 @@ export type LossRule = 'classic' | 'attrition' | 'drawAttrition' | 'halfStack';
  * (overflow goes to the reserve). 'weighted': territories facing an enemy are three times as likely.
  */
 export type ReinforcementRule = 'random' | 'frontline' | 'weighted';
+/**
+ * Dice for a capture that joins two or more of your groups, placed on the linking territory (overflow to the reserve).
+ * 'flat': 2 per extra group joined. 'smaller': the size of every joined group except the largest.
+ */
+export type ConnectionBonusRule = 'off' | 'flat' | 'smaller';
 
 export interface RulesConfig {
   gridWidth: number;
@@ -40,6 +45,7 @@ export interface RulesConfig {
   maxReserve: number;
   lossRule: LossRule;
   reinforcement: ReinforcementRule;
+  connectionBonus: ConnectionBonusRule;
   /** Extra dice per reinforcement, permanently, for each opponent the player has knocked out. */
   eliminationBonus: number;
   /** Starting dice per player: floor(startingDiceFactor * territoryCount / players). */
@@ -141,6 +147,8 @@ export type GameEvent =
   /** placed: one territory id per die, in placement order. bonus: dice from knockouts. reserve: afterwards. */
   | { type: 'reinforced'; player: PlayerId; largestGroup: number; bonus: number; placed: TerritoryId[]; reserve: number }
   | { type: 'turnStarted'; player: PlayerId; round: number }
+  /** A capture joined `groups` of the player's groups; `bonus` dice went on the territory, `toReserve` past the cap. */
+  | { type: 'linked'; player: PlayerId; territory: TerritoryId; groups: number; bonus: number; toReserve: number }
   | { type: 'gameOver'; winner: PlayerId };
 
 export type AttackRolledEvent = Extract<GameEvent, { type: 'attackRolled' }>;

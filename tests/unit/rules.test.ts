@@ -252,6 +252,55 @@ describe('applyAction', () => {
     expect(front / total).toBeLessThan(0.82);
   });
 
+  /**
+   * P0's group A = t0 (6 dice), t5, t7 and group B = t2, t4, t6, t8 sit either side of P1's t1; P1 also holds t3.
+   * Capturing t1 from t0 links A (3 territories) and B (4).
+   */
+  function linkState(connectionBonus: 'off' | 'flat' | 'smaller', sourceDice = 6) {
+    return buildState({
+      owners: [0, 1, 0, 1, 0, 0, 0, 0, 0],
+      dice: [sourceDice, 1, 1, 1, 1, 1, 1, 1, 1],
+      edges: [[0, 1], [1, 2], [1, 3], [0, 5], [5, 7], [2, 4], [4, 6], [6, 8]],
+      rules: { connectionBonus },
+    });
+  }
+
+  /** First seed whose t0 → t1 attack captures. */
+  function capture(base: GameState) {
+    for (let seed = 1; seed <= 200; seed++) {
+      const result = applyAction({ ...base, rngState: seed }, { type: 'attack', from: 0, to: 1 });
+      if (result.state.territories[1]!.owner === 0) return result;
+    }
+    throw new Error('never captured');
+  }
+
+  it('a flat connection bonus adds 2 dice per extra group joined, on the linking territory', () => {
+    const { state, events } = capture(linkState('flat'));
+    expect(events).toContainEqual({ type: 'linked', player: 0, territory: 1, groups: 2, bonus: 2, toReserve: 0 });
+    expect(state.territories[1]!.dice).toBe(5 + 2);
+  });
+
+  it('a "smaller" connection bonus adds the size of the groups pulled in', () => {
+    const { state, events } = capture(linkState('smaller'));
+    expect(events).toContainEqual({ type: 'linked', player: 0, territory: 1, groups: 2, bonus: 3, toReserve: 0 });
+    expect(state.territories[1]!.dice).toBe(5 + 3);
+  });
+
+  it('bonus dice past the cap go to the reserve', () => {
+    const { state, events } = capture(linkState('flat', 8));
+    expect(events).toContainEqual({ type: 'linked', player: 0, territory: 1, groups: 2, bonus: 2, toReserve: 1 });
+    expect(state.territories[1]!.dice).toBe(8);
+    expect(state.players[0]!.reserve).toBe(1);
+  });
+
+  it('gives no connection bonus when it is off, or when a capture joins nothing', () => {
+    const off = capture(linkState('off'));
+    expect(off.events.some((e) => e.type === 'linked')).toBe(false);
+    expect(off.state.territories[1]!.dice).toBe(5);
+    const lone = buildState({ owners: [0, 1, 1], dice: [6, 1, 1], edges: [[0, 1], [1, 2]], rules: { connectionBonus: 'flat' } });
+    expect(capture(lone).events.some((e) => e.type === 'linked')).toBe(false);
+  });
+
   it('capturing the last territory eliminates the player', () => {
     for (let seed = 1; seed <= 50; seed++) {
       const s = buildState({
