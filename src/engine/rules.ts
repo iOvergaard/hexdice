@@ -209,9 +209,13 @@ function lastStand(s: GameState, events: GameEvent[]): void {
   const [a, b] = alive.map((p) => s.territories.filter((t) => t.owner === p.id)) as [Territory[], Territory[]];
   if (s.config.lastStandDice <= 0 || a.length === b.length) return;
   const own = a.length < b.length ? a : b;
-  const raised = own.filter((t) => t.dice < s.config.maxDice);
-  for (const t of raised) t.dice = Math.min(s.config.maxDice, t.dice + s.config.lastStandDice);
-  events.push({ type: 'lastStand', player: own[0]!.owner, territories: raised.map((t) => t.id) });
+  const placed: TerritoryId[] = [];
+  for (const t of own) {
+    const gain = Math.min(s.config.lastStandDice, s.config.maxDice - t.dice);
+    t.dice += gain;
+    for (let i = 0; i < gain; i++) placed.push(t.id);
+  }
+  events.push({ type: 'lastStand', player: own[0]!.owner, placed });
 }
 
 /** Mutates the (already cloned) state: hands play to the next alive player. */

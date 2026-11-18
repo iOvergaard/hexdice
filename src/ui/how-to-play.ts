@@ -56,6 +56,16 @@ export function helpSections(rules: RulesConfig): HelpSection[] {
     sections.push({ heading: 'Linking up', lines: [earn, 'They land on the territory you just took, and any that don\'t fit go to your reserve. Look for the gold "linked!".'] });
   }
 
+  if (rules.lastStandDice > 0) {
+    sections.push({
+      heading: 'The final',
+      lines: [
+        `In a game of three or more players, the first time a turn ends with only two left, the one with fewer territories makes a last stand: +${dice(rules.lastStandDice)} on each of their territories.`,
+        'Knock out both of your last two rivals in one turn and nobody gets one.',
+      ],
+    });
+  }
+
   const tips = ['Attack with more dice than the defender: equal stacks win less than half the time.', 'Keep your territories joined up. Your largest group is your income.'];
   if (rules.reinforcement === 'frontline') tips.push('A short front line gets your new dice where the fighting is, and water makes a cheap wall.');
   if (rules.eliminationBonus > 0) tips.push('Knocking out a weak player pays every turn after.');

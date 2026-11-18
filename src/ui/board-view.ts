@@ -282,14 +282,19 @@ export class BoardView {
     return bonus > 0 ? this.floatLabel(territory, `+${bonus} linked!`, 'link', durationMs) : Promise.resolve();
   }
 
-  private floatLabel(territory: TerritoryId, text: string, kind: 'loss' | 'link', durationMs: number): Promise<void> {
+  /** Floats a gold "Last stand!" over one territory and "+N" over the rest of the dice gained. Resolves when they're gone. */
+  async showLastStand(at: TerritoryId, placed: TerritoryId[], durationMs: number): Promise<void> {
+    await Promise.all([this.showPlacements(placed.filter((id) => id !== at), durationMs), this.floatLabel(at, 'Last stand!', 'stand', durationMs)]);
+  }
+
+  private floatLabel(territory: TerritoryId, text: string, kind: 'loss' | 'link' | 'stand', durationMs: number): Promise<void> {
     const geo = this.geometry[territory];
     if (durationMs <= 0 || !geo) return Promise.resolve();
     const scale = this.rotated ? PORTRAIT_UNIT_SCALE : UNIT_SCALE;
     const p = this.tokenAt[territory] ?? this.toView(geo.centre);
     const label = svg('text', { x: n(p.x), y: n(p.y - (TOKEN_TOP + 4) * scale), 'text-anchor': 'middle' }, `placement is-${kind}`);
     label.dataset.testid = `${kind}-${territory}`;
-    label.style.fontSize = `${n((kind === 'link' ? 38 : 44) * scale)}px`;
+    label.style.fontSize = `${n((kind === 'loss' ? 44 : 38) * scale)}px`;
     label.style.setProperty('--dur', `${durationMs}ms`);
     label.textContent = text;
     this.placeLayer.append(label);

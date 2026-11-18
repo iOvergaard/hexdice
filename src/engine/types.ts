@@ -157,8 +157,8 @@ export type GameEvent =
   | { type: 'turnStarted'; player: PlayerId; round: number }
   /** A capture joined `groups` of the player's groups; `bonus` dice went on the territory, `toReserve` past the cap. */
   | { type: 'linked'; player: PlayerId; territory: TerritoryId; groups: number; bonus: number; toReserve: number }
-  /** The smaller of the last two players gained `lastStandDice` on each territory listed (the ones below the cap). */
-  | { type: 'lastStand'; player: PlayerId; territories: TerritoryId[] }
+  /** The smaller of the last two players gained dice on each territory, up to the cap. placed: one territory id per die. */
+  | { type: 'lastStand'; player: PlayerId; placed: TerritoryId[] }
   | { type: 'gameOver'; winner: PlayerId };
 
 export type AttackRolledEvent = Extract<GameEvent, { type: 'attackRolled' }>;

@@ -12,8 +12,8 @@ const section = (heading: string, overrides: Partial<RulesConfig> = {}) =>
   helpSections({ ...DEFAULT_RULES, ...overrides }).find((s) => s.heading === heading)?.lines.join('\n');
 
 describe('how to play', () => {
-  it('covers the goal, attacks, reinforcements, linking and tips with the default rules', () => {
-    expect(helpSections(DEFAULT_RULES).map((s) => s.heading)).toEqual(['Goal', 'The map', 'Attacking', 'Reinforcements', 'Linking up', 'Tips']);
+  it('covers the goal, attacks, reinforcements, linking, the final and tips with the default rules', () => {
+    expect(helpSections(DEFAULT_RULES).map((s) => s.heading)).toEqual(['Goal', 'The map', 'Attacking', 'Reinforcements', 'Linking up', 'The final', 'Tips']);
   });
 
   it('says ties go to the defender and what a failed attack costs', () => {
@@ -52,6 +52,15 @@ describe('how to play', () => {
     expect(section('Linking up', { connectionBonus: 'flat' })).not.toContain('average');
     expect(section('Linking up', { connectionBonus: 'smaller' })).toContain('smaller groups');
     expect(text({ connectionBonus: 'off' })).not.toContain('Linking up');
+  });
+
+  it('explains the last stand and how to deny it, and leaves it out when off', () => {
+    const final = section('The final')!;
+    expect(final).toContain('three or more players');
+    expect(final).toContain('fewer territories makes a last stand: +1 die on each of their territories');
+    expect(final).toContain('Knock out both of your last two rivals in one turn');
+    expect(section('The final', { lastStandDice: 2 })).toContain('+2 dice on each');
+    expect(text({ lastStandDice: 0 })).not.toContain('The final');
   });
 
   it('only mentions rivers and fords when the map has them', () => {

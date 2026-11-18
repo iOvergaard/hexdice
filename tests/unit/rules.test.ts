@@ -441,7 +441,7 @@ describe('last stand', () => {
 
   it('gives the smaller of the last two a die on each territory when the turn ends', () => {
     const { state, events } = applyAction(final(), { type: 'endTurn' });
-    expect(stands(events)).toEqual([{ type: 'lastStand', player: 1, territories: [3, 4] }]);
+    expect(stands(events)).toEqual([{ type: 'lastStand', player: 1, placed: [3, 4] }]);
     expect(state.territories.slice(3).map((t) => t.dice)).toEqual([5, 2]);
     expect(state.finalStarted).toBe(true);
   });
@@ -456,10 +456,11 @@ describe('last stand', () => {
     expect(stands(applyAction(state, { type: 'endTurn' }).events)).toEqual([]);
   });
 
-  it('stops at the dice cap and lists only the territories that gained', () => {
-    const { state, events } = applyAction(final([3, 3, 3, 8, 7], { lastStandDice: 2 }), { type: 'endTurn' });
-    expect(stands(events)[0]).toMatchObject({ territories: [4] });
-    expect(state.territories.slice(3).map((t) => t.dice)).toEqual([8, 8]);
+  it('lists one territory per die gained, and stops at the dice cap', () => {
+    const { state, events } = applyAction(final([3, 3, 3, 5, 7], { lastStandDice: 2 }), { type: 'endTurn' });
+    expect(stands(events)[0]).toMatchObject({ placed: [3, 3, 4] });
+    expect(state.territories.slice(3).map((t) => t.dice)).toEqual([7, 8]);
+    expect(stands(applyAction(final([3, 3, 3, 8, 8]), { type: 'endTurn' }).events)[0]).toMatchObject({ placed: [] });
   });
 
   it('goes to nobody when the last two hold as many territories each, and never comes later', () => {
