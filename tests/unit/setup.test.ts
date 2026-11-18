@@ -12,16 +12,16 @@ describe('createGame', () => {
         const s = game(n, seed);
         s.players.forEach((p, seat) => {
           const total = s.territories.filter((t) => t.owner === p.id).reduce((a, t) => a + t.dice, 0);
-          expect(total, `${n} players, seat ${seat}`).toBe(base + SEAT_COMPENSATION[n]![seat]!);
+          expect(total, `${n} players, seat ${seat}`).toBe(base + SEAT_COMPENSATION_CATCHUP[n]![seat]!);
         });
       }
     }
   });
 
-  it('uses the catch-up table when the catch-up connection bonus is on', () => {
-    const s = createGame(makeConfig(defaultSeats(1), 3, { connectionBonus: 'catchup' }));
+  it('uses the main table when the catch-up connection bonus is off', () => {
+    const s = createGame(makeConfig(defaultSeats(1), 3, { connectionBonus: 'off' }));
     const totals = s.players.map((p) => s.territories.filter((t) => t.owner === p.id).reduce((a, t) => a + t.dice, 0));
-    expect(totals).toEqual([45 + SEAT_COMPENSATION_CATCHUP[2]![0]!, 45 + SEAT_COMPENSATION_CATCHUP[2]![1]!]);
+    expect(totals).toEqual([45 + SEAT_COMPENSATION[2]![0]!, 45 + SEAT_COMPENSATION[2]![1]!]);
   });
 
   it('has a compensation for every table size, one entry per seat', () => {

@@ -52,7 +52,7 @@ scripts/sim.ts · tests/unit (Vitest) · tests/e2e (Playwright) · tests/fixture
 | UI or flow | `check`, `e2e`, hands-on |
 | Anything else | `check` at least |
 
-The simulation fails on any crash, illegal move or 1,000-round cap hit, Normal beating Easy under 70%, or eight-player games running long: p90 over 26 rounds, p99 over 33, or more than 0.5% past 60 (`scripts/stats.ts`). The length limits sit about 50% above today's numbers (front-line reinforcement) and fail random reinforcement and every rule that caused endless standoffs.
+The simulation fails on any crash, illegal move or 1,000-round cap hit, Normal beating Easy under 70%, or eight-player games running long: p90 over 26 rounds, p99 over 33, or more than 0.5% past 60 (`scripts/stats.ts`). The length limits sit about 50% above front-line reinforcement (p90 17, p99 22; with the catch-up connection bonus, today's default, p90 19, p99 26) and fail random reinforcement and every rule that caused endless standoffs.
 
 A hands-on report goes in `playtest/DD-MM-YYYY-<change>.md` with screenshots and every scenario marked verified, partly verified or not testable (with why). Bug reports carry the seed and the action log (`__hexdice.actions()`).
 
