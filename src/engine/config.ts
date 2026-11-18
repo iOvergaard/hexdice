@@ -24,6 +24,7 @@ export const DEFAULT_RULES: Readonly<RulesConfig> = {
   reinforcement: 'frontline',
   connectionBonus: 'catchup',
   eliminationBonus: 1,
+  lastStandDice: 1,
   startingDiceFactor: 3,
   seatCompensation: true,
 };

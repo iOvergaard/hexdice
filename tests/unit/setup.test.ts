@@ -31,6 +31,11 @@ describe('createGame', () => {
     }
   });
 
+  it('starts in the final, with no last stand to come, only with two seats', () => {
+    expect(createGame(makeConfig(defaultSeats(1), 3)).finalStarted).toBe(true);
+    expect(createGame(makeConfig(defaultSeats(2), 3)).finalStarted).toBe(false);
+  });
+
   it('rejects fewer than 2 or more than 8 seats', () => {
     expect(() => createGame(makeConfig(defaultSeats(1).slice(0, 1), 1))).toThrow(RangeError);
     expect(() => createGame(makeConfig(aiSeats(Array(9).fill('easy')), 1))).toThrow(RangeError);

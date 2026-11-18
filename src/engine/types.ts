@@ -49,6 +49,11 @@ export interface RulesConfig {
   connectionBonus: ConnectionBonusRule;
   /** Extra dice per reinforcement, permanently, for each opponent the player has knocked out. */
   eliminationBonus: number;
+  /**
+   * Dice added to each territory of the last two players' smaller one (fewer territories; nobody on a tie), once,
+   * when a turn first ends with two players left in a game that started with three or more. 0 turns it off.
+   */
+  lastStandDice: number;
   /** Starting dice per player: floor(startingDiceFactor * territoryCount / players). */
   startingDiceFactor: number;
   /** Adjust each seat's starting dice by turn order (`SEAT_COMPENSATION`), so where you sit doesn't decide the game. */
@@ -124,6 +129,8 @@ export interface GameState {
   /** Rng state after the last random draw. */
   rngState: number;
   winner: PlayerId | null;
+  /** A turn has ended with two players left, so the last stand is spent; true from the start with two seats. */
+  finalStarted: boolean;
 }
 
 export type Action =
@@ -150,6 +157,8 @@ export type GameEvent =
   | { type: 'turnStarted'; player: PlayerId; round: number }
   /** A capture joined `groups` of the player's groups; `bonus` dice went on the territory, `toReserve` past the cap. */
   | { type: 'linked'; player: PlayerId; territory: TerritoryId; groups: number; bonus: number; toReserve: number }
+  /** The smaller of the last two players gained `lastStandDice` on each territory listed (the ones below the cap). */
+  | { type: 'lastStand'; player: PlayerId; territories: TerritoryId[] }
   | { type: 'gameOver'; winner: PlayerId };
 
 export type AttackRolledEvent = Extract<GameEvent, { type: 'attackRolled' }>;
