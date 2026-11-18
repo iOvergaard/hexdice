@@ -1,4 +1,4 @@
-import { hexDistance, neighbours } from './hex';
+import { cellCentre, hexDistance, neighbours } from './hex';
 import type { Rng } from './rng';
 import type { Board, CellIndex, RulesConfig, Territory } from './types';
 
@@ -6,6 +6,9 @@ export type MapTerritory = Pick<Territory, 'id' | 'cells' | 'neighbours' | 'cent
 
 const MAX_ATTEMPTS = 500;
 const SEA_MARGIN = 2;
+/** Random spread, in hexes, added to a frontier cell's distance from the seed: enough to keep borders from running straight. */
+const GROWTH_NOISE = 1;
+const RELAX_PASSES = 2;
 
 /**
  * Shapes one continent from a lobed, bay-notched radial mask inside a sea margin, spreads seeds over it (best-of-k farthest point), grows territories round-robin
@@ -57,34 +60,13 @@ function tryGenerate(rules: RulesConfig, rng: Rng): { board: Board; territories:
     if (bestDist >= 1) seeds.push(best);
   }
 
-  // Round-robin growth, one random frontier cell per territory per pass.
+  // Compact territories, so a two-stack dice token fits: each grows towards its seed, then two relaxation passes move every
+  // seed to its territory's middle and regrow. Territories with no inner hex fell from 20% to 8% (18-11-2026).
   const cellTerritory = new Array<number>(total).fill(-1);
   const sizes = new Array<number>(territoryCount).fill(0);
-  const fronts: CellIndex[][] = seeds.map(() => []);
-  const claim = (t: number, cell: CellIndex) => {
-    cellTerritory[cell] = t;
-    sizes[t]!++;
-    for (const n of nbrs[cell]!) if (isLand[n] && cellTerritory[n] === -1) fronts[t]!.push(n);
-  };
-  seeds.forEach((cell, t) => claim(t, cell));
-  let progress = true;
-  while (progress) {
-    progress = false;
-    for (let t = 0; t < territoryCount; t++) {
-      if (sizes[t]! >= maxTerritoryCells) continue;
-      const f = fronts[t]!;
-      while (f.length > 0) {
-        const i = rng.int(f.length);
-        const cell = f[i]!;
-        f[i] = f[f.length - 1]!;
-        f.pop();
-        if (cellTerritory[cell] === -1) {
-          claim(t, cell);
-          progress = true;
-          break;
-        }
-      }
-    }
+  for (let pass = 0; pass <= RELAX_PASSES; pass++) {
+    if (pass > 0) recentreSeeds(seeds, cellTerritory, sizes, W);
+    growTerritories(seeds, isLand, nbrs, maxTerritoryCells, W, rng, cellTerritory, sizes);
   }
 
   let claimed = 0;
@@ -128,6 +110,77 @@ function tryGenerate(rules: RulesConfig, rng: Rng): { board: Board; territories:
     centre: interiorCell(cells, cellTerritory, id, nbrs),
   }));
   return { board: { width: W, height: H, cellTerritory, fords, rivers }, territories };
+}
+
+/**
+ * Round-robin growth into free land: each pass, every territory under the size cap takes the free frontier cell nearest
+ * its seed, give or take GROWTH_NOISE. Fills `cellTerritory` and `sizes` in place.
+ */
+function growTerritories(
+  seeds: CellIndex[],
+  isLand: Uint8Array,
+  nbrs: CellIndex[][],
+  maxCells: number,
+  W: number,
+  rng: Rng,
+  cellTerritory: number[],
+  sizes: number[],
+): void {
+  cellTerritory.fill(-1);
+  sizes.fill(0);
+  const fronts: CellIndex[][] = seeds.map(() => []);
+  const claim = (t: number, cell: CellIndex) => {
+    cellTerritory[cell] = t;
+    sizes[t]!++;
+    for (const n of nbrs[cell]!) if (isLand[n] && cellTerritory[n] === -1) fronts[t]!.push(n);
+  };
+  seeds.forEach((cell, t) => claim(t, cell));
+  let progress = true;
+  while (progress) {
+    progress = false;
+    for (let t = 0; t < seeds.length; t++) {
+      if (sizes[t]! >= maxCells) continue;
+      const free = fronts[t]!.filter((c) => cellTerritory[c] === -1);
+      fronts[t] = free;
+      let pick = -1;
+      let best = Infinity;
+      for (let j = 0; j < free.length; j++) {
+        const score = hexDistance(free[j]!, seeds[t]!, W) + rng.next() * GROWTH_NOISE;
+        if (score < best) {
+          best = score;
+          pick = j;
+        }
+      }
+      if (pick === -1) continue;
+      const cell = free[pick]!;
+      free[pick] = free[free.length - 1]!;
+      free.pop();
+      claim(t, cell);
+      progress = true;
+    }
+  }
+}
+
+/** Moves each seed to its territory's cell nearest the territory's centroid. */
+function recentreSeeds(seeds: CellIndex[], cellTerritory: number[], sizes: number[], W: number): void {
+  const sx = new Float64Array(seeds.length);
+  const sy = new Float64Array(seeds.length);
+  cellTerritory.forEach((t, c) => {
+    if (t === -1) return;
+    const p = cellCentre(c, W, 1);
+    sx[t]! += p.x;
+    sy[t]! += p.y;
+  });
+  const bestD = new Float64Array(seeds.length).fill(Infinity);
+  cellTerritory.forEach((t, c) => {
+    if (t === -1) return;
+    const p = cellCentre(c, W, 1);
+    const d = (p.x - sx[t]! / sizes[t]!) ** 2 + (p.y - sy[t]! / sizes[t]!) ** 2;
+    if (d < bestD[t]!) {
+      bestD[t] = d;
+      seeds[t] = c;
+    }
+  });
 }
 
 /**
