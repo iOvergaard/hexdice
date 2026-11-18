@@ -27,11 +27,11 @@ export function lengthStats(rounds: readonly number[]): LengthStats {
 }
 
 /**
- * Eight-player game-length limits, about 50% above today's rules (p90 34, p99 54, 0.8% past 60 over 1,000 games).
- * Rules that caused endless standoffs break them: attrition (p99 never ends), half-stack (p99 275, 2.4% past 60),
- * continent maps with narrow land bridges (p99 146).
+ * Eight-player game-length limits, about 50% above today's rules (front-line reinforcement: p90 17, p99 22, none past
+ * 60 over 1,000 games; 18-11-2026). Random reinforcement (p90 35, p99 54) and the rules that caused endless standoffs
+ * (attrition, half-stack, narrow land bridges) all break them.
  */
-export const LENGTH_LIMITS = { maxP90: 45, maxP99: 80, maxOver60Share: 0.02 } as const;
+export const LENGTH_LIMITS = { maxP90: 26, maxP99: 33, maxOver60Share: 0.005 } as const;
 
 /** Why a length distribution fails the limits; empty when it passes. */
 export function lengthFailures(stats: LengthStats, limits: { maxP90: number; maxP99: number; maxOver60Share: number } = LENGTH_LIMITS): string[] {

@@ -16,13 +16,13 @@ describe('game-length stats', () => {
   });
 
   it('passes a healthy distribution', () => {
-    const rounds = Array.from({ length: 1000 }, (_, i) => 15 + (i % 30));
+    const rounds = Array.from({ length: 1000 }, (_, i) => 8 + (i % 16));
     expect(lengthFailures(lengthStats(rounds))).toEqual([]);
   });
 
   it('fails a long tail of endless standoffs', () => {
     // Like the attrition rule on continent maps: most games are fine, a few never end.
-    const rounds = Array.from({ length: 1000 }, (_, i) => (i < 30 ? 1001 : 15 + (i % 30)));
+    const rounds = Array.from({ length: 1000 }, (_, i) => (i < 30 ? 1001 : 8 + (i % 16)));
     const failures = lengthFailures(lengthStats(rounds));
     expect(failures.join(' ')).toContain('p99');
     expect(failures.join(' ')).toContain('past 60');

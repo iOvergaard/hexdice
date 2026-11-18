@@ -320,7 +320,7 @@ describe('reinforcement', () => {
 
   it('never exceeds 8 dice', () => {
     for (let seed = 1; seed <= 100; seed++) {
-      const s = buildState({ owners: [0, 0, 0, 1], dice: [7, 8, 6, 1], edges: [[0, 1], [1, 2], [2, 3]], reserves: [10, 0], seed });
+      const s = buildState({ owners: [0, 0, 0, 1], dice: [7, 8, 6, 1], edges: [[0, 1], [1, 2], [2, 3]], reserves: [10, 0], seed, rules: { reinforcement: 'random' } });
       const { state } = applyAction(s, { type: 'endTurn' });
       for (const t of state.territories) expect(t.dice).toBeLessThanOrEqual(8);
       // Room for 1 + 0 + 2 = 3 dice out of 3 + 10, so 10 go back to the reserve.
