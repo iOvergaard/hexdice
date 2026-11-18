@@ -58,7 +58,14 @@ export interface TitleSound {
   toggle: () => boolean;
 }
 
-export function showTitle(root: HTMLElement, initial: TitleOptions, onStart: (opts: TitleOptions) => void, sound?: TitleSound, onContinue?: () => void): void {
+export function showTitle(
+  root: HTMLElement,
+  initial: TitleOptions,
+  onStart: (opts: TitleOptions) => void,
+  sound?: TitleSound,
+  onContinue?: () => void,
+  onHelp?: () => void,
+): void {
   let players = Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, initial.players));
   let aiLevel = initial.aiLevel;
 
@@ -117,14 +124,21 @@ export function showTitle(root: HTMLElement, initial: TitleOptions, onStart: (op
     start.className = 'btn btn-big';
   }
   actions.append(start);
+  const extras = el('div', 'title-extras');
+  if (onHelp) {
+    const help = button('How to play', 'how-to-play', 'btn btn-quiet');
+    help.addEventListener('click', onHelp);
+    extras.append(help);
+  }
   if (sound) {
     const toggle = soundToggle();
     toggle.set(sound.on);
     toggle.el.addEventListener('click', () => toggle.set(sound.toggle()));
-    actions.append(toggle.el);
+    extras.append(toggle.el);
   }
 
   screen.append(playersWrap, aiWrap, actions);
+  if (extras.childElementCount > 0) screen.append(extras);
   root.replaceChildren(screen);
 }
 

@@ -170,6 +170,12 @@
   margin-top: 0;
 }
 
+.title-extras {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 /* ---------- game layout ---------- */
 
 .game {
@@ -901,6 +907,84 @@
   gap: 10px;
 }
 
+/* ---------- how to play ---------- */
+
+.help {
+  width: min(560px, calc(100vw - 2 * var(--gutter)));
+  max-height: min(760px, calc(100dvh - 2 * var(--gutter)));
+  padding: 0;
+  color: var(--text);
+  background: var(--sea);
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+}
+
+/* Only when open: a display on the closed dialog would override the browser hiding it. */
+.help[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.help::backdrop {
+  background: rgba(10, 13, 28, 0.72);
+}
+
+.help-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 10px 4px 20px;
+}
+
+.help-heading {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.help-close {
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.help-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 20px 12px;
+}
+
+.help-section h3 {
+  margin: 14px 0 6px;
+  font-size: 1.05rem;
+  color: var(--paper);
+}
+
+.help-section ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 1.1em;
+  line-height: 1.42;
+}
+
+.help-section li::marker {
+  color: var(--muted);
+}
+
+.help-foot {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 20px 16px;
+  border-top: 1px solid var(--line);
+}
+
+.help-button {
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
 /* ---------- phone ---------- */
 
 @media (max-width: 640px) {
@@ -964,8 +1048,15 @@
   .speed-label {
     display: none;
   }
+  /* Round, speed, help, sound and Quit share one row on a 375px phone, up to round 99. */
   .controls-secondary {
-    gap: 8px;
+    gap: 6px;
+  }
+  .controls-secondary .btn-quiet:not(.btn-icon) {
+    padding: 0 8px;
+  }
+  .hud select {
+    padding: 0 4px;
   }
   .end-turn {
     flex: 1 1 140px;

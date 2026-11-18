@@ -1,11 +1,12 @@
 import { chooseAction } from '../ai';
-import { makeConfig, randomSeed } from '../engine/config';
+import { DEFAULT_RULES, makeConfig, randomSeed } from '../engine/config';
 import { winProbability } from '../engine/odds';
 import { Rng } from '../engine/rng';
 import { applyAction, isLegalAttack, largestGroup } from '../engine/rules';
 import { defaultSeats } from '../engine/seats';
 import { createGame } from '../engine/setup';
-import type { Action, AiLevel, GameConfig, GameEvent, GameState, Speed, TerritoryId } from '../engine/types';
+import type { Action, AiLevel, GameConfig, GameEvent, GameState, RulesConfig, Speed, TerritoryId } from '../engine/types';
+import { openHowToPlay } from '../ui/how-to-play';
 import { createGameScreen, showTitle, type GameScreen, type TitleOptions } from '../ui/screens';
 import { nextSelection, targetsFor } from '../ui/selection';
 import { restore, serialise, type RestoredGame } from './save';
@@ -186,7 +187,16 @@ export class Controller {
       },
       { on: this.sound.isOn(), toggle: () => this.toggleSound() },
       saved ? () => this.resume(saved) : undefined,
+      () => openHowToPlay({ ...DEFAULT_RULES, ...this.ruleOverrides() }),
     );
+  }
+
+  /** Rules the URL asks for, on top of the defaults. */
+  private ruleOverrides(): Partial<RulesConfig> {
+    return {
+      ...(this.params.reinforcement ? { reinforcement: this.params.reinforcement } : {}),
+      ...(this.params.connectionBonus ? { connectionBonus: this.params.connectionBonus } : {}),
+    };
   }
 
   private newGame(opts: TitleOptions, seed: number, config?: GameConfig): void {
@@ -194,11 +204,7 @@ export class Controller {
     this.persist = true;
     this.gen++;
     this.skipping = false;
-    const rules = {
-      ...(this.params.reinforcement ? { reinforcement: this.params.reinforcement } : {}),
-      ...(this.params.connectionBonus ? { connectionBonus: this.params.connectionBonus } : {}),
-    };
-    this.config = config ?? makeConfig(defaultSeats(opts.players - 1, opts.aiLevel), seed, rules);
+    this.config = config ?? makeConfig(defaultSeats(opts.players - 1, opts.aiLevel), seed, this.ruleOverrides());
     this.state = createGame(this.config);
     this.actionLog = [];
     this.eventLog = [];
@@ -265,6 +271,7 @@ export class Controller {
       this.speed = s;
     });
     screen.hud.onQuit(() => this.toTitle());
+    screen.hud.onHelp(() => openHowToPlay(this.state?.config ?? this.config ?? DEFAULT_RULES));
     screen.hud.onSoundToggle(() => {
       this.toggleSound();
       this.renderAll();
@@ -346,6 +353,8 @@ export class Controller {
   }
 
   private onKey(e: KeyboardEvent): void {
+    // Keys belong to an open dialog, so Space scrolls the rules instead of ending your turn.
+    if (document.querySelector('dialog[open]')) return;
     if (e.key === 'Escape') {
       if (this.canAct() && this.selected !== null) {
         this.selected = null;

@@ -45,11 +45,13 @@ export class Hud {
   private readonly speed: HTMLSelectElement;
   private readonly endTurn: HTMLButtonElement;
   private readonly quit: HTMLButtonElement;
+  private readonly help: HTMLButtonElement;
   private readonly sound: SoundToggle;
   private soundHandler: () => void = () => {};
   private endTurnHandler: () => void = () => {};
   private speedHandler: (speed: Speed) => void = () => {};
   private quitHandler: () => void = () => {};
+  private helpHandler: () => void = () => {};
 
   constructor(container: HTMLElement) {
     container.classList.add('hud');
@@ -73,12 +75,18 @@ export class Hud {
 
     this.sound = soundToggle();
 
+    this.help = el('button', 'btn btn-quiet btn-icon help-button', '?');
+    this.help.type = 'button';
+    this.help.dataset.testid = 'help';
+    this.help.setAttribute('aria-label', 'How to play');
+    this.help.title = 'How to play';
+
     this.endTurn = el('button', 'btn btn-primary end-turn', 'End turn');
     this.endTurn.type = 'button';
     this.endTurn.dataset.testid = 'end-turn';
 
     const secondary = el('div', 'controls-secondary');
-    secondary.append(this.round, speedLabel, this.sound.el, this.quit);
+    secondary.append(this.round, speedLabel, this.help, this.sound.el, this.quit);
     controls.append(secondary, this.endTurn);
     container.append(this.chips, controls);
 
@@ -86,6 +94,7 @@ export class Hud {
     this.speed.addEventListener('change', () => this.speedHandler(this.speed.value as Speed));
     this.quit.addEventListener('click', () => this.quitHandler());
     this.sound.el.addEventListener('click', () => this.soundHandler());
+    this.help.addEventListener('click', () => this.helpHandler());
   }
 
   onEndTurn(h: () => void): void {
@@ -96,6 +105,9 @@ export class Hud {
   }
   onQuit(h: () => void): void {
     this.quitHandler = h;
+  }
+  onHelp(h: () => void): void {
+    this.helpHandler = h;
   }
   onSoundToggle(h: () => void): void {
     this.soundHandler = h;
