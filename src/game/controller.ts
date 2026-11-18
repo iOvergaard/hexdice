@@ -194,7 +194,10 @@ export class Controller {
     this.persist = true;
     this.gen++;
     this.skipping = false;
-    const rules = this.params.reinforcement ? { reinforcement: this.params.reinforcement } : {};
+    const rules = {
+      ...(this.params.reinforcement ? { reinforcement: this.params.reinforcement } : {}),
+      ...(this.params.connectionBonus ? { connectionBonus: this.params.connectionBonus } : {}),
+    };
     this.config = config ?? makeConfig(defaultSeats(opts.players - 1, opts.aiLevel), seed, rules);
     this.state = createGame(this.config);
     this.actionLog = [];
@@ -396,6 +399,8 @@ export class Controller {
       const lost = before.territories[roll.from]!.dice - next.territories[roll.from]!.dice;
       void this.screen!.board.showLoss(roll.from, lost, (byAi ? AI_PLACE_MS : PLACE_MS)[speed] * 1.5);
     }
+    const linked = events.find((e) => e.type === 'linked');
+    if (linked) void this.screen!.board.showLink(linked.territory, linked.bonus, (byAi ? AI_PLACE_MS : PLACE_MS)[speed] * 2);
     const out = events.find((e) => e.type === 'playerEliminated');
     if (out && roll) {
       // The big bang: the game deliberately holds here so a knockout lands.

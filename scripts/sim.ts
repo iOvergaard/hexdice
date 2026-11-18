@@ -25,7 +25,7 @@ const eliminationBonus = Number(arg('elimination-bonus', '1'));
 const reinforcement = arg('reinforcement', DEFAULT_RULES.reinforcement) as ReinforcementRule;
 if (!['random', 'frontline', 'weighted'].includes(reinforcement)) throw new Error(`unknown --reinforcement ${reinforcement}`);
 const connectionBonus = arg('connection', DEFAULT_RULES.connectionBonus) as ConnectionBonusRule;
-if (!['off', 'flat', 'smaller'].includes(connectionBonus)) throw new Error(`unknown --connection ${connectionBonus}`);
+if (!['off', 'flat', 'smaller', 'catchup'].includes(connectionBonus)) throw new Error(`unknown --connection ${connectionBonus}`);
 
 let crashes = 0;
 let illegalActions = 0;

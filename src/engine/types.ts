@@ -21,8 +21,9 @@ export type ReinforcementRule = 'random' | 'frontline' | 'weighted';
 /**
  * Dice for a capture that joins two or more of your groups, placed on the linking territory (overflow to the reserve).
  * 'flat': 2 per extra group joined. 'smaller': the size of every joined group except the largest.
+ * 'catchup': 2 per extra group joined, only for a player holding fewer territories than the average of those alive.
  */
-export type ConnectionBonusRule = 'off' | 'flat' | 'smaller';
+export type ConnectionBonusRule = 'off' | 'flat' | 'smaller' | 'catchup';
 
 export interface RulesConfig {
   gridWidth: number;

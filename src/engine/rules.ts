@@ -110,7 +110,7 @@ function resolveAttack(s: GameState, from: TerritoryId, to: TerritoryId, rng: Rn
     return;
   }
 
-  const joined = s.config.connectionBonus === 'off' ? [] : groupSizesAround(s, attacker, to);
+  const joined = s.config.connectionBonus === 'off' || !linkEarnsBonus(s, attacker) ? [] : groupSizesAround(s, attacker, to);
   dst.owner = attacker;
   dst.dice = src.dice - 1;
   src.dice = 1;
@@ -153,9 +153,16 @@ function groupSizesAround(s: GameState, player: PlayerId, at: TerritoryId): numb
   return sizes;
 }
 
+/** The catch-up bonus only goes to a player holding fewer territories than the average of the players still in. */
+function linkEarnsBonus(s: GameState, player: PlayerId): boolean {
+  if (s.config.connectionBonus !== 'catchup') return true;
+  const alive = s.players.filter((p) => p.alive).length;
+  return s.territories.filter((t) => t.owner === player).length < s.territories.length / alive;
+}
+
 /** Mutates the (already cloned) state: the connection bonus for a capture that joined two or more groups. */
 function linkBonus(s: GameState, player: PlayerId, at: TerritoryId, joined: number[], events: GameEvent[]): void {
-  const bonus = s.config.connectionBonus === 'flat' ? 2 * (joined.length - 1) : joined.reduce((a, b) => a + b, 0) - Math.max(...joined);
+  const bonus = s.config.connectionBonus === 'smaller' ? joined.reduce((a, b) => a + b, 0) - Math.max(...joined) : 2 * (joined.length - 1);
   const t = s.territories[at]!;
   const onBoard = Math.min(bonus, s.config.maxDice - t.dice);
   t.dice += onBoard;

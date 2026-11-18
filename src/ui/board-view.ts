@@ -274,15 +274,24 @@ export class BoardView {
 
   /** Floats a red "−N" over a territory whose attack failed. Resolves when the label is gone. */
   showLoss(territory: TerritoryId, lost: number, durationMs: number): Promise<void> {
+    return lost > 0 ? this.floatLabel(territory, `−${lost}`, 'loss', durationMs) : Promise.resolve();
+  }
+
+  /** Floats a gold "+N linked!" over the territory whose capture joined the player's groups. */
+  showLink(territory: TerritoryId, bonus: number, durationMs: number): Promise<void> {
+    return bonus > 0 ? this.floatLabel(territory, `+${bonus} linked!`, 'link', durationMs) : Promise.resolve();
+  }
+
+  private floatLabel(territory: TerritoryId, text: string, kind: 'loss' | 'link', durationMs: number): Promise<void> {
     const geo = this.geometry[territory];
-    if (durationMs <= 0 || lost <= 0 || !geo) return Promise.resolve();
+    if (durationMs <= 0 || !geo) return Promise.resolve();
     const scale = this.rotated ? PORTRAIT_UNIT_SCALE : UNIT_SCALE;
     const p = this.tokenAt[territory] ?? this.toView(geo.centre);
-    const label = svg('text', { x: n(p.x), y: n(p.y - (TOKEN_TOP + 4) * scale), 'text-anchor': 'middle' }, 'placement is-loss');
-    label.dataset.testid = `loss-${territory}`;
-    label.style.fontSize = `${n(44 * scale)}px`;
+    const label = svg('text', { x: n(p.x), y: n(p.y - (TOKEN_TOP + 4) * scale), 'text-anchor': 'middle' }, `placement is-${kind}`);
+    label.dataset.testid = `${kind}-${territory}`;
+    label.style.fontSize = `${n((kind === 'link' ? 38 : 44) * scale)}px`;
     label.style.setProperty('--dur', `${durationMs}ms`);
-    label.textContent = `−${lost}`;
+    label.textContent = text;
     this.placeLayer.append(label);
     return new Promise((resolve) =>
       setTimeout(() => {

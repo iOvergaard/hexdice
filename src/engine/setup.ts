@@ -18,6 +18,14 @@ export const SEAT_COMPENSATION: Readonly<Record<number, readonly number[]>> = {
   8: [0, 0, 0, 0, 1, 0, -1, -1],
 };
 
+/** With the catch-up connection bonus the player behind gets help, so small games need less compensation (18-11-2026). */
+export const SEAT_COMPENSATION_CATCHUP: Readonly<Record<number, readonly number[]>> = {
+  ...SEAT_COMPENSATION,
+  2: [-5, 0],
+  3: [-2, -1, 1],
+  4: [0, 0, 0, 0],
+};
+
 export function createGame(config: GameConfig): GameState {
   const n = config.seats.length;
   if (n < MIN_PLAYERS || n > MAX_PLAYERS) {
@@ -45,7 +53,8 @@ export function createGame(config: GameConfig): GameState {
   const startingDice = Math.floor((config.startingDiceFactor * territories.length) / n);
   for (const p of players) {
     const own = territories.filter((t) => t.owner === p.id);
-    const adjust = config.seatCompensation ? (SEAT_COMPENSATION[n]?.[p.id] ?? 0) : 0;
+    const table = config.connectionBonus === 'catchup' ? SEAT_COMPENSATION_CATCHUP : SEAT_COMPENSATION;
+    const adjust = config.seatCompensation ? (table[n]?.[p.id] ?? 0) : 0;
     let spare = startingDice + adjust - own.length;
     if (spare > own.length * (config.maxDice - 1)) throw new Error('Starting dice do not fit on the territories');
     while (spare > 0) {

@@ -256,7 +256,7 @@ describe('applyAction', () => {
    * P0's group A = t0 (6 dice), t5, t7 and group B = t2, t4, t6, t8 sit either side of P1's t1; P1 also holds t3.
    * Capturing t1 from t0 links A (3 territories) and B (4).
    */
-  function linkState(connectionBonus: 'off' | 'flat' | 'smaller', sourceDice = 6) {
+  function linkState(connectionBonus: 'off' | 'flat' | 'smaller' | 'catchup', sourceDice = 6) {
     return buildState({
       owners: [0, 1, 0, 1, 0, 0, 0, 0, 0],
       dice: [sourceDice, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -291,6 +291,19 @@ describe('applyAction', () => {
     expect(events).toContainEqual({ type: 'linked', player: 0, territory: 1, groups: 2, bonus: 2, toReserve: 1 });
     expect(state.territories[1]!.dice).toBe(8);
     expect(state.players[0]!.reserve).toBe(1);
+  });
+
+  it('a catch-up bonus only rewards a player holding fewer territories than average', () => {
+    // P0 holds 4 of 12 territories (average 6): groups t0+t5 and t2+t4 either side of P1's t1.
+    const behind = buildState({
+      owners: [0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1],
+      dice: [6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+      edges: [[0, 1], [1, 2], [1, 3], [0, 5], [2, 4], [3, 6], [6, 7], [7, 8], [8, 9], [9, 10], [10, 11]],
+      rules: { connectionBonus: 'catchup' },
+    });
+    expect(capture(behind).events).toContainEqual({ type: 'linked', player: 0, territory: 1, groups: 2, bonus: 2, toReserve: 0 });
+    // The same link from the leader (7 of 9 territories) earns nothing.
+    expect(capture(linkState('catchup')).events.some((e) => e.type === 'linked')).toBe(false);
   });
 
   it('gives no connection bonus when it is off, or when a capture joins nothing', () => {
