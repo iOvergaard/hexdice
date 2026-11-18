@@ -42,6 +42,11 @@ describe('save', () => {
     expect(restore(JSON.stringify({ v: 1, config, actions: [] }))?.aiRngState).toBeNull();
   });
 
+  it('replays saves from before the connection bonus without it', () => {
+    const { connectionBonus: _, ...old } = makeConfig(defaultSeats(3), 11);
+    expect(restore(JSON.stringify({ v: 1, config: old, actions: [] }))?.config.connectionBonus).toBe('off');
+  });
+
   it('gives null for missing and corrupt saves', () => {
     expect(restore(null)).toBeNull();
     expect(restore('')).toBeNull();

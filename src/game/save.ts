@@ -29,7 +29,8 @@ export function restore(raw: string | null): RestoredGame | null {
   try {
     const data = JSON.parse(raw) as { v?: unknown; config?: unknown; actions?: unknown; ai?: unknown } | null;
     if (!data || data.v !== VERSION || typeof data.config !== 'object' || data.config === null || !Array.isArray(data.actions)) return null;
-    const config = data.config as GameConfig;
+    // Saves from before the connection bonus were played without it.
+    const config = { connectionBonus: 'off', ...data.config } as GameConfig;
     if (!Number.isInteger(config.seed) || !Array.isArray(config.seats) || !data.actions.every(isAction)) return null;
     const actions = data.actions as Action[];
     let state = createGame(config);

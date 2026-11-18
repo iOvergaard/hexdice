@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { makeConfig } from '../../src/engine/config';
 import { aiSeats, defaultSeats } from '../../src/engine/seats';
-import { SEAT_COMPENSATION, createGame } from '../../src/engine/setup';
+import { SEAT_COMPENSATION, SEAT_COMPENSATION_CATCHUP, createGame } from '../../src/engine/setup';
 
 const game = (players: number, seed = 1) => createGame(makeConfig(defaultSeats(players - 1), seed));
 
@@ -12,14 +12,23 @@ describe('createGame', () => {
         const s = game(n, seed);
         s.players.forEach((p, seat) => {
           const total = s.territories.filter((t) => t.owner === p.id).reduce((a, t) => a + t.dice, 0);
-          expect(total, `${n} players, seat ${seat}`).toBe(base + SEAT_COMPENSATION[n]![seat]!);
+          expect(total, `${n} players, seat ${seat}`).toBe(base + SEAT_COMPENSATION_CATCHUP[n]![seat]!);
         });
       }
     }
   });
 
+  it('uses the main table when the catch-up connection bonus is off', () => {
+    const s = createGame(makeConfig(defaultSeats(1), 3, { connectionBonus: 'off' }));
+    const totals = s.players.map((p) => s.territories.filter((t) => t.owner === p.id).reduce((a, t) => a + t.dice, 0));
+    expect(totals).toEqual([45 + SEAT_COMPENSATION[2]![0]!, 45 + SEAT_COMPENSATION[2]![1]!]);
+  });
+
   it('has a compensation for every table size, one entry per seat', () => {
-    for (let n = 2; n <= 8; n++) expect(SEAT_COMPENSATION[n]).toHaveLength(n);
+    for (let n = 2; n <= 8; n++) {
+      expect(SEAT_COMPENSATION[n]).toHaveLength(n);
+      expect(SEAT_COMPENSATION_CATCHUP[n]).toHaveLength(n);
+    }
   });
 
   it('rejects fewer than 2 or more than 8 seats', () => {

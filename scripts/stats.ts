@@ -27,8 +27,8 @@ export function lengthStats(rounds: readonly number[]): LengthStats {
 }
 
 /**
- * Eight-player game-length limits, about 50% above today's rules (front-line reinforcement: p90 17, p99 22, none past
- * 60 over 1,000 games; 18-11-2026). Random reinforcement (p90 35, p99 54) and the rules that caused endless standoffs
+ * Eight-player game-length limits, set about 50% above front-line reinforcement (p90 17, p99 22, none past 60 over
+ * 1,000 games; 18-11-2026). With the catch-up connection bonus on top: p90 19, p99 26. Random reinforcement (p90 35, p99 54) and the rules that caused endless standoffs
  * (attrition, half-stack, narrow land bridges) all break them.
  */
 export const LENGTH_LIMITS = { maxP90: 26, maxP99: 33, maxOver60Share: 0.005 } as const;

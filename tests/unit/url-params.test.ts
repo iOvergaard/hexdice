@@ -10,6 +10,7 @@ describe('parseUrlParams', () => {
       speed: 'instant',
       sound: false,
       reinforcement: null,
+      connectionBonus: null,
     });
   });
   it('clamps players to 2..8', () => {
@@ -25,8 +26,13 @@ describe('parseUrlParams', () => {
     expect(p.speed).toBeNull();
   });
   it('returns all null for an empty string', () => {
-    expect(parseUrlParams('')).toEqual({ seed: null, players: null, aiLevel: null, speed: null, sound: null, reinforcement: null });
+    expect(parseUrlParams('')).toEqual({ seed: null, players: null, aiLevel: null, speed: null, sound: null, reinforcement: null, connectionBonus: null });
   });
+  it('reads a connection bonus, ignores unknown ones', () => {
+    expect(parseUrlParams('?link=catchup').connectionBonus).toBe('catchup');
+    expect(parseUrlParams('?link=always').connectionBonus).toBeNull();
+  });
+
   it('reads a reinforcement rule, ignores unknown ones', () => {
     expect(parseUrlParams('?reinforce=frontline').reinforcement).toBe('frontline');
     expect(parseUrlParams('?reinforce=weighted').reinforcement).toBe('weighted');

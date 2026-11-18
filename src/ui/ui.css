@@ -627,6 +627,10 @@
   fill: #ff8a7a;
 }
 
+.placement.is-link {
+  fill: #ffd34d;
+}
+
 .placement {
   fill: #fff;
   stroke: var(--ink);
