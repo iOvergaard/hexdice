@@ -9,6 +9,7 @@ export function openWhatsNew(log: Changelog): HTMLDialogElement {
       day.date,
       day.changes.map((c) => {
         const line = el('span');
+        if (c.time) line.append(el('span', 'change-time', c.time));
         line.append(el('span', `change-tag is-${c.kind}`, KIND_LABEL[c.kind]), c.text);
         return line;
       }),

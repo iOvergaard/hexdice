@@ -1025,7 +1025,21 @@
   list-style: none;
 }
 
+/* Time and tag in their own columns, so a long line wraps under its text. */
+.whats-new .help-section li > span {
+  display: flex;
+  align-items: baseline;
+}
+
+.change-time {
+  flex: none;
+  margin-right: 8px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .change-tag {
+  flex: none;
   display: inline-block;
   min-width: 4.6em;
   margin-right: 8px;
