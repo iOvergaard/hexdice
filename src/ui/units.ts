@@ -89,6 +89,19 @@ function die(x: number, y: number, value: number, top: boolean): string {
   return out;
 }
 
+// Roll strip dice, drawn with the board's faces and classes so a roll matches the stacks.
+/** A whole cube: front face with pips, side and top. Half a unit of margin keeps the seams. */
+export const CUBE_VIEWBOX = `-0.5 ${-DY - 0.5} ${W + DX + 1} ${H + DY + 1}`;
+export const cubeDie = (value: number): string => die(0, 0, value, true);
+
+/** The front face alone on a thin ledge in the side colour. */
+const LEDGE = 2;
+export const FLAT_VIEWBOX = `-0.5 -0.5 ${W + 1} ${H + LEDGE + 1}`;
+export const flatDie = (value: number): string =>
+  `<rect class="u-side" x="0" y="${LEDGE}" width="${W}" height="${H}" rx="1.4"/>` +
+  `<rect class="u-face" x="0" y="0" width="${W}" height="${H}" rx="1.4"/>` +
+  `<path class="u-pip" d="${pips(0.5, 0.5, W - 1, H - 1, value)}"/>`;
+
 function stacks(id: number, n: number): string {
   const width = stacksWidth(n);
   let out = `<ellipse class="u-ground" cx="${f(width / 2)}" cy="${BASE + 1.5}" rx="${f(width / 2 + 5)}" ry="4"/>`;

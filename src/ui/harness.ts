@@ -1,5 +1,5 @@
 // Dev-only page for looking at the UI components on a fixture board, without the engine rules or controller.
-// ?seed=&players=  ?roll=1  ?overlay=1  ?preview=1  ?title=1  (&tumble=1 keeps the roll animation)
+// ?seed=&players=  ?roll=1 (&dice=8x8)  ?overlay=1  ?preview=1  ?title=1  (&tumble=1 keeps the roll animation)
 import '../style.css';
 import { fixtureBoardState } from '../../tests/fixtures/state';
 import type { AttackRolledEvent, GameState, TerritoryId } from '../engine/types';
@@ -51,6 +51,13 @@ function start(): void {
     return { from: 0, to: state.territories[0]!.neighbours[0] ?? 1 };
   };
 
+  // ?dice=8x8 rolls that many dice a side (attacker x defender), every face shown.
+  const [att, def] = (params.get('dice') ?? '').split('x').map(Number);
+  const faces = (n: number, from: number) => Array.from({ length: n }, (_, i) => ((i + from) % 6) + 1);
+  const attackRolls = att ? faces(att, 4) : [5, 3, 6, 2];
+  const defendRolls = def ? faces(def, 0) : [4, 3, 5];
+  const sum = (rolls: number[]) => rolls.reduce((a, b) => a + b, 0);
+
   const showRoll = (pair: { from: TerritoryId; to: TerritoryId }, ms: number) => {
     const event: AttackRolledEvent = {
       type: 'attackRolled',
@@ -58,11 +65,11 @@ function start(): void {
       defender: state.territories[pair.to]!.owner,
       from: pair.from,
       to: pair.to,
-      attackRolls: [5, 3, 6, 2],
-      defendRolls: [4, 3, 5],
-      attackSum: 16,
-      defendSum: 12,
-      success: true,
+      attackRolls,
+      defendRolls,
+      attackSum: sum(attackRolls),
+      defendSum: sum(defendRolls),
+      success: sum(attackRolls) > sum(defendRolls),
     };
     return screen.roll.show(event, state, ms);
   };

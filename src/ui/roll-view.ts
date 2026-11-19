@@ -1,46 +1,24 @@
 import { diceAfterFailedAttack } from '../engine/rules';
 import type { AttackRolledEvent, GameState, Player } from '../engine/types';
-import { emblemPath, playerColour } from './identity';
+import { darken, emblemPath, pipColour, playerColour } from './identity';
+import { CUBE_VIEWBOX, FLAT_VIEWBOX, cubeDie, flatDie } from './units';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
-// Pip positions on a 100 x 100 face, by face value.
-const L = 27;
-const M = 50;
-const R = 73;
-const PIPS: Record<number, Array<[number, number]>> = {
-  1: [[M, M]],
-  2: [[L, L], [R, R]],
-  3: [[L, L], [M, M], [R, R]],
-  4: [[L, L], [R, L], [L, R], [R, R]],
-  5: [[L, L], [R, L], [M, M], [L, R], [R, R]],
-  6: [[L, L], [R, L], [L, M], [R, M], [L, R], [R, R]],
-};
+/** Roll dice look while Jacob compares them: ?rolldice=flat, cube otherwise. */
+export type RollDiceLook = 'cube' | 'flat';
+export function rollDiceLook(search: string): RollDiceLook {
+  return new URLSearchParams(search).get('rolldice') === 'flat' ? 'flat' : 'cube';
+}
 
-function dieFace(value: number, colour: string): SVGSVGElement {
+function dieFace(value: number, look: RollDiceLook): SVGSVGElement {
   const el = document.createElementNS(SVG_NS, 'svg');
-  el.setAttribute('viewBox', '0 0 100 100');
-  el.setAttribute('class', 'die');
+  el.setAttribute('viewBox', look === 'cube' ? CUBE_VIEWBOX : FLAT_VIEWBOX);
+  el.setAttribute('class', `die die-${look}`);
   el.setAttribute('role', 'img');
   el.dataset.value = String(value);
   el.setAttribute('aria-label', String(value));
-  el.style.setProperty('--c', colour);
-  const plate = document.createElementNS(SVG_NS, 'rect');
-  plate.setAttribute('x', '5');
-  plate.setAttribute('y', '5');
-  plate.setAttribute('width', '90');
-  plate.setAttribute('height', '90');
-  plate.setAttribute('rx', '20');
-  plate.setAttribute('class', 'die-plate');
-  el.append(plate);
-  for (const [x, y] of PIPS[value] ?? []) {
-    const pip = document.createElementNS(SVG_NS, 'circle');
-    pip.setAttribute('cx', String(x));
-    pip.setAttribute('cy', String(y));
-    pip.setAttribute('r', '9');
-    pip.setAttribute('class', 'die-pip');
-    el.append(pip);
-  }
+  el.innerHTML = look === 'cube' ? cubeDie(value) : flatDie(value);
   return el;
 }
 
@@ -97,6 +75,7 @@ export class RollView {
   private timer: ReturnType<typeof setInterval> | null = null;
   private settleTimer: ReturnType<typeof setTimeout> | null = null;
   private finish: (() => void) | null = null;
+  private readonly look = rollDiceLook(typeof location === 'undefined' ? '' : location.search);
 
   constructor(container: HTMLElement) {
     this.root = document.createElement('section');
@@ -136,8 +115,8 @@ export class RollView {
     const settle = () => {
       this.timer = null;
       this.settleTimer = null;
-      this.paintDice(this.attacker, att, event.attackRolls);
-      this.paintDice(this.defender, def, event.defendRolls);
+      this.paintDice(this.attacker, event.attackRolls);
+      this.paintDice(this.defender, event.defendRolls);
       this.attacker.sum.textContent = String(event.attackSum);
       this.defender.sum.textContent = String(event.defendSum);
       this.attacker.el.classList.toggle('is-winner', event.success);
@@ -167,16 +146,16 @@ export class RollView {
       const tumbleMs = durationMs * TUMBLE_SHARE;
       if (!reducedMotion()) {
         const shuffle = () => {
-          this.paintDice(this.attacker, att, event.attackRolls, true);
-          this.paintDice(this.defender, def, event.defendRolls, true);
+          this.paintDice(this.attacker, event.attackRolls, true);
+          this.paintDice(this.defender, event.defendRolls, true);
         };
         shuffle();
         this.timer = setInterval(shuffle, 80);
         this.settleTimer = setTimeout(() => {
           if (this.timer) clearInterval(this.timer);
           this.timer = null;
-          this.paintDice(this.attacker, att, event.attackRolls);
-          this.paintDice(this.defender, def, event.defendRolls);
+          this.paintDice(this.attacker, event.attackRolls);
+          this.paintDice(this.defender, event.defendRolls);
           this.settleTimer = setTimeout(settle, durationMs - tumbleMs);
         }, tumbleMs);
       } else {
@@ -221,16 +200,18 @@ export class RollView {
 
   private fillSide(side: Side, player: Player | undefined, rolls: number[]): void {
     const identity = player?.identity ?? 0;
-    side.el.style.setProperty('--c', playerColour(identity));
+    const colour = playerColour(identity);
+    side.el.style.setProperty('--c', colour);
+    side.el.style.setProperty('--cd', darken(colour));
+    side.el.style.setProperty('--pip', pipColour(colour));
     const name = document.createElement('span');
     name.className = 'roll-name';
     name.textContent = player?.name ?? '';
     side.who.replaceChildren(emblemSvg(identity), name);
-    this.paintDice(side, player, rolls, true);
+    this.paintDice(side, rolls, true);
   }
 
-  private paintDice(side: Side, player: Player | undefined, rolls: number[], random = false): void {
-    const colour = playerColour(player?.identity ?? 0);
-    side.dice.replaceChildren(...rolls.map((v) => dieFace(random ? 1 + Math.floor(Math.random() * 6) : v, colour)));
+  private paintDice(side: Side, rolls: number[], random = false): void {
+    side.dice.replaceChildren(...rolls.map((v) => dieFace(random ? 1 + Math.floor(Math.random() * 6) : v, this.look)));
   }
 }
