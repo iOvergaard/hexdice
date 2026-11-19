@@ -89,6 +89,10 @@ function die(x: number, y: number, value: number, top: boolean): string {
   return out;
 }
 
+/** The roll strip's die: the board's top die as a whole cube, with half a unit of margin for the seams. */
+export const CUBE_VIEWBOX = `-0.5 ${-DY - 0.5} ${W + DX + 1} ${H + DY + 1}`;
+export const cubeDie = (value: number): string => die(0, 0, value, true);
+
 function stacks(id: number, n: number): string {
   const width = stacksWidth(n);
   let out = `<ellipse class="u-ground" cx="${f(width / 2)}" cy="${BASE + 1.5}" rx="${f(width / 2 + 5)}" ry="4"/>`;

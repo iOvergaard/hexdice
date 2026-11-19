@@ -518,19 +518,11 @@
   justify-content: flex-end;
 }
 
+/* Roll dice are the board's cubes (.u-face, .u-side, .u-top); --die is the front face's width plus a margin. */
 .die {
-  width: var(--die);
-  height: var(--die);
-}
-
-.die-plate {
-  fill: var(--ink);
-  stroke: var(--c);
-  stroke-width: 6;
-}
-
-.die-pip {
-  fill: var(--c);
+  flex: none;
+  width: calc(var(--die) * 1.25);
+  height: calc(var(--die) * 1.125);
 }
 
 .is-rolling .die {
@@ -1091,14 +1083,18 @@
 @media (max-width: 640px) {
   /* One fixed height for dice and messages alike, so the board never jumps; 8 dice fit on one row. */
   .roll {
-    --die: 16px;
+    --die: 14px;
     height: 96px;
     padding: 6px 8px;
     gap: 4px;
   }
+  /* 8 cubes fit the row only by tucking each side under the next die. */
   .roll-dice {
     flex-wrap: nowrap;
-    gap: 2px;
+    gap: 0;
+  }
+  .die + .die {
+    margin-left: calc(var(--die) * -0.215);
   }
   .roll-message {
     font-size: 0.95rem;
