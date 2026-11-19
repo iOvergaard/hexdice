@@ -1682,6 +1682,20 @@
   }
 }
 
+/* Tablets: the one-row strip is short of room for 8 dice a side, so the cubes tuck as on phones,
+   sized to fit two long names and two-digit totals without shrinking. From 1100 px they stand apart. */
+@media (min-width: 720px) and (max-width: 1099px) {
+  .roll {
+    --die: min(24px, 5.85vw - 32.5px);
+  }
+  .roll-dice {
+    gap: 0;
+  }
+  .die + .die {
+    margin-left: calc(var(--die) * -0.215);
+  }
+}
+
 /* Players and controls share one row when there is room for both; the chips go compact (emblem and number). */
 @media (min-width: 1180px) {
   .hud {
