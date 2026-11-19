@@ -195,7 +195,7 @@ export class PreviewPrompt {
     this.el.hidden = true;
     const text = el('div', 'preview-text');
     const head = el('div', 'preview-head');
-    head.append(el('p', 'preview-question', 'Play this board?'));
+    head.append(el('p', 'preview-question', 'Play on this map?'));
     this.you = el('span', 'preview-you');
     this.you.dataset.testid = 'preview-you';
     this.you.hidden = true;
