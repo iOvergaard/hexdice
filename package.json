@@ -16,6 +16,7 @@
     "pacing": "tsx scripts/pacing.ts",
     "icons": "tsx scripts/icons.ts",
     "changelog": "tsx scripts/changelog.ts",
+    "screenshots": "tsx scripts/screenshots.ts",
     "e2e": "playwright test"
   },
   "devDependencies": {
