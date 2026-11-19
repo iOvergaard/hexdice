@@ -233,10 +233,28 @@ describe('applyAction', () => {
     }
   });
 
-  it('frontline overflow goes to the reserve when the front is full', () => {
-    const { state, events } = applyAction(frontState('frontline', 8, 1), { type: 'endTurn' });
+  it('with the reserve rule, frontline overflow goes to the reserve when the front is full', () => {
+    const s = buildState({ owners: [0, 0, 1, 1], dice: [1, 8, 1, 1], edges: [[0, 1], [1, 2], [2, 3]], rules: { frontlineOverflow: 'reserve' } });
+    const { state, events } = applyAction(s, { type: 'endTurn' });
     expect(events.find((e) => e.type === 'reinforced')).toMatchObject({ placed: [], reserve: 2 });
     expect(state.territories[0]!.dice).toBe(1);
+  });
+
+  /** Line 0-1-2-3-4: P0 holds 0 to 3, so 3 is the front and 2, 1, 0 lie 1, 2 and 3 steps behind it. */
+  const behind = (dice: number[]) =>
+    buildState({ owners: [0, 0, 0, 0, 1], dice: [...dice, 1], edges: [[0, 1], [1, 2], [2, 3], [3, 4]] });
+  const reinforced = (s: GameState) => applyAction(s, { type: 'endTurn' }).events.find((e) => e.type === 'reinforced');
+
+  it('frontline overflow goes behind the front, nearest it first', () => {
+    expect(reinforced(behind([1, 1, 6, 8]))).toMatchObject({ placed: [2, 2, 1, 1], reserve: 0 });
+  });
+
+  it('fills the front before the territories behind it', () => {
+    expect(reinforced(behind([1, 1, 1, 6]))).toMatchObject({ placed: [3, 3, 2, 2], reserve: 0 });
+  });
+
+  it('keeps a reserve only once every territory is full', () => {
+    expect(reinforced(behind([8, 8, 8, 8]))).toMatchObject({ placed: [], reserve: 4 });
   });
 
   it('weighted reinforcement favours the front about three to one', () => {

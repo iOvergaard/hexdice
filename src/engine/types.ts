@@ -19,6 +19,11 @@ export type LossRule = 'classic' | 'attrition' | 'drawAttrition' | 'halfStack';
  */
 export type ReinforcementRule = 'random' | 'frontline' | 'weighted';
 /**
+ * Where front-line reinforcements that don't fit go. 'behind': onto your territories behind the front, nearest it first,
+ * and only then the reserve. 'reserve': straight to the reserve. Only used with 'frontline' reinforcement.
+ */
+export type FrontlineOverflow = 'behind' | 'reserve';
+/**
  * Dice for a capture that joins two or more of your groups, placed on the linking territory (overflow to the reserve).
  * 'flat': 2 per extra group joined. 'smaller': the size of every joined group except the largest.
  * 'catchup': 2 per extra group joined, only for a player holding fewer territories than the average of those alive.
@@ -46,6 +51,7 @@ export interface RulesConfig {
   maxReserve: number;
   lossRule: LossRule;
   reinforcement: ReinforcementRule;
+  frontlineOverflow: FrontlineOverflow;
   connectionBonus: ConnectionBonusRule;
   /** Extra dice per reinforcement, permanently, for each opponent the player has knocked out. */
   eliminationBonus: number;

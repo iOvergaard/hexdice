@@ -31,8 +31,8 @@ export function restore(raw: string | null): RestoredGame | null {
   try {
     const data = JSON.parse(raw) as { v?: unknown; config?: unknown; actions?: unknown; ai?: unknown } | null;
     if (!data || data.v !== VERSION || typeof data.config !== 'object' || data.config === null || !Array.isArray(data.actions)) return null;
-    // Saves from before the connection bonus and the last stand were played without them.
-    const config = { connectionBonus: 'off', lastStandDice: 0, ...data.config } as GameConfig;
+    // Saves from before the connection bonus, the last stand and overflow behind the front were played without them.
+    const config = { connectionBonus: 'off', lastStandDice: 0, frontlineOverflow: 'reserve', ...data.config } as GameConfig;
     if (!Number.isInteger(config.seed) || !Array.isArray(config.seats) || !data.actions.every(isAction)) return null;
     const actions = data.actions as Action[];
     let state = createGame(config);
