@@ -124,4 +124,4 @@ Commits follow Conventional Commits (`type(scope): subject`). `feat`, `rules`, `
 - **Ask Jacob before every push to main**, and before merging into it.
 - After a push, `gh run watch <id> --exit-status`. If it deployed, `curl -s https://hexdice.snebold.dk/version.txt` prints the commit you pushed.
 - Never force-push, never amend or rebase pushed commits, never bypass commit signing.
-- Delete merged local branches only when Jacob says so (`git branch -d`).
+- Clean up after yourself once your work is merged and deployed: `git worktree remove` your worktree, delete your merged local branches with `git branch -d`, and stop the dev servers you started (Jacob, 19-11-2026). Never `git branch -D`, never delete remote branches, and leave other sessions' worktrees and branches alone.
