@@ -16,7 +16,7 @@ npm run screenshots          # README screenshots from a seeded game (docs/scree
 npm run build
 ```
 
-- `sim` flags: `--games`, `--seed`, `--out`, `--loss-rule`, `--reinforcement`, `--overflow`, `--connection`, `--last-stand <dice>`, `--elimination-bonus`.
+- `sim` flags: `--games`, `--seed`, `--out`, `--loss-rule`, `--reinforcement`, `--overflow`, `--connection`, `--last-stand <dice>`, `--elimination-bonus`, `--seat-tables`.
 - Several sessions often run at once. If port 5190 is taken, run `E2E_PORT=5197 npm run e2e`.
 
 ## Docs
