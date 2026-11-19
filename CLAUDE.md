@@ -118,8 +118,8 @@ Commits follow Conventional Commits (`type(scope): subject`). `feat`, `rules`, `
 
 - `main` is the integration branch. Feature work happens on branches (`feat/…`, `fix/…`, `proto/…`) or in agent worktrees under `.claude/worktrees/`.
 - Merge with `git merge --no-ff <branch> -m "Merge <branch>: <summary>"`, then run `npm run changelog` and commit it as `chore(changelog): …`.
-- A push to main runs `.github/workflows/deploy.yml`: check, changelog check, sim of 2,000 games and e2e. It then deploys to GitHub Pages only if a game file differs from the commit the live site was built from (`/version.txt`). Every file counts as a game file unless the workflow's `NOT_GAME` list names it, so add new non-game paths there.
-- A push that touches only `CLAUDE.md`, `README.md`, `LICENSE`, `docs/`, `playtest/` or `.claude/` runs nothing. To deploy anyway, run the workflow by hand.
+- A push to main runs `.github/workflows/deploy.yml`: check, changelog check, sim of 2,000 games and e2e, then a deploy to GitHub Pages, which writes the commit it came from to `/version.txt`.
+- Its `paths` filter skips pushes that only touch Markdown (except `CHANGELOG.md`), `LICENSE`, `docs/`, `playtest/`, `.claude/` or `.github/FUNDING.yml`. Add new non-game paths there. To deploy anyway, run the workflow by hand.
 - **Ask Jacob before every push to main**, and before merging into it.
 - After a push, `gh run watch <id> --exit-status`. If it deployed, `curl -s https://hexdice.snebold.dk/version.txt` prints the commit you pushed.
 - Never force-push, never amend or rebase pushed commits, never bypass commit signing.
