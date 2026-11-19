@@ -42,7 +42,7 @@ tests/        unit (Vitest), e2e (Playwright), fixtures (state builders)
 - Shared contract: `src/engine/types.ts`, `rng.ts`, `hex.ts`, `config.ts`, `seats.ts` and `tests/fixtures/`. Change them deliberately, never as a side effect.
 - Saves (`src/game/save.ts`) are the config plus the action log, replayed on load. A new rule setting must default to off in `restore`, as `connectionBonus` and `lastStandDice` do, so older saves replay without it.
 - A change to map generation changes every seeded map, so older saves stop loading. Say so before shipping it.
-- `src/ui/how-to-play.ts` builds the rules text from `RulesConfig`. Update it with every rule change; a unit test bans em dashes.
+- `src/ui/how-to-play.ts` builds the rules text from `RulesConfig`. Update it with every rule change; a unit test bans em dashes. The README's "How to play" mirrors it for the defaults (plus the odds table and the computer players), so update both.
 - `odds.ts` covers 1–8 dice per side; `winProbability` throws beyond that.
 
 ## Rules in force (summary; §3 of the plan wins)
