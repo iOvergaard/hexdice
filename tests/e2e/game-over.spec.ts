@@ -30,6 +30,28 @@ test('the ending leads with the winner and shows how the map changed hands', asy
   await expect(page.getByTestId('ending-chart')).toBeVisible();
   // One mark per knocked-out player.
   await expect(page.locator('.end-out')).toHaveCount(7);
+
+  // The scoreboard: every player, when they went out, and their attacks and defences.
+  const board = page.getByTestId('scoreboard');
+  await expect(board.locator('thead')).toContainText('Out');
+  await expect(board.locator('tbody tr')).toHaveCount(8);
+  const rows = await page.evaluate(() => {
+    const s = window.__hexdice!.state()!;
+    const rolls = window.__hexdice!.events().filter((e) => e.type === 'attackRolled');
+    return s.players.map((p) => ({
+      id: p.id,
+      attacks: `${rolls.filter((r) => r.type === 'attackRolled' && r.attacker === p.id && r.success).length}/${rolls.filter((r) => r.type === 'attackRolled' && r.attacker === p.id).length}`,
+      defences: `${rolls.filter((r) => r.type === 'attackRolled' && r.defender === p.id && !r.success).length}/${rolls.filter((r) => r.type === 'attackRolled' && r.defender === p.id).length}`,
+    }));
+  });
+  for (const r of rows) {
+    const row = page.getByTestId(`scoreboard-${r.id}`);
+    await expect(row.locator('.board-attacks')).toHaveText(r.attacks);
+    await expect(row.locator('.board-defences')).toHaveText(r.defences);
+  }
+  const winner = await page.evaluate(() => window.__hexdice!.state()!.winner!);
+  await expect(page.getByTestId(`scoreboard-${winner}`).locator('.board-out')).toHaveText('Winner');
+  await expect(board.locator('tbody tr').first()).toHaveAttribute('data-testid', `scoreboard-${winner}`);
   await expect(page.getByTestId('overlay-replay')).toBeFocused();
   await expect(page.getByTestId('overlay-title')).toBeInViewport();
   await page.waitForTimeout(1500);

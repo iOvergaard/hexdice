@@ -14,6 +14,12 @@ export interface Standing {
   peakRound: number;
   captures: number;
   knockouts: number;
+  /** Attacks made, and how many took the territory. */
+  attacks: number;
+  attacksWon: number;
+  /** Attacks faced, and how many were held (a draw counts as held). */
+  defences: number;
+  defencesHeld: number;
 }
 
 /** The least likely attack a player won. */
@@ -71,6 +77,10 @@ export function summarise(start: GameState, events: readonly GameEvent[], end: G
     peakRound: round,
     captures: 0,
     knockouts: 0,
+    attacks: 0,
+    attacksWon: 0,
+    defences: 0,
+    defencesHeld: 0,
   }));
   const upsets: (Upset | null)[] = start.players.map(() => null);
   const bigTurns: (BigTurn | null)[] = start.players.map(() => null);
@@ -79,6 +89,12 @@ export function summarise(start: GameState, events: readonly GameEvent[], end: G
   for (const e of events) {
     switch (e.type) {
       case 'attackRolled': {
+        const by = standings[e.attacker]!;
+        const on = standings[e.defender]!;
+        by.attacks++;
+        on.defences++;
+        if (e.success) by.attacksWon++;
+        else on.defencesHeld++;
         if (!e.success) break;
         const chance = winProbability(e.attackRolls.length, e.defendRolls.length);
         const best = upsets[e.attacker];

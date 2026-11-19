@@ -87,6 +87,24 @@ describe('summarise', () => {
     expect(held).toEqual([...held].sort((a, b) => b - a));
   });
 
+  it('counts attacks made and won, and defences faced and held, for the scoreboard', () => {
+    const { start, state, events } = play(42, 8);
+    const s = summarise(start, events, state);
+    const rolls = events.filter((e): e is Extract<GameEvent, { type: 'attackRolled' }> => e.type === 'attackRolled');
+    for (const x of s.standings) {
+      const made = rolls.filter((r) => r.attacker === x.player);
+      const faced = rolls.filter((r) => r.defender === x.player);
+      expect(x.attacks).toBe(made.length);
+      expect(x.attacksWon).toBe(made.filter((r) => r.success).length);
+      expect(x.defences).toBe(faced.length);
+      expect(x.defencesHeld).toBe(faced.filter((r) => !r.success).length);
+      // Every won attack takes a territory.
+      expect(x.attacksWon).toBe(x.captures);
+    }
+    expect(s.standings.reduce((n, x) => n + x.attacks, 0)).toBe(rolls.length);
+    expect(s.standings.reduce((n, x) => n + x.defences, 0)).toBe(rolls.length);
+  });
+
   it('counts the biggest turn from the captures in one turn', () => {
     const { start, state, events } = play(7, 4);
     const s = summarise(start, events, state);

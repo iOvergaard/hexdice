@@ -42,7 +42,9 @@ export function helpSections(rules: RulesConfig): HelpSection[] {
     random: `New dice land at random on any of your territories, up to ${rules.maxDice} per territory.`,
     weighted: `New dice land at random on your territories, up to ${rules.maxDice} per territory, three times as likely on ones that border an enemy.`,
   }[rules.reinforcement];
-  const income = ['When you end your turn you get 1 die for each territory in your largest connected group: the number by your name.'];
+  const income = [
+    'When you end your turn you get 1 die for each territory in your largest connected group: the number by your name. The small number under it, by the little die, is how many dice you have on the map.',
+  ];
   if (rules.eliminationBonus > 0) income.push(`You also get +${dice(rules.eliminationBonus)} per turn for every player you knock out, for the rest of the game.`);
   const reserve = `(up to ${rules.maxReserve}), shown as +N by your name, and come with your next reinforcements.`;
   income.push(

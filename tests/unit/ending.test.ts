@@ -10,7 +10,7 @@ const players = [
 ];
 
 function st(player: number, place: number | null, out: [number, number] | null, peak = 10, peakRound = 1): Standing {
-  return { player, place, outRound: out?.[0] ?? null, outBy: out?.[1] ?? null, peak, peakRound, captures: 0, knockouts: 0 };
+  return { player, place, outRound: out?.[0] ?? null, outBy: out?.[1] ?? null, peak, peakRound, captures: 0, knockouts: 0, attacks: 0, attacksWon: 0, defences: 0, defencesHeld: 0 };
 }
 
 function ending(over: Partial<Ending>, summary: Partial<GameSummary>): Ending {

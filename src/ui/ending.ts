@@ -149,6 +149,45 @@ function chart(e: Ending): SVGSVGElement {
   return s;
 }
 
+/** Every player in finishing order: when they went out, and their attacks and defences. */
+function scoreboard(e: Ending): HTMLElement {
+  const table = el('table', 'end-board');
+  table.dataset.testid = 'scoreboard';
+  const head = el('tr');
+  for (const [label, cls] of [['', 'board-place'], ['Player', 'board-player'], ['Out', 'board-out'], ['Attacks', 'board-num'], ['Defences', 'board-num']] as const) {
+    head.append(el('th', cls, label));
+  }
+  const thead = el('thead');
+  thead.append(head);
+  const tbody = el('tbody');
+  for (const st of e.summary.standings) {
+    const row = el('tr', st.player === e.you ? 'is-you' : undefined);
+    row.dataset.testid = `scoreboard-${st.player}`;
+    const who = el('td', 'board-player');
+    const badge = el('span', 'board-badge');
+    badge.style.setProperty('--c', playerColour(e.players[st.player]!.identity));
+    const mark = svg('svg', { viewBox: '-12 -12 24 24', 'aria-hidden': 'true' });
+    mark.append(svg('path', { d: emblemPath(e.players[st.player]!.identity, 10) }));
+    badge.append(mark);
+    const inner = el('span', 'board-who');
+    inner.append(badge, nameOf(e, st.player));
+    who.append(inner);
+    const out = st.outRound !== null ? `Round ${st.outRound}` : st.player === e.summary.winner ? 'Winner' : st.place !== null ? 'Still in' : 'Earlier';
+    row.append(
+      el('td', 'board-place', st.place !== null ? ordinal(st.place) : ''),
+      who,
+      el('td', 'board-out', out),
+      el('td', 'board-num board-attacks', `${st.attacksWon}/${st.attacks}`),
+      el('td', 'board-num board-defences', `${st.defencesHeld}/${st.defences}`),
+    );
+    tbody.append(row);
+  }
+  table.append(thead, tbody);
+  const wrap = el('div', 'end-scores');
+  wrap.append(table, el('p', 'end-note', 'Attacks: won of made. Defences: held of faced.'));
+  return wrap;
+}
+
 /** The card's content; the overlay adds the buttons. */
 export function renderEnding(e: Ending): HTMLElement {
   const lead = e.players[leadOf(e)]!;
@@ -179,5 +218,6 @@ export function renderEnding(e: Ending): HTMLElement {
     caption.dataset.testid = 'ending-caption';
     card.append(caption);
   }
+  card.append(scoreboard(e));
   return card;
 }
