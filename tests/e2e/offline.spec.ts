@@ -45,7 +45,7 @@ test.describe('offline', () => {
   let server: PagesServer;
 
   test.beforeAll(async ({}, info) => {
-    const out = join(info.project.outputDir, `offline-builds-${info.project.name}`);
+    const out = join(info.project.outputDir, `offline-builds-${info.workerIndex}`);
     first = await buildInto(join(out, 'first'));
     // Any change to the game makes a new build; turning off minification is the quickest one to make.
     second = await buildInto(join(out, 'second'), false);
@@ -68,7 +68,7 @@ test.describe('offline', () => {
     await newGame(page); // starting a game saves it, so Continue has something to resume
 
     await context.setOffline(true);
-    const served = server.served;
+    const before = server.requests.length;
     const response = await page.reload();
     expect(response?.fromServiceWorker()).toBe(true);
     await expect(page.getByTestId('title')).toBeVisible();
@@ -80,7 +80,9 @@ test.describe('offline', () => {
     await page.reload();
     await newGame(page);
     await shot(page, info, 'new-game');
-    expect(server.served, 'nothing reached the server while offline').toBe(served);
+    // Chromium's update check for the worker script ignores Playwright's offline mode; a real offline device fails it.
+    const reached = server.requests.slice(before).filter((path) => path !== '/sw.js');
+    expect(reached, 'nothing but the worker update check reached the server while offline').toEqual([]);
   });
 
   test('a new deploy replaces the old build and deletes its cache', async ({ page, context }) => {

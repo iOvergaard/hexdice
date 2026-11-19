@@ -19,8 +19,8 @@ const TYPES: Record<string, string> = {
  * Swapping `root` is a deploy: the old build's files are gone at once.
  */
 export class PagesServer {
-  /** Requests answered so far. */
-  served = 0;
+  /** Paths requested so far, in order of arrival. */
+  readonly requests: string[] = [];
   /** Hold requests open: a signal that connects but carries nothing. */
   stalled = false;
 
@@ -33,9 +33,9 @@ export class PagesServer {
     const server = createServer();
     const pages = new PagesServer(root, server);
     server.on('request', (req, res) => {
+      pages.requests.push(req.url ?? '/');
       if (pages.stalled) return;
       void pages.serve(req.url ?? '/', req.headers['if-none-match']).then(({ status, headers, body }) => {
-        pages.served++;
         res.writeHead(status, headers).end(body);
       });
     });
