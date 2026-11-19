@@ -64,7 +64,7 @@ Rounded to whole percent. Equal stacks win less than half the time, because ties
 
 ### Reinforcements
 
-- When you end your turn you get 1 die for each territory in your **largest connected group**: the number by your name.
+- When you end your turn you get 1 die for each territory in your **largest connected group**: the number by your name. The small number under it, by the little die, is how many dice you have on the map.
 - You also get +1 die per turn for every player you knock out, for the rest of the game.
 - New dice land at random on your territories that border an enemy, up to 8 per territory.
 - Dice that don't fit on your front line go to the territories just behind it, nearest the front first. They wait in your reserve (up to 64, shown as +N by your name) only once every territory you hold is full, and come with your next reinforcements.
@@ -103,7 +103,7 @@ Rounded to whole percent. Equal stacks win less than half the time, because ties
 - **Offline.** After one visit the game loads without a connection. A new version arrives the next time you open it online.
 - **Continue.** Close the tab mid-game and pick up exactly where you left off.
 - **How to play and What's new** are one tap away on the title screen. What's new lists every change by its commit and tells you which version you're on.
-- **Game over** opens with the winner's colours and shows how the map changed hands, with a replay of the whole game. If you're knocked out early, you can watch the rest.
+- **Game over** opens with the winner's colours, shows how the map changed hands, and ends with a scoreboard: who went out when, and everyone's attacks won and defences held. Then replay the whole game, or watch the rest if you're knocked out early.
 - **Speed and sound.** Four speeds from Slow to Instant, a skip-to-my-turn button, and synthesised sound with a speaker toggle.
 - **Keyboard.** Space ends your turn, or skips ahead while the computer plays; Escape cancels a selection.
 
