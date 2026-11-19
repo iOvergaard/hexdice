@@ -32,8 +32,9 @@ src/engine/   pure TS, no DOM. types.ts (the contract), rng, hex, config, seats,
 src/ai/       pure TS. chooseAction(state, level, rng): easy.ts, normal.ts
 src/ui/       SVG board (board-view, terrain, units), roll strip, HUD/player bar, screens, panels (how-to-play, whats-new)
 src/game/     controller (screen flow, turn flow, animation queue, busy lock, replay), save, sound, URL params, timing
+src/offline/  service worker, production builds only; the Vite plugin in scripts/offline.ts writes dist/sw.js
 src/changelog.ts  parse and write CHANGELOG.md (pure) · src/main.ts entry · src/debug.ts dev-only window.__hexdice
-scripts/      sim, stats (length limits), changelog, pacing, icons
+scripts/      sim, stats (length limits), changelog, pacing, icons, offline
 tests/        unit (Vitest), e2e (Playwright), fixtures (state builders)
 ```
 
