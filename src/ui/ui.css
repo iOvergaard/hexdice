@@ -829,11 +829,39 @@
   font-size: 0.9rem;
 }
 
-.chip-group {
+/* Income on top, total dice under it: every chip keeps the same shape at any width. */
+.chip-stats {
   margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.05;
+}
+
+.chip-group {
   font-weight: 800;
   font-size: 1.1rem;
   font-variant-numeric: tabular-nums;
+}
+
+/* Total dice on the board, after the income; the small square reads as a die. */
+.chip-dice {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.chip-dice::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
 }
 
 .chip-reserve {
@@ -1006,7 +1034,8 @@
 
 .end-card {
   width: min(100%, 480px);
-  overflow: hidden;
+  /* clip, not hidden: hidden would make the card the sticky buttons' scroll box instead of the overlay. */
+  overflow: clip;
   background: var(--sea);
   border: 2px solid var(--line);
   border-radius: 18px;
@@ -1093,16 +1122,126 @@
   line-height: 1.4;
 }
 
+/* Scoreboard: finishing order, when each player went out, attacks and defences. */
+.end-scores {
+  margin: 14px 18px 0;
+}
+
+.end-board {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.end-board th {
+  padding: 0 6px 4px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.end-board td {
+  padding: 5px 6px;
+  border-top: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.end-board .board-place {
+  width: 2.4em;
+  padding-left: 0;
+  color: var(--muted);
+}
+
+.end-board td.board-player {
+  font-weight: 600;
+}
+
+.board-who {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  vertical-align: middle;
+}
+
+.end-board .board-num {
+  text-align: right;
+}
+
+.end-board tr.is-you td {
+  color: var(--paper);
+  font-weight: 800;
+}
+
+.board-badge {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: var(--c);
+}
+
+.board-badge svg {
+  width: 13px;
+  height: 13px;
+  fill: var(--ink);
+}
+
+.end-note {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
 .overlay-actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
   padding: 16px 18px 18px;
+  /* The buttons stay on screen while a long card scrolls under them; -16px reaches past the overlay's padding. */
+  position: sticky;
+  bottom: -16px;
+  background: var(--sea);
+  box-shadow: 0 -12px 14px -12px rgba(0, 0, 0, 0.55);
 }
 
 .overlay-actions .btn {
   min-width: 96px;
+}
+
+/* Wide screens: chart and story on the left, scoreboard on the right, so nothing needs scrolling. */
+@media (min-width: 900px) {
+  .end-card {
+    width: min(100%, 860px);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'head head'
+      'figure scores'
+      'caption scores'
+      'actions actions';
+    grid-template-rows: auto auto 1fr auto;
+  }
+  .end-head {
+    grid-area: head;
+  }
+  .end-figure {
+    grid-area: figure;
+  }
+  .end-caption {
+    grid-area: caption;
+    align-self: start;
+  }
+  .end-scores {
+    grid-area: scores;
+    margin: 14px 18px 0 0;
+  }
+  .overlay-actions {
+    grid-area: actions;
+  }
 }
 
 /* A phone's board is too short for the card, so the ending takes the whole screen. */
@@ -1123,6 +1262,13 @@
   }
   .end-caption {
     margin-inline: 14px;
+  }
+  .end-scores {
+    margin-inline: 14px;
+  }
+  .end-board th,
+  .end-board td {
+    padding-inline: 4px;
   }
 }
 
