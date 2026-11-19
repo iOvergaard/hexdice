@@ -1,4 +1,4 @@
-// Unit visuals for a territory token. Three variants, all flat 2D, all keep the emblem and the dice count.
+// Unit visuals for a territory token. Three variants, all keep the emblem and the dice count.
 import { emblemPath } from './identity';
 
 export type UnitVariant = 'cluster' | 'stack' | 'banners';
@@ -25,7 +25,7 @@ const PIPS: Record<number, Array<[number, number]>> = {
   3: [[0.27, 0.27], [0.5, 0.5], [0.73, 0.73]],
   4: [[0.27, 0.27], [0.73, 0.27], [0.27, 0.73], [0.73, 0.73]],
   5: [[0.27, 0.27], [0.73, 0.27], [0.5, 0.5], [0.27, 0.73], [0.73, 0.73]],
-  6: [[0.3, 0.24], [0.7, 0.24], [0.3, 0.5], [0.7, 0.5], [0.3, 0.76], [0.7, 0.76]],
+  6: [[0.28, 0.22], [0.72, 0.22], [0.28, 0.5], [0.72, 0.5], [0.28, 0.78], [0.72, 0.78]],
 };
 
 /** Pips for a die whose top-left is x,y and whose face is w by h. */
@@ -54,18 +54,53 @@ function cluster(id: number, n: number): string {
   return out + `<path class="u-pip" d="${pipPath}"/>`;
 }
 
-function stack(id: number, n: number): string {
-  const w = 26;
-  const h = 22;
-  const step = n > 1 ? Math.min(11, 40 / (n - 1)) : 0;
-  let out = '<ellipse class="u-ground" cx="-16" cy="24" rx="21" ry="4"/>';
-  for (let i = 0; i < n; i++) {
-    const x = -16 - w / 2 + (i % 2 === 0 ? -1 : 1.4);
-    const y = 22 - h - i * step;
-    out += `<rect class="u-die" x="${f(x)}" y="${f(y)}" width="${w}" height="${h}" rx="2.6"/>`;
-    if (i === n - 1) out += `<path class="u-pip" d="${pips(x, y, w, h, face(id, i))}"/>`;
-    else out += `<path class="u-edge" d="M${f(x + 2)} ${f(y + 1.8)}h${w - 4}"/>`;
+/** Dice per stack: up to 3 stand in one stack, 4+ split into two side by side, the left one never shorter. */
+export function stackSplit(n: number): number[] {
+  return n <= 3 ? [n] : [Math.ceil(n / 2), Math.floor(n / 2)];
+}
+
+// Dice in a 3/4 view (oblique, not isometric): front face W by H, side and top faces sheared DX right and DY up.
+const W = 19;
+const H = 17;
+const DX = 5;
+const DY = 4.5;
+/** Each die sits STEP above the one below, a little less than H so the seams overlap. */
+const STEP = 14;
+const GAP = 2;
+/** Where the dice stand. */
+const BASE = 24;
+const PILL_W = 26;
+const PILL_GAP = 4;
+
+function stacksWidth(n: number): number {
+  const cols = stackSplit(n).length;
+  return cols * (W + DX) + (cols - 1) * GAP;
+}
+
+function die(x: number, y: number, value: number, top: boolean): string {
+  let out =
+    `<path class="u-side" d="M${f(x + W)} ${f(y)}l${DX} ${-DY}v${H}l${-DX} ${DY}z"/>` +
+    `<rect class="u-face" x="${f(x)}" y="${f(y)}" width="${W}" height="${H}" rx="1.4"/>`;
+  // Pips on the top die only: on a phone, pips on every die read as noise.
+  if (top) {
+    out += `<path class="u-top" d="M${f(x)} ${f(y)}l${DX} ${-DY}h${W}l${-DX} ${DY}z"/>`;
+    out += `<path class="u-pip" d="${pips(x + 0.5, y + 0.5, W - 1, H - 1, value)}"/>`;
   }
+  return out;
+}
+
+function stacks(id: number, n: number): string {
+  const width = stacksWidth(n);
+  let out = `<ellipse class="u-ground" cx="${f(width / 2)}" cy="${BASE + 1.5}" rx="${f(width / 2 + 5)}" ry="4"/>`;
+  let slot = 0;
+  stackSplit(n).forEach((count, col) => {
+    const x0 = col * (W + DX + GAP);
+    for (let i = 0; i < count; i++) {
+      // A slight wobble so a stack reads as stacked dice, not a bar.
+      const x = x0 + (i % 2 === 0 ? 0 : 0.9);
+      out += die(x, BASE - H - i * STEP, face(id, slot++), i === count - 1);
+    }
+  });
   return out;
 }
 
@@ -104,16 +139,14 @@ export function createUnits(variant: UnitVariant, id: number): UnitView {
   const stackLayout = variant === 'stack';
   // Keeps the whole token tappable, whatever the dice shapes leave empty.
   const plate = stackLayout
-    ? el('rect', 'units-hit', { x: -34, y: -36, width: 72, height: 64, rx: 13 })
+    ? el('rect', 'units-hit', { rx: 13 })
     : el('rect', 'token-plate', { x: -36, y: -29, width: 72, height: 58, rx: 13 });
   const art = el('g', 'units-art');
   const emblem = el('path', 'token-emblem');
   const count = el('text', 'token-count', { 'text-anchor': 'middle', 'dominant-baseline': 'central' });
+  const pill = el('rect', 'token-plate', { y: BASE - 46, width: PILL_W, height: 46, rx: 11 });
   if (stackLayout) {
-    const pill = el('rect', 'token-plate', { x: 3, y: -24, width: 32, height: 48, rx: 11 });
-    emblem.setAttribute('transform', 'translate(19 -10)');
-    count.setAttribute('x', '19');
-    count.setAttribute('y', '10');
+    count.setAttribute('y', String(BASE - 13));
     root.append(plate, art, pill, emblem, count);
   } else {
     emblem.setAttribute('transform', 'translate(-13 -15)');
@@ -121,13 +154,30 @@ export function createUnits(variant: UnitVariant, id: number): UnitView {
     count.setAttribute('y', '-14');
     root.append(plate, art, emblem, count);
   }
+  /** Centres [dice][pill] on the territory and fits the hit area round both. */
+  const place = (dice: number) => {
+    const w = stacksWidth(dice);
+    const total = w + PILL_GAP + PILL_W;
+    const left = -total / 2;
+    const px = left + w + PILL_GAP;
+    art.setAttribute('transform', `translate(${f(left)} 0)`);
+    pill.setAttribute('x', String(f(px)));
+    emblem.setAttribute('transform', `translate(${f(px + PILL_W / 2)} ${BASE - 32})`);
+    count.setAttribute('x', String(f(px + PILL_W / 2)));
+    const top = Math.min(BASE - 46, BASE - H - (stackSplit(dice)[0]! - 1) * STEP - DY) - 4;
+    plate.setAttribute('x', String(f(left - 4)));
+    plate.setAttribute('y', String(f(top)));
+    plate.setAttribute('width', String(f(total + 8)));
+    plate.setAttribute('height', String(f(BASE + 6 - top)));
+  };
   let lastDice = -1;
   let lastIdentity = -1;
   return {
     root,
     update(dice, identity) {
       if (dice !== lastDice) {
-        art.innerHTML = variant === 'cluster' ? cluster(id, dice) : variant === 'stack' ? stack(id, dice) : banners(dice);
+        art.innerHTML = variant === 'cluster' ? cluster(id, dice) : variant === 'stack' ? stacks(id, dice) : banners(dice);
+        if (stackLayout) place(dice);
         count.textContent = String(dice);
         lastDice = dice;
       }
