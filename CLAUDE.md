@@ -48,7 +48,7 @@ tests/        unit (Vitest), e2e (Playwright), fixtures (state builders)
 
 30 territories on a generated continent with lakes and rivers crossable only at fords. Attacks need 2+ dice; both sides roll all their dice and ties go to the defender (equal stacks win under 50%). A failed attack drops to as many dice as the defender had (losing at least 1) on a draw, and to 1 on a loss (`drawAttrition`). Ending your turn gives one die per territory in your largest connected group, +1 per player you knocked out. New dice only land on territories that border an enemy, max 8 per territory, and the overflow goes to a reserve (max 64). Catch-up connection bonus: +2 dice per extra group joined, only for players below the average territory count. Last stand: the first time a turn ends with two players left (in a game that started with three or more), the one with fewer territories gets +1 die on each territory. Seat compensation adjusts starting dice by turn order (its own table under the catch-up bonus).
 
-Normal AI (`src/ai/normal.ts`): attacks at ≥ 50% odds (≥ 30% from a full stack of 8). It prefers captures that grow its largest group, shrink the leader's group or knock someone out, and ends its turn when no good attack is left. Easy attacks at random. Jacob finds Normal hard enough. A Hard AI is parked.
+Normal AI (`src/ai/normal.ts`): attacks at ≥ 50% odds (≥ 30% from a full stack of 8). It prefers captures that grow its largest group, shrink the leader's group or knock someone out. It gangs up on a runaway: anyone holding at least 1.5× the average territory count (and at least 8) gets +0.6 on every attack against them, the human included. It ends its turn when no good attack is left. Easy attacks at random. Jacob finds Normal hard enough. A Hard AI is parked.
 
 ## Conventions
 
@@ -83,7 +83,7 @@ The balance metrics used so far:
 | UI or flow | `check`, `e2e`, hands-on |
 | Anything else | `check` at least |
 
-The simulation fails on any crash, illegal move or 1,000-round cap hit, Normal beating Easy under 70%, or eight-player games running long: p90 over 26 rounds, p99 over 33, or more than 0.5% past 60 (`scripts/stats.ts`). The length limits sit about 50% above front-line reinforcement (p90 17, p99 22; with today's defaults p90 19, p99 27) and fail random reinforcement and every rule that caused endless standoffs.
+The simulation fails on any crash, illegal move or 1,000-round cap hit, Normal beating Easy under 70%, or eight-player games running long: p90 over 26 rounds, p99 over 33, or more than 0.5% past 60 (`scripts/stats.ts`). The length limits sit about 50% above front-line reinforcement (p90 17, p99 22; with today's defaults and the gang-up AI p90 22, p99 32, so the CI seeds have one round of p99 headroom left) and fail random reinforcement and every rule that caused endless standoffs.
 
 A hands-on report goes in `playtest/DD-MM-YYYY-<change>.md` with screenshots and every scenario marked verified, partly verified or not testable (with why). Bug reports carry the seed and the action log (`__hexdice.actions()`).
 
