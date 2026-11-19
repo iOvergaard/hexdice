@@ -4,10 +4,15 @@ What changed in Hexdice, newest first. Players see this under What's new on the 
 
 `npm run changelog` adds new `feat`, `rules`, `fix` and `perf` commits on top. Edit the wording freely, but keep the shape: `## DD-MM-YYYY`, then `- **New:**`, `**Rules:**`, `**Fixed:**` or `**Faster:**` lines.
 
-<!-- changelog: up to 07880c8e186ba7788d827629dcf5553e0b152fa4 -->
+<!-- changelog: up to e8066c3ad36e289f068ac071ed2c69feb5219d57 -->
+
+## 19-11-2026
+
+- **New:** What's new on the title screen
 
 ## 18-11-2026
 
+- **New:** Dice in two stacks, cube dice and compact territories
 - **New:** Show the last stand on the board and explain it in How to play
 - **New:** Last stand for the smaller of the last two players
 - **New:** How to play panel on the title screen and in game
