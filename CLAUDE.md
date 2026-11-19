@@ -12,10 +12,11 @@ npm run e2e                  # Playwright desktop + phone (gate 3), own dev serv
 npm run changelog            # add new player-facing commits to CHANGELOG.md (`-- --check`: fail if it's behind)
 npm run pacing               # seconds you wait between turns per speed; needs `npm run dev` running
 npm run icons                # regenerate the icons and link-preview image from public/favicon.svg
+npm run screenshots          # README screenshots from a seeded game (docs/screenshots/); needs `npm run dev` running
 npm run build
 ```
 
-- `sim` flags: `--games`, `--seed`, `--out`, `--loss-rule`, `--reinforcement`, `--connection`, `--last-stand <dice>`, `--elimination-bonus`.
+- `sim` flags: `--games`, `--seed`, `--out`, `--loss-rule`, `--reinforcement`, `--overflow`, `--connection`, `--last-stand <dice>`, `--elimination-bonus`.
 - Several sessions often run at once. If port 5190 is taken, run `E2E_PORT=5197 npm run e2e`.
 
 ## Docs
