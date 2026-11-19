@@ -27,6 +27,7 @@ src/ai/      pure TS. chooseAction(state, level, rng)
 src/ui/      SVG board, roll strip, HUD/player bar, screens, selection logic
 src/game/    controller (screen flow, turn flow, animation queue, busy lock, replay), URL params, timing
 src/main.ts  entry · src/debug.ts dev-only window.__hexdice test hook
+src/offline/ service worker (production builds only); scripts/offline.ts writes dist/sw.js with the build's file list
 scripts/sim.ts · tests/unit (Vitest) · tests/e2e (Playwright) · tests/fixtures (state builders)
 ```
 
