@@ -1,4 +1,4 @@
-import type { AiLevel } from '../engine/types';
+import type { AiLevel, GameState } from '../engine/types';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../engine/config';
 import { BoardView } from './board-view';
 import { Hud } from './hud';
@@ -67,13 +67,17 @@ export function showTitle(
   onContinue?: () => void,
   onHelp?: () => void,
   whatsNew?: { unseen: boolean; open: () => void },
+  scene?: () => GameState,
 ): void {
   let players = Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, initial.players));
   let aiLevel = initial.aiLevel;
 
   const screen = el('main', 'title');
   screen.dataset.testid = 'title';
-  screen.append(el('h1', 'title-name', 'Hexdice'), emblemRow(), el('p', 'title-tagline', 'Roll your dice, take the map.'));
+  const head = el('div', 'title-head');
+  head.append(el('h1', 'title-name', 'Hexdice'), emblemRow());
+  const form = el('div', 'title-form');
+  form.append(el('p', 'title-tagline', 'Roll your dice, take the map.'));
 
   const chipGroup = (label: string, id: string): [HTMLElement, HTMLElement] => {
     const wrap = el('section', 'choice');
@@ -152,9 +156,27 @@ export function showTitle(
     extras.append(toggle.el);
   }
 
-  screen.append(playersWrap, aiWrap, actions);
-  if (extras.childElementCount > 0) screen.append(extras);
+  form.append(playersWrap, aiWrap, actions);
+  if (extras.childElementCount > 0) form.append(extras);
+  if (scene) screen.append(titleScene(scene));
+  screen.append(head, form);
   root.replaceChildren(screen);
+}
+
+/** A dealt board behind the menu, built a frame later so the menu paints first. */
+function titleScene(scene: () => GameState): HTMLElement {
+  const hero = el('div', 'title-hero');
+  hero.dataset.testid = 'title-scene';
+  const frame = el('div', 'title-hero-frame');
+  hero.append(frame);
+  // Two frames: a single rAF callback runs before its frame paints.
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      if (!hero.isConnected) return;
+      new BoardView(frame, true).render(scene(), { selected: null, targets: [], attack: null, interactive: false });
+    }),
+  );
+  return hero;
 }
 
 export class PreviewPrompt {
