@@ -3,6 +3,14 @@ name: Test and deploy
 on:
   push:
     branches: [main]
+    # A push that only touches these can't change the game or its tests, so nothing runs.
+    paths-ignore:
+      - 'CLAUDE.md'
+      - 'README.md'
+      - 'LICENSE'
+      - 'docs/**'
+      - 'playtest/**'
+      - '.claude/**'
   pull_request:
   workflow_dispatch:
 
@@ -48,10 +56,46 @@ jobs:
           path: test-results/
           retention-days: 7
 
+  changes:
+    name: Game files changed since the live build?
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      game: ${{ steps.diff.outputs.game }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: diff
+        name: Compare main with the commit hexdice.snebold.dk was built from
+        env:
+          MANUAL: ${{ github.event_name == 'workflow_dispatch' }}
+          # Everything else counts as a game file, so a new file deploys until it is listed here.
+          NOT_GAME: '^(tests/|docs/|playtest/|\.claude/|\.github/|scripts/(sim|stats|changelog|pacing|icons|screenshots)\.ts$|(README|CLAUDE)\.md$|LICENSE$|playwright\.config\.ts$)'
+        run: |
+          live=$(curl -fsS https://hexdice.snebold.dk/version.txt 2>/dev/null | tr -d '[:space:]' || true)
+          if [ "$MANUAL" = true ]; then
+            echo "Run by hand: deploying."
+            echo "game=true" >> "$GITHUB_OUTPUT"
+          elif [ -z "$live" ] || ! git cat-file -e "$live^{commit}" 2>/dev/null; then
+            echo "The live site doesn't say which commit it was built from: deploying."
+            echo "game=true" >> "$GITHUB_OUTPUT"
+          else
+            changed=$(git diff --name-only "$live" HEAD | grep -Ev "$NOT_GAME" || true)
+            if [ -n "$changed" ]; then
+              printf 'Game files changed since %s:\n%s\n' "$live" "$changed"
+              echo "game=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "No game files changed since $live: nothing to deploy."
+              echo "game=false" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
   deploy:
     name: Deploy to GitHub Pages
-    needs: test
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: [test, changes]
+    if: needs.changes.outputs.game == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -69,6 +113,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      - name: Record the commit this build comes from
+        # Written after the build, so the offline worker doesn't cache it and players aren't asked to update for it.
+        run: git rev-parse HEAD > dist/version.txt
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
