@@ -64,6 +64,8 @@ This section is the complete, authoritative rule set. It's our design, not a par
 
 **Odds:** the engine precomputes the exact win probability for every a-vs-d dice matchup (1–8 each). AI uses it; the UI can show it later.
 
+**Normal AI and runaways** (19-11-2026, Jacob's call): the Normal AI treats an opponent holding at least 1.5× the average territories of the players still in, and at least 8, as a runaway, and adds +0.6 to the score of any attack on them. Cutting the leader's largest group now counts 0.15 per territory instead of 0.06. The table gangs up on whoever pulls away, you included. Jacob chose this over rule changes (less income for big empires, more for players below the average): those made a formed runaway beatable only by pushing games past the length gate. Simulated (7 players, all-Normal, two sets of 1,500 games): a leader with 15 or more of the 30 territories at round 5 appears in 9% of games instead of 14%, and at round 8 in 43–45% instead of 56–58%. Once formed, it still wins 86–87%. Eight players: p90 22, p99 30–32 (was 19 and 26–27). Normal beats Easy 88.7–90.7%. Details in `playtest/19-11-2026-ai-gang-up.md`.
+
 ## 4. Approaches considered
 
 | | Approach | Trade-off |

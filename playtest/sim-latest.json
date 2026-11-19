@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-19T08:19:36.882Z",
+  "date": "2026-11-19T08:42:46.653Z",
   "games": 2000,
   "rules": {
     "lossRule": "drawAttrition",
@@ -9,36 +9,36 @@
     "lastStandDice": 1
   },
   "links": {
-    "count": 14158,
-    "dice": 29708
+    "count": 14063,
+    "dice": 29372
   },
-  "lastStands": 761,
+  "lastStands": 738,
   "normalVsEasy": {
     "games": 1000,
-    "normalWins": 884,
-    "winRate": 0.884
+    "normalWins": 907,
+    "winRate": 0.907
   },
   "eightPlayer": {
     "games": 1000,
-    "avgRounds": 13.537,
-    "maxRounds": 37,
+    "avgRounds": 14.973,
+    "maxRounds": 39,
     "winsBySeat": [
-      109,
-      130,
-      122,
-      122,
-      139,
-      120,
-      134,
-      124
+      107,
+      125,
+      110,
+      124,
+      136,
+      129,
+      154,
+      115
     ]
   },
   "gameLength": {
     "games": 1000,
-    "p50": 13,
-    "p90": 19,
-    "p99": 27,
-    "max": 37,
+    "p50": 14,
+    "p90": 22,
+    "p99": 32,
+    "max": 39,
     "over60Share": 0,
     "limits": {
       "maxP90": 26,
@@ -50,7 +50,7 @@
   "crashes": 0,
   "illegalActions": 0,
   "roundCapHits": 0,
-  "attacks": 300585,
-  "ties": 9391,
-  "durationMs": 25150
+  "attacks": 333230,
+  "ties": 11234,
+  "durationMs": 46459
 }
