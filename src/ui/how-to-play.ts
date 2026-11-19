@@ -44,7 +44,13 @@ export function helpSections(rules: RulesConfig): HelpSection[] {
   }[rules.reinforcement];
   const income = ['When you end your turn you get 1 die for each territory in your largest connected group: the number by your name.'];
   if (rules.eliminationBonus > 0) income.push(`You also get +${dice(rules.eliminationBonus)} per turn for every player you knock out, for the rest of the game.`);
-  income.push(where, `Dice that don't fit wait in your reserve (up to ${rules.maxReserve}), shown as +N by your name, and come with your next reinforcements.`);
+  const reserve = `(up to ${rules.maxReserve}), shown as +N by your name, and come with your next reinforcements.`;
+  income.push(
+    where,
+    rules.reinforcement === 'frontline' && rules.frontlineOverflow === 'behind'
+      ? `Dice that don't fit on your front line go to the territories just behind it, nearest it first. They wait in your reserve only once every territory you hold is full ${reserve}`
+      : `Dice that don't fit wait in your reserve ${reserve}`,
+  );
   sections.push({ heading: 'Reinforcements', lines: income });
 
   if (rules.connectionBonus !== 'off') {
