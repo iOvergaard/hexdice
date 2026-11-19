@@ -324,6 +324,40 @@ describe('applyAction', () => {
     expect(capture(linkState('catchup')).events.some((e) => e.type === 'linked')).toBe(false);
   });
 
+  it('a catch-up bonus needs fewer territories than the average, counted before the capture', () => {
+    // 12 territories, 2 players: average 6. P0's groups t0+t5 and t2+t4 sit either side of P1's t1; t10 and t11 are spares.
+    const holding = (spares: number[]) =>
+      buildState({
+        owners: [0, 1, 0, 1, 0, 0, 1, 1, 1, 1, ...spares],
+        dice: [6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        edges: [[0, 1], [1, 2], [1, 3], [0, 5], [2, 4], [3, 6], [6, 7], [7, 8], [8, 9], [9, 10], [10, 11]],
+        rules: { connectionBonus: 'catchup' },
+      });
+    const linked = (s: GameState) => capture(s).events.some((e) => e.type === 'linked');
+    // 5 of 12 earns it, though the capture takes P0 to the average.
+    expect(linked(holding([1, 0]))).toBe(true);
+    expect(linked(holding([0, 0]))).toBe(false);
+  });
+
+  it('a catch-up link that also knocks a player out uses the average from before the knockout', () => {
+    // P2's only territory t1 splits P0's t0 and t2. Before: 2 of 6 with 3 players in (average 2), so no bonus.
+    const split = (connectionBonus: 'flat' | 'catchup') =>
+      buildState({ owners: [0, 2, 0, 1, 1, 1], dice: [6, 1, 1, 1, 1, 1], edges: [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5]], rules: { connectionBonus } });
+    const flat = capture(split('flat')).events;
+    expect(flat).toContainEqual({ type: 'playerEliminated', player: 2, by: 0 });
+    expect(flat.some((e) => e.type === 'linked')).toBe(true);
+    expect(capture(split('catchup')).events.some((e) => e.type === 'linked')).toBe(false);
+  });
+
+  it('bonus dice past the cap are lost when the reserve is full', () => {
+    const base = linkState('flat', 8);
+    const full = { ...base, players: base.players.map((p) => (p.id === 0 ? { ...p, reserve: 64 } : p)) };
+    const { state, events } = capture(full);
+    expect(events).toContainEqual({ type: 'linked', player: 0, territory: 1, groups: 2, bonus: 2, toReserve: 1 });
+    expect(state.territories[1]!.dice).toBe(8);
+    expect(state.players[0]!.reserve).toBe(64);
+  });
+
   it('gives no connection bonus when it is off, or when a capture joins nothing', () => {
     const off = capture(linkState('off'));
     expect(off.events.some((e) => e.type === 'linked')).toBe(false);
@@ -486,6 +520,24 @@ describe('last stand', () => {
     const { state, events } = applyAction(even, { type: 'endTurn' });
     expect(stands(events)).toEqual([]);
     expect(state.finalStarted).toBe(true);
+  });
+
+  it('comes after a turn that knocks out two players and leaves two', () => {
+    // Line 0-7: P0 holds t0, t2 and t4; P2 and P3 hold one territory each; P1 holds t5-t7.
+    for (let seed = 1; seed <= 50; seed++) {
+      let s = buildState({
+        owners: [0, 2, 0, 3, 0, 1, 1, 1],
+        dice: [8, 1, 8, 1, 3, 3, 3, 3],
+        edges: [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7]],
+        seed,
+      });
+      s = applyAction(s, { type: 'attack', from: 0, to: 1 }).state;
+      s = applyAction(s, { type: 'attack', from: 2, to: 3 }).state;
+      if (s.players.filter((p) => p.alive).length !== 2) continue;
+      expect(stands(applyAction(s, { type: 'endTurn' }).events)).toEqual([{ type: 'lastStand', player: 1, placed: [5, 6, 7] }]);
+      return;
+    }
+    throw new Error('no seed knocked out both');
   });
 
   it('waits while three or more players are in', () => {
