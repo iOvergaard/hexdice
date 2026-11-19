@@ -1251,14 +1251,33 @@
   .roll-message {
     font-size: 0.95rem;
   }
+  /* Total, ✓ and "7 moved in" share one 119 px line; a wrapped ✓ pushed the winner box below the strip. */
   .roll-side {
+    column-gap: 4px;
     padding: 2px 4px;
   }
+  .roll-defender {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .roll-attacker {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
   .roll-sum {
+    white-space: nowrap;
     font-size: 1.3rem;
   }
   .roll-side.is-winner .roll-sum {
-    font-size: 1.6rem;
+    font-size: 1.3rem;
+  }
+  .roll-side.is-winner .roll-sum::after {
+    content: '\2713';
+    margin-left: 1px;
+    font-size: 0.85rem;
+  }
+  /* Only if a wider font still doesn't fit. */
+  .roll-cost {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .roll-mid {
     min-width: 2.4rem;
