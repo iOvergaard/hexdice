@@ -65,6 +65,7 @@ export function showTitle(
   sound?: TitleSound,
   onContinue?: () => void,
   onHelp?: () => void,
+  whatsNew?: { unseen: boolean; open: () => void },
 ): void {
   let players = Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, initial.players));
   let aiLevel = initial.aiLevel;
@@ -129,6 +130,19 @@ export function showTitle(
     const help = button('How to play', 'how-to-play', 'btn btn-quiet');
     help.addEventListener('click', onHelp);
     extras.append(help);
+  }
+  if (whatsNew) {
+    const news = button("What's new", 'whats-new', 'btn btn-quiet whats-new-button');
+    if (whatsNew.unseen) {
+      news.append(el('span', 'whats-new-dot'));
+      news.setAttribute('aria-label', "What's new (updated)");
+    }
+    news.addEventListener('click', () => {
+      news.querySelector('.whats-new-dot')?.remove();
+      news.removeAttribute('aria-label');
+      whatsNew.open();
+    });
+    extras.append(news);
   }
   if (sound) {
     const toggle = soundToggle();

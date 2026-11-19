@@ -1,4 +1,5 @@
 import type { RulesConfig } from '../engine/types';
+import { listSection, openPanel } from './panel';
 
 export interface HelpSection {
   heading: string;
@@ -73,55 +74,7 @@ export function helpSections(rules: RulesConfig): HelpSection[] {
   return sections;
 }
 
-function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: string): HTMLElementTagNameMap[K] {
-  const e = document.createElement(tag);
-  if (cls) e.className = cls;
-  if (text !== undefined) e.textContent = text;
-  return e;
-}
-
-/** Opens the rules as a modal dialog; Escape, the backdrop, Close and Got it all close it. */
+/** Opens the rules as a modal panel. */
 export function openHowToPlay(rules: RulesConfig): HTMLDialogElement {
-  const open = document.querySelector<HTMLDialogElement>('dialog.help[open]');
-  if (open) return open;
-
-  const dialog = el('dialog', 'help');
-  dialog.dataset.testid = 'help-dialog';
-  dialog.setAttribute('aria-labelledby', 'help-heading');
-
-  const head = el('div', 'help-head');
-  const heading = el('h2', 'help-heading', 'How to play');
-  heading.id = 'help-heading';
-  const close = el('button', 'btn btn-quiet btn-icon help-close', '×');
-  close.type = 'button';
-  close.dataset.testid = 'help-close';
-  close.setAttribute('aria-label', 'Close');
-  head.append(heading, close);
-
-  const body = el('div', 'help-body');
-  for (const s of helpSections(rules)) {
-    const section = el('section', 'help-section');
-    const list = el('ul');
-    for (const line of s.lines) list.append(el('li', undefined, line));
-    section.append(el('h3', undefined, s.heading), list);
-    body.append(section);
-  }
-
-  const done = el('button', 'btn btn-primary', 'Got it');
-  done.type = 'button';
-  done.dataset.testid = 'help-done';
-  const foot = el('div', 'help-foot');
-  foot.append(done);
-
-  dialog.append(head, body, foot);
-  close.addEventListener('click', () => dialog.close());
-  done.addEventListener('click', () => dialog.close());
-  // The dialog's own box is covered by its children, so a click on the dialog itself is on the backdrop.
-  dialog.addEventListener('click', (e) => {
-    if (e.target === dialog) dialog.close();
-  });
-  dialog.addEventListener('close', () => dialog.remove());
-  document.body.append(dialog);
-  dialog.showModal();
-  return dialog;
+  return openPanel('help', 'How to play', helpSections(rules).map((s) => listSection(s.heading, s.lines)));
 }
