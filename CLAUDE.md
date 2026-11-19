@@ -119,7 +119,8 @@ Commits follow Conventional Commits (`type(scope): subject`). `feat`, `rules`, `
 
 - `main` is the integration branch. Feature work happens on branches (`feat/…`, `fix/…`, `proto/…`) or in agent worktrees under `.claude/worktrees/`.
 - Merge with `git merge --no-ff <branch> -m "Merge <branch>: <summary>"`, then run `npm run changelog` and commit it as `chore(changelog): …`.
-- A push to main runs `.github/workflows/deploy.yml`: check, changelog check, sim of 2,000 games and e2e, then a deploy to GitHub Pages, which writes the commit it came from to `/version.txt`.
+- A push to main runs `.github/workflows/deploy.yml`. Three jobs run side by side: check, changelog check and sim of 2,000 games; e2e on desktop; and e2e on phone. Then comes a deploy to GitHub Pages, which writes the commit it came from to `/version.txt`.
+- On CI a failed browser test gets one retry. One that passes on the retry shows as flaky in the run's annotations: fix it, don't live with it.
 - Its `paths` filter skips pushes that only touch Markdown (except `CHANGELOG.md`), `LICENSE`, `docs/`, `playtest/`, `.claude/` or `.github/FUNDING.yml`. Add new non-game paths there. To deploy anyway, run the workflow by hand.
 - **Ask Jacob before every push to main**, and before merging into it.
 - After a push, `gh run watch <id> --exit-status`. If it deployed, `curl -s https://hexdice.snebold.dk/version.txt` prints the commit you pushed.

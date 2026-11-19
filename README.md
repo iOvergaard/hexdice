@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/game-desktop.png" alt="A game in progress on a laptop: a painted continent split into six players' territories, each with its dice; your stack of five is selected and the neighbour you can attack shows a 72% chance of winning" width="820">
+  <img src="docs/screenshots/game-desktop.jpg" alt="A game in progress on a laptop: a painted continent split into six players' territories, each with its dice; your stack of five is selected and the neighbour you can attack shows a 72% chance of winning" width="820">
 </p>
 
 ## How to play
@@ -92,9 +92,9 @@ Rounded to whole percent. Equal stacks win less than half the time, because ties
 - Knocking out a weak player pays every turn after.
 
 <p align="center">
-  <img src="docs/screenshots/game-phone.png" alt="The same game on a phone, with the map turned upright and the player bar below it" width="250">
+  <img src="docs/screenshots/game-phone.jpg" alt="The same game on a phone, with the map turned upright and the player bar below it" width="250">
   &nbsp;
-  <img src="docs/screenshots/title.png" alt="The title screen over the painted map: choose 2 to 8 players and the computer's level, then Start; How to play and What's new sit underneath" width="520">
+  <img src="docs/screenshots/title.jpg" alt="The title screen over the painted map: choose 2 to 8 players and the computer's level, then Start; How to play and What's new sit underneath" width="520">
 </p>
 
 ## What else is in it
