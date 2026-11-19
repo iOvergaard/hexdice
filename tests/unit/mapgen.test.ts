@@ -226,6 +226,23 @@ describe('generateMap', () => {
     expect(avg).toBeLessThanOrEqual(20);
   });
 
+  it('keeps territories compact enough for a two-stack dice token', () => {
+    // Inner hex: all six neighbours in the same territory. Without one, a territory is a thin strip (20% with random growth).
+    let thin = 0;
+    let all = 0;
+    for (const m of maps.values()) {
+      for (const t of m.territories) {
+        all++;
+        const inner = t.cells.some((c) => {
+          const nb = neighbours(c, W, H);
+          return nb.length === 6 && nb.every((n) => m.board.cellTerritory[n] === t.id);
+        });
+        if (!inner) thin++;
+      }
+    }
+    expect(thin / all).toBeLessThan(0.1);
+  });
+
   it('has no single-territory bridge between large regions', () => {
     for (const [seed, m] of maps) {
       for (let cut = 0; cut < m.territories.length; cut++) {
