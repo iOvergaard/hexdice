@@ -6,7 +6,8 @@ import type { GameConfig, GameState, Player, Territory } from './types';
 /**
  * Starting-dice change per seat in turn order, by table size. Moving first is a big edge in small games (2 players:
  * the first seat won 84%) and moving last in big ones (8 players: the last seat won 17%). Tuned with all-Normal AIs over 2,000 games per size
- * (17-11-2026) and checked on a second set of seeds: every seat within about 2–3 points of a fair share.
+ * (17-11-2026) and checked on a second set of seeds: every seat within about 2–3 points of a fair share. Rechecked 19-11-2026: the
+ * last seat in 3-player games and the first in 6- and 7-player games have drifted to the edge of that (plan §3).
  */
 export const SEAT_COMPENSATION: Readonly<Record<number, readonly number[]>> = {
   2: [-7, 0],

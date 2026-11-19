@@ -98,7 +98,7 @@ The simulation fails on:
 - Normal beating Easy in under 70% of the duels;
 - eight-player games running long: p90 over 26 rounds, p99 over 33, or more than 0.5% past 60 (`LENGTH_LIMITS` in `scripts/stats.ts`).
 
-Today's defaults give p90 22 and p99 32 on the CI seeds, so p99 has one round of headroom.
+Today's defaults give p90 22 and p99 31 on the CI seeds, so p99 has two rounds of headroom.
 
 A hands-on report goes in `playtest/DD-MM-YYYY-<change>.md` with screenshots and every scenario marked verified, partly verified or not testable (with why). Bug reports carry the seed and the action log (`__hexdice.actions()`).
 
