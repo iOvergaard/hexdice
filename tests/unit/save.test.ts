@@ -34,6 +34,18 @@ describe('save', () => {
 
   it('restores a fresh game with an empty log', () => {
     expect(restore(serialise(config, []))!.state).toEqual(createGame(config));
+    expect(restore(serialise(config, []))!.events).toEqual([]);
+  });
+
+  it("gives back the actions' events, so a resumed game's summary covers all of it", () => {
+    const { actions } = play(config, (n) => n >= 40);
+    let state = createGame(config);
+    const events = actions.flatMap((a) => {
+      const result = applyAction(state, a);
+      state = result.state;
+      return result.events;
+    });
+    expect(restore(serialise(config, actions))!.events).toEqual(events);
   });
 
   it('keeps the AI random state, and tolerates saves without one', () => {

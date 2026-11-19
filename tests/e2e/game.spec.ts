@@ -199,6 +199,8 @@ test('eliminated player can watch the rest', async ({ page }, info) => {
     await page.waitForTimeout(50);
   }
   await expect(page.getByTestId('overlay-heading')).toHaveText('You were eliminated');
+  await expect(page.getByTestId('ending-sub')).toHaveText(/^You came (2nd|3rd) of 3\.$/);
+  await expect(page.getByTestId('ending-caption')).toContainText('took your last one in round');
   await expect(page.getByTestId('overlay-title')).toBeVisible();
   await shot(page, info, 'eliminated');
   const before = await page.evaluate(() => window.__hexdice!.actions().length);

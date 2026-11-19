@@ -11,10 +11,12 @@ import { hasUnseen, newestChange, parseChangelog } from '../changelog';
 import { openHowToPlay } from '../ui/how-to-play';
 import { openWhatsNew } from '../ui/whats-new';
 import { createGameScreen, showTitle, type GameScreen, type TitleOptions } from '../ui/screens';
+import type { Ending, Mood } from '../ui/ending';
 import { nextSelection, targetsFor } from '../ui/selection';
 import { restore, serialise, type RestoredGame } from './save';
 import { loadSoundOn, Sound } from './sound';
 import { cuesFor } from './sound-cues';
+import { summarise } from './summary';
 import { AI_PLACE_MS, AI_ROLL_MS, ELIMINATION_MS, PAUSE_MS, PLACE_MS, ROLL_MS } from './timing';
 import type { UrlParams } from './url-params';
 
@@ -87,6 +89,8 @@ export class Controller {
   private config: GameConfig | null = null;
   private actionLog: Action[] = [];
   private eventLog: GameEvent[] = [];
+  /** The state the event log starts from: a new game, a resumed game's first state, or a debug load. */
+  private startState: GameState | null = null;
   private aiRng = new Rng(0);
   private speed: Speed;
   private mode: 'play' | 'replay' = 'play';
@@ -135,6 +139,7 @@ export class Controller {
     this.newGame({ players: 0, aiLevel: 'normal' }, saved.config.seed, saved.config);
     this.state = saved.state;
     this.actionLog = [...saved.actions];
+    this.eventLog = [...saved.events];
     if (saved.aiRngState !== null) this.aiRng = new Rng(saved.aiRngState);
     this.begin();
   }
@@ -167,6 +172,7 @@ export class Controller {
     this.skipping = false;
     this.config = state.config;
     this.state = state;
+    this.startState = state;
     this.actionLog = [];
     this.eventLog = [];
     this.replayable = false;
@@ -230,6 +236,7 @@ export class Controller {
     this.skipping = false;
     this.config = config ?? makeConfig(defaultSeats(opts.players - 1, opts.aiLevel), seed, this.ruleOverrides());
     this.state = createGame(this.config);
+    this.startState = this.state;
     this.actionLog = [];
     this.eventLog = [];
     this.replayable = true;
@@ -475,7 +482,7 @@ export class Controller {
     if (record && !this.watching && !this.autoplay && this.humansAllOut(events)) {
       this.paused = true;
       this.renderAll();
-      this.screen!.overlay.show(this.humans() === 1 ? 'You were eliminated' : 'All human players were eliminated', {
+      this.screen!.overlay.show(this.ending(this.humans() === 1 ? 'You were eliminated' : 'All human players were eliminated', 'out'), {
         onTitle: () => this.toTitle(),
         onReplay: null,
         onWatch: () => {
@@ -551,11 +558,24 @@ export class Controller {
     const s = this.state!;
     const winner = s.players[s.winner!]!;
     const title = this.humans() === 1 && winner.kind === 'human' ? 'You win' : `${winner.name} wins`;
-    this.screen!.overlay.show(title, {
+    this.screen!.overlay.show(this.ending(title, winner.kind === 'human' ? 'won' : 'lost'), {
       onTitle: () => this.toTitle(),
       onReplay: this.replayable ? () => void this.replay() : null,
       onWatch: null,
     });
+  }
+
+  private ending(title: string, mood: Mood): Ending {
+    const s = this.state!;
+    const solo = this.humans() === 1 ? s.players.find((p) => p.kind === 'human')!.id : null;
+    return {
+      title,
+      mood,
+      summary: summarise(this.startState ?? s, this.eventLog, s),
+      players: s.players.map((p) => ({ name: p.name, identity: p.identity })),
+      you: solo,
+      territories: s.territories.length,
+    };
   }
 
   private async replay(): Promise<void> {

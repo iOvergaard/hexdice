@@ -1,6 +1,6 @@
 import { applyAction } from '../engine/rules';
 import { createGame } from '../engine/setup';
-import type { Action, GameConfig, GameState } from '../engine/types';
+import type { Action, GameConfig, GameEvent, GameState } from '../engine/types';
 
 const VERSION = 1;
 
@@ -8,6 +8,8 @@ export interface RestoredGame {
   config: GameConfig;
   actions: Action[];
   state: GameState;
+  /** Everything the actions produced, so the end-of-game summary covers the whole game. */
+  events: GameEvent[];
   /** The AI's random state when the game was saved, so the AIs carry on as if never interrupted; null in older saves. */
   aiRngState: number | null;
 }
@@ -34,9 +36,14 @@ export function restore(raw: string | null): RestoredGame | null {
     if (!Number.isInteger(config.seed) || !Array.isArray(config.seats) || !data.actions.every(isAction)) return null;
     const actions = data.actions as Action[];
     let state = createGame(config);
-    for (const action of actions) state = applyAction(state, action).state;
+    const events: GameEvent[] = [];
+    for (const action of actions) {
+      const result = applyAction(state, action);
+      state = result.state;
+      events.push(...result.events);
+    }
     const aiRngState = Number.isInteger(data.ai) ? (data.ai as number) >>> 0 : null;
-    return state.winner === null ? { config, actions, state, aiRngState } : null;
+    return state.winner === null ? { config, actions, state, events, aiRngState } : null;
   } catch {
     return null;
   }
