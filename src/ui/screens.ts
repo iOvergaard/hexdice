@@ -5,6 +5,7 @@ import { Hud } from './hud';
 import { PALETTE, emblemPath, playerColour } from './identity';
 import { RollView } from './roll-view';
 import { soundToggle } from './sound-toggle';
+import { renderEnding, type Ending } from './ending';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -220,9 +221,10 @@ export class PreviewPrompt {
   }
 }
 
+/** Over the board: who won, how the map changed hands, and Replay and Title (or Watch the rest). */
 export class GameOverOverlay {
   private readonly el: HTMLElement;
-  private readonly heading: HTMLElement;
+  private readonly body: HTMLElement;
   private readonly actions: HTMLElement;
 
   constructor(container: HTMLElement) {
@@ -230,17 +232,16 @@ export class GameOverOverlay {
     this.el.dataset.testid = 'overlay';
     this.el.hidden = true;
     this.el.setAttribute('role', 'dialog');
-    this.heading = el('h2', 'overlay-heading');
-    this.heading.dataset.testid = 'overlay-heading';
-    this.heading.id = 'overlay-heading';
     this.el.setAttribute('aria-labelledby', 'overlay-heading');
+    this.body = el('div', 'overlay-body');
     this.actions = el('div', 'overlay-actions');
-    this.el.append(this.heading, this.actions);
+    this.el.append(this.body);
     container.append(this.el);
   }
 
-  show(title: string, actions: { onTitle: () => void; onReplay: (() => void) | null; onWatch: (() => void) | null }): void {
-    this.heading.textContent = title;
+  show(ending: Ending, actions: { onTitle: () => void; onReplay: (() => void) | null; onWatch: (() => void) | null }): void {
+    this.el.className = `overlay mood-${ending.mood}`;
+    const card = renderEnding(ending);
     const buttons: HTMLButtonElement[] = [];
     if (actions.onWatch) {
       const b = button('Watch the rest', 'overlay-watch', 'btn btn-primary');
@@ -256,6 +257,8 @@ export class GameOverOverlay {
     t.addEventListener('click', actions.onTitle);
     buttons.push(t);
     this.actions.replaceChildren(...buttons);
+    card.append(this.actions);
+    this.body.replaceChildren(card);
     this.el.hidden = false;
     buttons[0]?.focus({ preventScroll: true });
   }
@@ -263,6 +266,7 @@ export class GameOverOverlay {
   hide(): void {
     this.el.hidden = true;
     this.actions.replaceChildren();
+    this.body.replaceChildren();
   }
 }
 

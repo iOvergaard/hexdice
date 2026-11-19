@@ -3,6 +3,8 @@
 import '../style.css';
 import { fixtureBoardState } from '../../tests/fixtures/state';
 import type { AttackRolledEvent, GameState, TerritoryId } from '../engine/types';
+import { summarise } from '../game/summary';
+import type { Ending } from './ending';
 import { createGameScreen, showTitle } from './screens';
 import { nextSelection, targetsFor } from './selection';
 
@@ -87,6 +89,17 @@ function start(): void {
     void showRoll(attack, params.has('tumble') ? 1600 : 0);
   }
   if (params.has('preview')) screen.preview.show(seed, { onYes: () => screen.preview.hide(), onNo: () => screen.preview.hide() });
-  if (params.has('overlay')) screen.overlay.show('You were eliminated', { onTitle: () => {}, onReplay: () => {}, onWatch: () => {} });
+  if (params.has('overlay')) {
+    const you = state.players.find((p) => p.kind === 'human')?.id ?? 0;
+    const ending: Ending = {
+      title: 'You were eliminated',
+      mood: 'out',
+      summary: summarise(state, [], state),
+      players: state.players.map((p) => ({ name: p.name, identity: p.identity })),
+      you,
+      territories: state.territories.length,
+    };
+    screen.overlay.show(ending, { onTitle: () => {}, onReplay: () => {}, onWatch: () => {} });
+  }
   paint();
 }
