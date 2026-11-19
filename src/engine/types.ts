@@ -64,6 +64,8 @@ export interface RulesConfig {
   startingDiceFactor: number;
   /** Adjust each seat's starting dice by turn order (`SEAT_COMPENSATION`), so where you sit doesn't decide the game. */
   seatCompensation: boolean;
+  /** Which seat tables: 1 as tuned on 17 and 18-11-2026, 2 retuned on 19-11-2026 for 3, 6 and 7 players under catch-up. */
+  seatTables: number;
 }
 
 export interface SeatConfig {

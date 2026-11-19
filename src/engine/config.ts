@@ -28,6 +28,7 @@ export const DEFAULT_RULES: Readonly<RulesConfig> = {
   lastStandDice: 1,
   startingDiceFactor: 3,
   seatCompensation: true,
+  seatTables: 2,
 };
 
 export function makeConfig(seats: SeatConfig[], seed: number, overrides: Partial<RulesConfig> = {}): GameConfig {

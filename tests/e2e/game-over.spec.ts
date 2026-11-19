@@ -74,8 +74,8 @@ test('the ending fits a 375 px phone', async ({ page }, info) => {
 
 test('a win stamps your emblem; reduced motion keeps the ending still', async ({ page }, info) => {
   test.setTimeout(120_000);
-  // Seed 44 with six players: the AI playing your seat wins.
-  await playToEnd(page, 'seed=44&players=6');
+  // Seed 45 with six players: the AI playing your seat wins.
+  await playToEnd(page, 'seed=45&players=6');
   await expect(page.getByTestId('overlay-heading')).toHaveText('You win');
   const animations = () =>
     page.evaluate(() =>
