@@ -4,10 +4,12 @@ What changed in Hexdice, newest first. Players see this under What's new on the 
 
 `npm run changelog` adds new `feat`, `rules`, `fix` and `perf` commits on top, each with its commit hash, under the day it reached main. Edit the wording freely, but keep the shape: `## DD-MM-YYYY`, then `- <hash> **New:**`, `**Rules:**`, `**Fixed:**` or `**Faster:**` lines (the hash is optional).
 
-<!-- changelog: up to b9aea5782cfe089a08b2592ba9b1679cec176a9f -->
+<!-- changelog: up to 01455c310d8cdd1d1b12a367db8eea1d51d48da7 -->
 
 ## 19-11-2026
 
+- c268ef3 **New:** Every player's total dice in the player bar, under their income
+- 15fb4e7 **New:** A scoreboard at the end of the game: who went out when, attacks won and defences held
 - 8da6c22 **New:** Bigger roll dice on tablets
 - 62c0c4d **Rules:** Dice that don't fit on your front line go to the territories just behind it
 - 1410062 **New:** What's new names your version after the newest change
