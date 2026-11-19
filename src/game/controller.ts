@@ -61,7 +61,7 @@ function openChangelog(): void {
   } catch {
     // Ignore: the dot on What's new is a convenience.
   }
-  openWhatsNew(changelog);
+  openWhatsNew(changelog, __BUILD__);
 }
 
 function readSave(): RestoredGame | null {

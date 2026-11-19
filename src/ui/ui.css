@@ -1010,6 +1010,14 @@
   position: relative;
 }
 
+.whats-new-build {
+  margin: 4px 0 0;
+}
+
+.whats-new-build .change-hash {
+  margin-right: 0;
+}
+
 .whats-new-dot {
   position: absolute;
   top: 5px;
@@ -1025,17 +1033,25 @@
   list-style: none;
 }
 
-/* Time and tag in their own columns, so a long line wraps under its text. */
+/* Hash and tag in their own columns, so a long line wraps under its text. */
 .whats-new .help-section li > span {
   display: flex;
   align-items: baseline;
 }
 
-.change-time {
+.change-hash {
   flex: none;
   margin-right: 8px;
   color: var(--muted);
-  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+  text-decoration: none;
+}
+
+.change-hash:hover,
+.change-hash:focus-visible {
+  color: var(--text);
+  text-decoration: underline;
 }
 
 .change-tag {

@@ -8,20 +8,20 @@ describe('changelog from git', () => {
   it('keeps the player-facing types, without type or scope, capitalised', () => {
     const days = parseLog(
       log(
-        ['c3', '2026-11-18 13:54', 'feat(engine): last stand for the smaller of the last two players'],
-        ['c2', '2026-11-18 10:30', 'rules: catch-up connection bonus on by default'],
-        ['c1', '2026-11-18 10:30', 'fix(ui,game)!: owner colours you can tell apart'],
-        ['c0', '2026-11-18 09:07', 'perf: faster map generation'],
+        ['deb5154aaaa', '2026-11-18 13:54', 'feat(engine): last stand for the smaller of the last two players'],
+        ['1962b1dbbbb', '2026-11-18 10:30', 'rules: catch-up connection bonus on by default'],
+        ['17aa2c0cccc', '2026-11-18 10:30', 'fix(ui,game)!: owner colours you can tell apart'],
+        ['9f00e12dddd', '2026-11-18 09:07', 'perf: faster map generation'],
       ),
     );
     expect(days).toEqual([
       {
         date: '18-11-2026',
         changes: [
-          { time: '13:54', kind: 'new', text: 'Last stand for the smaller of the last two players' },
-          { time: '10:30', kind: 'rules', text: 'Catch-up connection bonus on by default' },
-          { time: '10:30', kind: 'fix', text: 'Owner colours you can tell apart' },
-          { time: '09:07', kind: 'perf', text: 'Faster map generation' },
+          { hash: 'deb5154', kind: 'new', text: 'Last stand for the smaller of the last two players' },
+          { hash: '1962b1d', kind: 'rules', text: 'Catch-up connection bonus on by default' },
+          { hash: '17aa2c0', kind: 'fix', text: 'Owner colours you can tell apart' },
+          { hash: '9f00e12', kind: 'perf', text: 'Faster map generation' },
         ],
       },
     ]);
@@ -45,9 +45,9 @@ describe('changelog from git', () => {
     const days = parseLog(
       log(['n2', '2026-11-18 09:00', 'feat: two'], ['o1', '2026-11-17 16:00', 'fix: one'], ['n1', '2026-11-18 11:00', 'feat: three'], ['n0', '2026-11-18 09:00', 'feat: four']),
     );
-    expect(days.map((d) => [d.date, d.changes.map((c) => `${c.time} ${c.text}`)])).toEqual([
-      ['18-11-2026', ['11:00 Three', '09:00 Two', '09:00 Four']],
-      ['17-11-2026', ['16:00 One']],
+    expect(days.map((d) => [d.date, d.changes.map((c) => `${c.hash} ${c.text}`)])).toEqual([
+      ['18-11-2026', ['n1 Three', 'n2 Two', 'n0 Four']],
+      ['17-11-2026', ['o1 One']],
     ]);
   });
 });
@@ -56,16 +56,16 @@ describe('CHANGELOG.md', () => {
   const sample: Changelog = {
     online: '17-11-2026',
     days: [
-      { date: '18-11-2026', changes: [{ time: '13:54', kind: 'new', text: 'Last stand' }, { time: '10:30', kind: 'rules', text: 'Catch-up on by default' }] },
-      { date: '17-11-2026', changes: [{ time: '12:22', kind: 'fix', text: 'Colours you can tell apart' }, { kind: 'perf', text: 'Faster maps' }] },
+      { date: '18-11-2026', changes: [{ hash: 'deb5154', kind: 'new', text: 'Last stand' }, { hash: '1962b1d', kind: 'rules', text: 'Catch-up on by default' }] },
+      { date: '17-11-2026', changes: [{ hash: 'a6c26ef', kind: 'fix', text: 'Colours you can tell apart' }, { kind: 'perf', text: 'Faster maps' }] },
     ],
   };
 
   it('reads back what it writes, and records the last commit it covers', () => {
     const md = renderChangelog(sample, 'abc123');
-    expect(md).toContain('## 18-11-2026\n\n- 13:54 **New:** Last stand\n- 10:30 **Rules:** Catch-up on by default\n');
-    // A line added by hand may leave out the time.
-    expect(md).toContain('- 12:22 **Fixed:** Colours you can tell apart\n- **Faster:** Faster maps\n');
+    expect(md).toContain('## 18-11-2026\n\n- deb5154 **New:** Last stand\n- 1962b1d **Rules:** Catch-up on by default\n');
+    // A line added by hand may leave out the hash.
+    expect(md).toContain('- a6c26ef **Fixed:** Colours you can tell apart\n- **Faster:** Faster maps\n');
     expect(md).toContain('Hexdice went online on 17-11-2026.');
     expect(parseChangelog(md)).toEqual(sample);
     expect(changelogMarker(md)).toBe('abc123');
@@ -74,8 +74,8 @@ describe('CHANGELOG.md', () => {
   it('keeps hand-edited wording and adds new changes on top, joining a day already there', () => {
     const edited = renderChangelog(sample, 'abc123').replace('Last stand', 'A last stand for the underdog');
     const merged = mergeDays(parseChangelog(edited).days, [
-      { date: '19-11-2026', changes: [{ time: '09:32', kind: 'new', text: "What's new" }] },
-      { date: '18-11-2026', changes: [{ time: '17:00', kind: 'fix', text: 'Late fix' }] },
+      { date: '19-11-2026', changes: [{ hash: '2d49e68', kind: 'new', text: "What's new" }] },
+      { date: '18-11-2026', changes: [{ hash: 'f00ba12', kind: 'fix', text: 'Late fix' }] },
     ]);
     expect(merged.map((d) => [d.date, d.changes.map((c) => c.text)])).toEqual([
       ['19-11-2026', ["What's new"]],

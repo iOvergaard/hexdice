@@ -5,8 +5,8 @@ export type ChangeKind = 'new' | 'rules' | 'fix' | 'perf';
 
 /** One player-facing change. */
 export interface Change {
-  /** HH:MM, Danish time, when it reached main; lines added by hand may leave it out. */
-  time?: string;
+  /** Short hash of the commit that made the change; lines added by hand may leave it out. */
+  hash?: string;
   kind: ChangeKind;
   text: string;
 }
@@ -39,7 +39,7 @@ const ymd = (date: string): string => date.split('-').reverse().join('-');
  * to the player-facing changes by day, newest first.
  */
 export function parseLog(raw: string): ChangelogDay[] {
-  const byDay = new Map<string, Change[]>();
+  const byDay = new Map<string, Array<{ time: string; change: Change }>>();
   for (const line of raw.split('\n')) {
     const [hash, landed, subject] = line.split('\x1f');
     const m = hash && landed && subject ? SUBJECT.exec(subject) : null;
@@ -47,11 +47,12 @@ export function parseLog(raw: string): ChangelogDay[] {
     if (!m || !kind) continue;
     const [iso, time] = landed!.split(' ') as [string, string];
     const text = m[2]!.charAt(0).toUpperCase() + m[2]!.slice(1);
-    byDay.set(iso, [...(byDay.get(iso) ?? []), { time, kind, text }]);
+    byDay.set(iso, [...(byDay.get(iso) ?? []), { time, change: { hash: hash!.slice(0, 7), kind, text } }]);
   }
+  // Newest first by the time each reached main; the time itself isn't kept.
   return [...byDay.entries()]
     .sort(([a], [b]) => b.localeCompare(a))
-    .map(([iso, changes]) => ({ date: dmy(iso), changes: changes.sort((a, b) => (b.time ?? '').localeCompare(a.time ?? '')) }));
+    .map(([iso, changes]) => ({ date: dmy(iso), changes: changes.sort((a, b) => b.time.localeCompare(a.time)).map((c) => c.change) }));
 }
 
 /** New changes go on top; a day already in the changelog gets them before its existing lines. */
@@ -63,7 +64,7 @@ export function mergeDays(existing: ChangelogDay[], fresh: ChangelogDay[]): Chan
 
 const MARKER = /<!-- changelog: up to ([0-9a-f]+) -->/;
 const DAY = /^## (\d{2}-\d{2}-\d{4})\s*$/;
-const LINE = new RegExp(`^- (?:(\\d{2}:\\d{2}) )?\\*\\*(${Object.values(KIND_LABEL).join('|')}):\\*\\* (.+)$`);
+const LINE = new RegExp(`^- (?:([0-9a-f]{7,40}) )?\\*\\*(${Object.values(KIND_LABEL).join('|')}):\\*\\* (.+)$`);
 const ONLINE = /^Hexdice went online on (\d{2}-\d{2}-\d{4})\.$/m;
 
 /** The last commit CHANGELOG.md covers, or null before it was first generated. */
@@ -72,11 +73,11 @@ export function changelogMarker(md: string): string | null {
 }
 
 export function renderChangelog(log: Changelog, upTo: string): string {
-  const days = log.days.map((d) => `## ${d.date}\n\n${d.changes.map((c) => `- ${c.time ? `${c.time} ` : ''}**${KIND_LABEL[c.kind]}:** ${c.text}\n`).join('')}`);
+  const days = log.days.map((d) => `## ${d.date}\n\n${d.changes.map((c) => `- ${c.hash ? `${c.hash} ` : ''}**${KIND_LABEL[c.kind]}:** ${c.text}\n`).join('')}`);
   return [
     '# Changelog\n',
     'What changed in Hexdice, newest first. Players see this under What\'s new on the title screen.\n',
-    '`npm run changelog` adds new `feat`, `rules`, `fix` and `perf` commits on top, with the time (Danish) each reached main. Edit the wording freely, but keep the shape: `## DD-MM-YYYY`, then `- HH:MM **New:**`, `**Rules:**`, `**Fixed:**` or `**Faster:**` lines (the time is optional).\n',
+    '`npm run changelog` adds new `feat`, `rules`, `fix` and `perf` commits on top, each with its commit hash, under the day it reached main. Edit the wording freely, but keep the shape: `## DD-MM-YYYY`, then `- <hash> **New:**`, `**Rules:**`, `**Fixed:**` or `**Faster:**` lines (the hash is optional).\n',
     `<!-- changelog: up to ${upTo} -->\n`,
     ...days,
     `Hexdice went online on ${log.online}.\n`,
@@ -90,7 +91,7 @@ export function parseChangelog(md: string): Changelog {
     if (day) days.push({ date: day[1]!, changes: [] });
     const change = LINE.exec(line);
     const kind = change ? (Object.keys(KIND_LABEL) as ChangeKind[]).find((k) => KIND_LABEL[k] === change[2]) : undefined;
-    if (change && kind && days.length > 0) days.at(-1)!.changes.push({ ...(change[1] ? { time: change[1] } : {}), kind, text: change[3]! });
+    if (change && kind && days.length > 0) days.at(-1)!.changes.push({ ...(change[1] ? { hash: change[1] } : {}), kind, text: change[3]! });
   }
   return { days: days.filter((d) => d.changes.length > 0), online: ONLINE.exec(md)?.[1] ?? '' };
 }
