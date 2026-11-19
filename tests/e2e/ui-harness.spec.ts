@@ -69,7 +69,11 @@ test('an 8 vs 8 roll shows 8 cube dice a side on one row', async ({ page }) => {
 });
 
 test('rolling dice tumble, and keep still with reduced motion', async ({ page }) => {
-  const tumble = () => page.locator('.is-rolling .die').first().evaluate((el) => getComputedStyle(el).animationName);
+  // Find and read the die in one step: the tumble repaints the dice every 80 ms, and a die read after a repaint is detached.
+  const tumble = async () => {
+    await page.locator('.is-rolling .die').first().waitFor();
+    return page.evaluate(() => getComputedStyle(document.querySelector('.is-rolling .die')!).animationName);
+  };
   await page.goto('/harness.html?seed=7&players=8&roll=1&tumble=1');
   expect(await tumble()).toBe('tumble');
   await page.emulateMedia({ reducedMotion: 'reduce' });
