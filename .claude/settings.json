@@ -1,5 +1,12 @@
 {
   "permissions": {
-    "allow": ["Bash(npm *)", "Bash(npx *)"]
+    "allow": [
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "mcp__Claude_Browser",
+      "mcp__Claude_Code_iOS_Simulator",
+      "Bash(xcrun simctl *)",
+      "Bash(open -a Simulator)"
+    ]
   }
 }
