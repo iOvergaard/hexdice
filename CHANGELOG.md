@@ -4,10 +4,12 @@ What changed in Hexdice, newest first. Players see this under What's new on the 
 
 `npm run changelog` adds new `feat`, `rules`, `fix` and `perf` commits on top, each with its commit hash, under the day it reached main. Edit the wording freely, but keep the shape: `## DD-MM-YYYY`, then `- <hash> **New:**`, `**Rules:**`, `**Fixed:**` or `**Faster:**` lines (the hash is optional).
 
-<!-- changelog: up to 6311945f953d6ceaf1ff0f73a97a4c2f3e16d9ed -->
+<!-- changelog: up to cc79cce087b2f045f79360166643e9a6d8faf1a5 -->
 
 ## 19-11-2026
 
+- 9216efb **Fixed:** Big rolls fit the roll strip on narrow phones and tablets
+- c34b66b **Fixed:** The winning roll's tick no longer pushes the result box over the map on phones
 - 66c5900 **New:** Title screen shows the painted map and its dice behind the menu
 - 1fb2262 **New:** The end of a game leads with the winner's colours and shows how the map changed hands
 - 89892ed **New:** Attack rolls show the same cube dice as the board
