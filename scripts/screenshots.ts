@@ -60,13 +60,13 @@ try {
   const desktop = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   await desktop.goto(url);
   await desktop.getByTestId('title').waitFor();
-  await desktop.screenshot({ path: `${out}/title.png` });
+  await desktop.screenshot({ path: `${out}/title.jpg`, type: 'jpeg', quality: 85 });
   await midGame(desktop);
-  await desktop.screenshot({ path: `${out}/game-desktop.png` });
+  await desktop.screenshot({ path: `${out}/game-desktop.jpg`, type: 'jpeg', quality: 85 });
 
   const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   await midGame(phone);
-  await phone.screenshot({ path: `${out}/game-phone.png` });
+  await phone.screenshot({ path: `${out}/game-phone.jpg`, type: 'jpeg', quality: 85 });
   console.log(`Screenshots in ${out}/ (seed ${seed}, round ${round}, ${players} players)`);
 } finally {
   await browser.close();
