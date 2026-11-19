@@ -22,6 +22,7 @@ export const DEFAULT_RULES: Readonly<RulesConfig> = {
   maxReserve: 64,
   lossRule: 'drawAttrition',
   reinforcement: 'frontline',
+  frontlineOverflow: 'behind',
   connectionBonus: 'catchup',
   eliminationBonus: 1,
   lastStandDice: 1,

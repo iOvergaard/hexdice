@@ -42,6 +42,10 @@ describe('how to play', () => {
   it('follows the reinforcement rule and knockout bonus', () => {
     expect(section('Reinforcements', { reinforcement: 'random' })).toContain('any of your territories');
     expect(section('Reinforcements', { reinforcement: 'weighted' })).toContain('three times as likely');
+    expect(section('Reinforcements')).toContain("Dice that don't fit on your front line go to the territories just behind it, nearest it first");
+    expect(section('Reinforcements')).toContain('only once every territory you hold is full');
+    expect(section('Reinforcements', { frontlineOverflow: 'reserve' })).toContain("Dice that don't fit wait in your reserve");
+    expect(section('Reinforcements', { reinforcement: 'random' })).not.toContain('just behind it');
     expect(section('Reinforcements', { eliminationBonus: 0 })).not.toContain('knock out');
     expect(section('Tips', { reinforcement: 'random' })).not.toContain('front');
   });

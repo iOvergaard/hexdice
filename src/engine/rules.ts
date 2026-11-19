@@ -172,6 +172,17 @@ function linkBonus(s: GameState, player: PlayerId, at: TerritoryId, joined: numb
   events.push({ type: 'linked', player, territory: at, groups: joined.length, bonus, toReserve: bonus - onBoard });
 }
 
+/** Steps from each of the player's territories to their front line (0 = borders an enemy); unreachable ones are left out. */
+function stepsBehindFront(s: GameState, player: PlayerId): Map<TerritoryId, number> {
+  const steps = new Map<TerritoryId, number>();
+  let ring = s.territories.filter((t) => t.owner === player && t.neighbours.some((n) => s.territories[n]!.owner !== player)).map((t) => t.id);
+  for (let d = 0; ring.length > 0; d++) {
+    for (const id of ring) steps.set(id, d);
+    ring = [...new Set(ring.flatMap((id) => s.territories[id]!.neighbours))].filter((n) => s.territories[n]!.owner === player && !steps.has(n));
+  }
+  return steps;
+}
+
 /** Mutates the (already cloned) state: places largest group + reserve dice for the current player. */
 function reinforce(s: GameState, rng: Rng, events: GameEvent[]): void {
   const player = s.players[s.current]!;
@@ -195,6 +206,21 @@ function reinforce(s: GameState, rng: Rng, events: GameEvent[]): void {
     placed.push(t.id);
     remaining--;
     if (t.dice >= max) open.splice(i, 1);
+  }
+
+  // Front-line dice that don't fit go behind the front, nearest it first, before any wait in the reserve.
+  if (rule === 'frontline' && s.config.frontlineOverflow === 'behind' && remaining > 0) {
+    const steps = stepsBehindFront(s, player.id);
+    const behind = s.territories.filter((t) => t.owner === player.id && t.dice < max && steps.get(t.id) !== 0);
+    while (remaining > 0 && behind.length > 0) {
+      const nearest = Math.min(...behind.map((t) => steps.get(t.id) ?? Infinity));
+      const tier = behind.filter((t) => (steps.get(t.id) ?? Infinity) === nearest);
+      const t = tier[rng.int(tier.length)]!;
+      t.dice++;
+      placed.push(t.id);
+      remaining--;
+      if (t.dice >= max) behind.splice(behind.indexOf(t), 1);
+    }
   }
 
   player.reserve = Math.min(s.config.maxReserve, remaining);

@@ -5,7 +5,7 @@ import { Rng } from '../src/engine/rng';
 import { applyAction, isLegalAttack } from '../src/engine/rules';
 import { aiSeats } from '../src/engine/seats';
 import { createGame } from '../src/engine/setup';
-import type { AiLevel, ConnectionBonusRule, GameState, LossRule, ReinforcementRule } from '../src/engine/types';
+import type { AiLevel, ConnectionBonusRule, FrontlineOverflow, GameState, LossRule, ReinforcementRule } from '../src/engine/types';
 import { LENGTH_LIMITS, lengthFailures, lengthStats } from './stats';
 
 const ROUND_CAP = 1000;
@@ -27,6 +27,8 @@ if (!['random', 'frontline', 'weighted'].includes(reinforcement)) throw new Erro
 const connectionBonus = arg('connection', DEFAULT_RULES.connectionBonus) as ConnectionBonusRule;
 if (!['off', 'flat', 'smaller', 'catchup'].includes(connectionBonus)) throw new Error(`unknown --connection ${connectionBonus}`);
 const lastStandDice = Number(arg('last-stand', String(DEFAULT_RULES.lastStandDice)));
+const frontlineOverflow = arg('overflow', DEFAULT_RULES.frontlineOverflow) as FrontlineOverflow;
+if (!['behind', 'reserve'].includes(frontlineOverflow)) throw new Error(`unknown --overflow ${frontlineOverflow}`);
 
 let crashes = 0;
 let illegalActions = 0;
@@ -45,7 +47,7 @@ interface Result {
 
 function play(levels: AiLevel[], seed: number): Result {
   try {
-    let state = createGame(makeConfig(aiSeats(levels), seed, { lossRule, eliminationBonus, reinforcement, connectionBonus, lastStandDice }));
+    let state = createGame(makeConfig(aiSeats(levels), seed, { lossRule, eliminationBonus, reinforcement, connectionBonus, lastStandDice, frontlineOverflow }));
     const rng = new Rng(seed ^ 0x9e3779b9);
     while (state.winner === null) {
       if (state.round > ROUND_CAP) {
@@ -109,7 +111,7 @@ const tooLong = lengthFailures(lengths);
 const result = {
   date: new Date().toISOString(),
   games,
-  rules: { lossRule, eliminationBonus, reinforcement, connectionBonus, lastStandDice },
+  rules: { lossRule, eliminationBonus, reinforcement, connectionBonus, lastStandDice, frontlineOverflow },
   links: { count: links, dice: linkDice },
   lastStands,
   normalVsEasy: { games: duelGames, normalWins, winRate },
@@ -125,7 +127,7 @@ const result = {
 writeFileSync(out, JSON.stringify(result, null, 2) + '\n');
 
 console.log(`Links: ${links} (${linkDice} bonus dice) · last stands: ${lastStands}`);
-console.log(`Rules: lossRule=${lossRule} eliminationBonus=${eliminationBonus} reinforcement=${reinforcement} connection=${connectionBonus} lastStand=${lastStandDice}; ${attacks} attacks, ${ties} draws (${((ties / Math.max(1, attacks)) * 100).toFixed(1)}%)`);
+console.log(`Rules: lossRule=${lossRule} eliminationBonus=${eliminationBonus} reinforcement=${reinforcement} connection=${connectionBonus} lastStand=${lastStandDice} overflow=${frontlineOverflow}; ${attacks} attacks, ${ties} draws (${((ties / Math.max(1, attacks)) * 100).toFixed(1)}%)`);
 console.log(`Normal vs Easy: ${normalWins}/${duelGames} (${(winRate * 100).toFixed(1)}%)`);
 console.log(`8-player: avg ${result.eightPlayer.avgRounds.toFixed(1)} rounds, max ${maxRounds}, wins by seat [${winsBySeat.join(', ')}]`);
 console.log(
