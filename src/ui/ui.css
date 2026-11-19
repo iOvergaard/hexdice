@@ -518,15 +518,9 @@
   justify-content: flex-end;
 }
 
-/* Roll dice are drawn with the board's faces (.u-face, .u-side, .u-top); --die is the width of a flat die. */
+/* Roll dice are the board's cubes (.u-face, .u-side, .u-top); --die is the front face's width plus a margin. */
 .die {
   flex: none;
-  width: var(--die);
-  height: var(--die);
-}
-
-/* Same front face as a flat die, plus the side and top (viewBox 25 x 22.5 against 20 x 20). */
-.die-cube {
   width: calc(var(--die) * 1.25);
   height: calc(var(--die) * 1.125);
 }
@@ -1078,15 +1072,12 @@
     padding: 6px 8px;
     gap: 4px;
   }
+  /* 8 cubes fit the row only by tucking each side under the next die. */
   .roll-dice {
     flex-wrap: nowrap;
-    gap: 1px;
-  }
-  /* 8 cubes fit the row only by tucking each side under the next die. */
-  .roll-dice:has(> .die-cube) {
     gap: 0;
   }
-  .die-cube + .die-cube {
+  .die + .die {
     margin-left: calc(var(--die) * -0.215);
   }
   .roll-message {

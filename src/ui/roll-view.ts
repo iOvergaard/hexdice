@@ -1,24 +1,19 @@
 import { diceAfterFailedAttack } from '../engine/rules';
 import type { AttackRolledEvent, GameState, Player } from '../engine/types';
 import { darken, emblemPath, pipColour, playerColour } from './identity';
-import { CUBE_VIEWBOX, FLAT_VIEWBOX, cubeDie, flatDie } from './units';
+import { CUBE_VIEWBOX, cubeDie } from './units';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
-/** Roll dice look while Jacob compares them: ?rolldice=flat, cube otherwise. */
-export type RollDiceLook = 'cube' | 'flat';
-export function rollDiceLook(search: string): RollDiceLook {
-  return new URLSearchParams(search).get('rolldice') === 'flat' ? 'flat' : 'cube';
-}
-
-function dieFace(value: number, look: RollDiceLook): SVGSVGElement {
+/** A rolled die, drawn as the cube on top of a board stack. */
+function dieFace(value: number): SVGSVGElement {
   const el = document.createElementNS(SVG_NS, 'svg');
-  el.setAttribute('viewBox', look === 'cube' ? CUBE_VIEWBOX : FLAT_VIEWBOX);
-  el.setAttribute('class', `die die-${look}`);
+  el.setAttribute('viewBox', CUBE_VIEWBOX);
+  el.setAttribute('class', 'die');
   el.setAttribute('role', 'img');
   el.dataset.value = String(value);
   el.setAttribute('aria-label', String(value));
-  el.innerHTML = look === 'cube' ? cubeDie(value) : flatDie(value);
+  el.innerHTML = cubeDie(value);
   return el;
 }
 
@@ -75,7 +70,6 @@ export class RollView {
   private timer: ReturnType<typeof setInterval> | null = null;
   private settleTimer: ReturnType<typeof setTimeout> | null = null;
   private finish: (() => void) | null = null;
-  private readonly look = rollDiceLook(typeof location === 'undefined' ? '' : location.search);
 
   constructor(container: HTMLElement) {
     this.root = document.createElement('section');
@@ -212,6 +206,6 @@ export class RollView {
   }
 
   private paintDice(side: Side, rolls: number[], random = false): void {
-    side.dice.replaceChildren(...rolls.map((v) => dieFace(random ? 1 + Math.floor(Math.random() * 6) : v, this.look)));
+    side.dice.replaceChildren(...rolls.map((v) => dieFace(random ? 1 + Math.floor(Math.random() * 6) : v)));
   }
 }

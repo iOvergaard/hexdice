@@ -44,6 +44,39 @@ test('no horizontal scroll', async ({ page }) => {
   }
 });
 
+test('an 8 vs 8 roll shows 8 cube dice a side on one row', async ({ page }) => {
+  await page.goto('/harness.html?seed=7&players=8&roll=1&dice=8x8');
+  await expect(page.getByTestId('roll-attacker-sum')).toHaveText('32');
+  for (const role of ['attacker', 'defender']) {
+    const side = page.getByTestId(`roll-${role}`);
+    const dice = side.locator('.die');
+    await expect(dice).toHaveCount(8);
+    for (const die of await dice.all()) {
+      const value = await die.getAttribute('data-value');
+      expect(value).toMatch(/^[1-6]$/);
+      await expect(die).toHaveAttribute('aria-label', value!);
+      await expect(die.locator('.u-face, .u-side, .u-top')).toHaveCount(3);
+    }
+    const row = (await side.locator('.roll-dice').boundingBox())!;
+    const first = (await dice.first().boundingBox())!;
+    const last = (await dice.last().boundingBox())!;
+    expect(first.x).toBeGreaterThanOrEqual(row.x - 0.5);
+    expect(last.x + last.width).toBeLessThanOrEqual(row.x + row.width + 0.5);
+    expect(Math.abs(last.y - first.y)).toBeLessThan(1);
+  }
+  const fits = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+  expect(fits).toBe(true);
+});
+
+test('rolling dice tumble, and keep still with reduced motion', async ({ page }) => {
+  const tumble = () => page.locator('.is-rolling .die').first().evaluate((el) => getComputedStyle(el).animationName);
+  await page.goto('/harness.html?seed=7&players=8&roll=1&tumble=1');
+  expect(await tumble()).toBe('tumble');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/harness.html?seed=7&players=8&roll=1&tumble=1');
+  expect(await tumble()).toBe('none');
+});
+
 test('title screen has 2–8 player chips', async ({ page }) => {
   await page.goto('/harness.html?title=1&players=5');
   for (let n = 2; n <= 8; n++) await expect(page.getByTestId(`players-${n}`)).toHaveText(`${n} players`);
