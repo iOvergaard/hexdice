@@ -70,7 +70,7 @@ export function helpSections(rules: RulesConfig): HelpSection[] {
       heading: 'The final',
       lines: [
         `In a game of three or more players, the first time a turn ends with only two left, the one with fewer territories makes a last stand: +${dice(rules.lastStandDice)} on each of their territories.`,
-        'Knock out both of your last two rivals in one turn and nobody gets one.',
+        'With three of you left, knocking out one rival hands the smaller of the last two a last stand. Knock out both in one turn and nobody gets one.',
       ],
     });
   }

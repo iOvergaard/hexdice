@@ -15,7 +15,7 @@ export type Speed = 'slow' | 'normal' | 'fast' | 'instant';
 export type LossRule = 'classic' | 'attrition' | 'drawAttrition' | 'halfStack';
 /**
  * Where reinforcement dice land. 'random': any own territory with room. 'frontline': only territories facing an enemy
- * (overflow goes to the reserve). 'weighted': territories facing an enemy are three times as likely.
+ * (what doesn't fit: `FrontlineOverflow`). 'weighted': territories facing an enemy are three times as likely.
  */
 export type ReinforcementRule = 'random' | 'frontline' | 'weighted';
 /**

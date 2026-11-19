@@ -77,11 +77,11 @@ Rounded to whole percent. Equal stacks win less than half the time, because ties
 ### The final
 
 - In a game of three or more players, the first time a turn ends with only two left, the one with fewer territories makes a **last stand**: +1 die on each of their territories.
-- Knock out both of your last two rivals in one turn and nobody gets one.
+- With three of you left, knocking out one rival hands the smaller of the last two a last stand. Knock out both in one turn and nobody gets one.
 
 ### The computer players
 
-- **Easy** attacks at random, picking only fights it can win, and sometimes ends its turn early.
+- **Easy** attacks at random, even against long odds, and sometimes ends its turn early.
 - **Normal** attacks when the odds are at least even, or from a full stack of 8 when they are 30% or better. It prefers captures that grow its largest group, break up the leader's or knock a player out, and the whole table gangs up on anyone who runs away with the map. That includes you.
 
 ### Tips

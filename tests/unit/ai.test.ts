@@ -76,6 +76,13 @@ describe('ai', () => {
     expect(attacks).toBeGreaterThan(0);
   });
 
+  it('easy attacks at random, even against long odds, and sometimes ends its turn early', () => {
+    const state = buildState({ owners: [0, 1], dice: [2, 8], edges: [[0, 1]] });
+    const picks = Array.from({ length: 100 }, (_, seed) => chooseAction(state, 'easy', new Rng(seed)).type);
+    expect(picks).toContain('attack');
+    expect(picks).toContain('endTurn');
+  });
+
   it('is deterministic for the same rng seed', () => {
     const state = createGame(makeConfig(aiSeats(['easy', 'normal', 'normal', 'easy']), 7));
     for (const level of LEVELS) {

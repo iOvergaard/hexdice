@@ -63,7 +63,8 @@ describe('how to play', () => {
     const final = section('The final')!;
     expect(final).toContain('three or more players');
     expect(final).toContain('fewer territories makes a last stand: +1 die on each of their territories');
-    expect(final).toContain('Knock out both of your last two rivals in one turn');
+    expect(final).toContain('knocking out one rival hands the smaller of the last two a last stand');
+    expect(final).toContain('Knock out both in one turn and nobody gets one');
     expect(section('The final', { lastStandDice: 2 })).toContain('+2 dice on each');
     expect(text({ lastStandDice: 0 })).not.toContain('The final');
   });
