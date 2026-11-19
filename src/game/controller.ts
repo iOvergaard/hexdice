@@ -38,6 +38,15 @@ function loadTitle(): TitleOptions {
   return { ...DEFAULT_TITLE };
 }
 
+/** The board behind the title: always the same deal, made once per visit. */
+const TITLE_SEED = 2026;
+const TITLE_PLAYERS = 6;
+let titleBoard: GameState | null = null;
+
+function titleScene(): GameState {
+  return (titleBoard ??= createGame(makeConfig(defaultSeats(TITLE_PLAYERS - 1), TITLE_SEED)));
+}
+
 function saveTitle(opts: TitleOptions): void {
   try {
     localStorage.setItem(TITLE_KEY, JSON.stringify(opts));
@@ -212,6 +221,7 @@ export class Controller {
       saved ? () => this.resume(saved) : undefined,
       () => openHowToPlay({ ...DEFAULT_RULES, ...this.ruleOverrides() }),
       { unseen: hasUnseen(changelog, seenChange()), open: openChangelog },
+      titleScene,
     );
   }
 

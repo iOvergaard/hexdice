@@ -10,7 +10,8 @@ const params = new URLSearchParams(location.search);
 const root = document.querySelector<HTMLElement>('#app')!;
 
 if (params.has('title')) {
-  showTitle(root, { players: Number(params.get('players') ?? 8), aiLevel: 'normal' }, () => {});
+  const scene = () => fixtureBoardState(Number(params.get('seed') ?? 2026), 6);
+  showTitle(root, { players: Number(params.get('players') ?? 8), aiLevel: 'normal' }, () => {}, undefined, undefined, undefined, undefined, scene);
 } else {
   start();
 }

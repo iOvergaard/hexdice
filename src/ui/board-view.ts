@@ -105,10 +105,14 @@ export class BoardView {
   private tapHandler: (territory: TerritoryId | null) => void = () => {};
   private interactive = true;
 
-  constructor(container: HTMLElement) {
+  /** `scenery`: a still picture (the title screen) with no taps, test hooks or accessible name. */
+  constructor(
+    container: HTMLElement,
+    private readonly scenery = false,
+  ) {
     this.container = container;
-    this.root = svg('svg', { role: 'group', 'aria-label': 'Game board' }, 'board');
-    this.root.dataset.testid = 'board';
+    this.root = svg('svg', scenery ? { 'aria-hidden': 'true' } : { role: 'group', 'aria-label': 'Game board' }, 'board');
+    if (!scenery) this.root.dataset.testid = 'board';
     this.root.setAttribute('preserveAspectRatio', 'xMidYMid meet');
 
     this.defs = svg('defs');
@@ -130,7 +134,7 @@ export class BoardView {
     container.append(this.root);
 
     this.root.addEventListener('pointerup', (e) => {
-      if (!e.isPrimary || e.button > 0 || !this.interactive) return;
+      if (!e.isPrimary || e.button > 0 || !this.interactive || this.scenery) return;
       const hit = (e.target as Element | null)?.closest<SVGElement>('[data-territory],[data-token-for]');
       this.tapHandler(hit ? Number(hit.dataset.territory ?? hit.dataset.tokenFor) : null);
     });
@@ -474,8 +478,10 @@ export class BoardView {
     state.territories.forEach((_t, id) => {
       const geo = this.geometry[id]!;
       const group = svg('g', {}, 'territory');
-      group.dataset.territory = String(id);
-      group.dataset.testid = `territory-${id}`;
+      if (!this.scenery) {
+        group.dataset.territory = String(id);
+        group.dataset.testid = `territory-${id}`;
+      }
       const fill = svg('path', { d: geo.fill }, 'fill');
 
       const clip = svg('clipPath', { id: `hd-t-${id}` });
@@ -488,8 +494,10 @@ export class BoardView {
       group.append(fill, borders);
 
       const token = svg('g', {}, 'token');
-      token.dataset.testid = `token-${id}`;
-      token.dataset.tokenFor = String(id);
+      if (!this.scenery) {
+        token.dataset.testid = `token-${id}`;
+        token.dataset.tokenFor = String(id);
+      }
       const body = svg('g', {}, 'token-body');
       const units = createUnits(this.variant, id);
       body.append(units.root);
