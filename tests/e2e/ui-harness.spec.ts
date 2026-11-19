@@ -68,6 +68,31 @@ test('an 8 vs 8 roll shows 8 cube dice a side on one row', async ({ page }) => {
   expect(fits).toBe(true);
 });
 
+test('an 8 vs 8 roll stays inside the strip from 320 to 1024 px', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'sets its own viewport sizes');
+  for (const width of [320, 360, 375, 641, 720, 768, 1024]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('/harness.html?seed=7&players=8&roll=1&dice=8x8');
+    await expect(page.getByTestId('roll-attacker-sum')).toHaveText('32');
+    const out = await page.evaluate(() => {
+      let worst = 0;
+      const within = (inner: DOMRect, outer: DOMRect) => {
+        worst = Math.max(worst, outer.left - inner.left, inner.right - outer.right, outer.top - inner.top, inner.bottom - outer.bottom);
+      };
+      const roll = document.querySelector('.roll')!.getBoundingClientRect();
+      for (const side of document.querySelectorAll('.roll-side')) {
+        const box = side.getBoundingClientRect();
+        within(box, roll);
+        for (const part of side.querySelectorAll('.roll-who, .roll-dice, .roll-sum, .roll-cost')) within(part.getBoundingClientRect(), box);
+        const row = side.querySelector('.roll-dice')!.getBoundingClientRect();
+        for (const die of side.querySelectorAll('.die')) within(die.getBoundingClientRect(), row);
+      }
+      return worst;
+    });
+    expect(out, `${width} px`).toBeLessThanOrEqual(0.5);
+  }
+});
+
 test('rolling dice tumble, and keep still with reduced motion', async ({ page }) => {
   const tumble = () => page.locator('.is-rolling .die').first().evaluate((el) => getComputedStyle(el).animationName);
   await page.goto('/harness.html?seed=7&players=8&roll=1&tumble=1');
