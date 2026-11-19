@@ -4,6 +4,13 @@ import { diceAfterFailedAttack, largestGroup, legalAttacks } from '../engine/rul
 import type { Action, GameState, PlayerId, Territory } from '../engine/types';
 
 const MIN_WIN = 0.5;
+/** A runaway holds at least this many times the average territories of the players still in, and at least RUNAWAY_MIN. */
+const RUNAWAY_RATIO = 1.5;
+const RUNAWAY_MIN = 8;
+/** Added to any attack on a runaway, so the table gangs up on whoever pulls away (19-11-2026). */
+const RUNAWAY_BONUS = 0.6;
+/** Per territory an attack cuts from the leader's largest group. */
+const LEADER_BREAK = 0.15;
 
 function withOwner(state: GameState, id: number, owner: PlayerId): GameState {
   const territories = state.territories.slice();
@@ -26,7 +33,15 @@ function leader(state: GameState): PlayerId | null {
   return best;
 }
 
-/** Odds-driven: take good fights that grow its group or break the leader's; never stalls on a full board. */
+/** Alive opponents holding well above the average territory count. */
+function runaways(state: GameState): Set<PlayerId> {
+  const alive = state.players.filter((p) => p.alive && p.id !== state.current);
+  const average = state.territories.length / (alive.length + 1);
+  const held = (id: PlayerId) => state.territories.filter((t) => t.owner === id).length;
+  return new Set(alive.map((p) => p.id).filter((id) => held(id) >= Math.max(RUNAWAY_MIN, RUNAWAY_RATIO * average)));
+}
+
+/** Odds-driven: take good fights that grow its group, break the leader's or hit a runaway; never stalls on a full board. */
 export function chooseNormal(state: GameState, _rng: Rng): Action {
   const me = state.current;
   const max = state.config.maxDice;
@@ -36,6 +51,7 @@ export function chooseNormal(state: GameState, _rng: Rng): Action {
   const myGroup = largestGroup(state, me);
   const top = leader(state);
   const topGroup = top === null ? 0 : largestGroup(state, top);
+  const run = runaways(state);
 
   let best: { from: number; to: number; score: number } | null = null;
   for (const a of attacks) {
@@ -46,7 +62,8 @@ export function chooseNormal(state: GameState, _rng: Rng): Action {
 
     const after = withOwner(state, a.to, me);
     let bonus = 0.08 * (largestGroup(after, me) - myGroup);
-    if (dst.owner === top) bonus += 0.06 * (topGroup - largestGroup(after, top));
+    if (dst.owner === top) bonus += LEADER_BREAK * (topGroup - largestGroup(after, top));
+    if (run.has(dst.owner)) bonus += RUNAWAY_BONUS;
     if (state.territories.filter((t) => t.owner === dst.owner).length === 1) bonus += 0.3;
     // Cost of losing scales with the dice the loss rule takes off the stack.
     const lost = src.dice - diceAfterFailedAttack(state.config, src.dice, dst.dice, false);
