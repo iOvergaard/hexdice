@@ -15,6 +15,7 @@
     "sim": "tsx scripts/sim.ts",
     "pacing": "tsx scripts/pacing.ts",
     "icons": "tsx scripts/icons.ts",
+    "changelog": "tsx scripts/changelog.ts",
     "e2e": "playwright test"
   },
   "devDependencies": {

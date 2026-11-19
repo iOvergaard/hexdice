@@ -986,6 +986,63 @@
   font-weight: 900;
 }
 
+.help-note {
+  margin: 16px 0 4px;
+  color: var(--muted);
+}
+
+/* ---------- what's new ---------- */
+
+.whats-new-button {
+  position: relative;
+}
+
+.whats-new-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ffd34d;
+}
+
+.whats-new .help-section ul {
+  padding-left: 0;
+  list-style: none;
+}
+
+.change-tag {
+  display: inline-block;
+  min-width: 4.6em;
+  margin-right: 8px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  color: var(--ink);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-transform: uppercase;
+  vertical-align: 2px;
+}
+
+.change-tag.is-new {
+  background: #ffd34d;
+}
+
+.change-tag.is-rules {
+  background: #8fc3ff;
+}
+
+.change-tag.is-fix {
+  background: #9ee6a8;
+}
+
+.change-tag.is-perf {
+  background: #f2b3ff;
+}
+
 /* ---------- phone ---------- */
 
 @media (max-width: 640px) {

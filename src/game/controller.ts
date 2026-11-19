@@ -6,7 +6,10 @@ import { applyAction, isLegalAttack, largestGroup } from '../engine/rules';
 import { defaultSeats } from '../engine/seats';
 import { createGame } from '../engine/setup';
 import type { Action, AiLevel, GameConfig, GameEvent, GameState, RulesConfig, Speed, TerritoryId } from '../engine/types';
+import changelogMarkdown from '../../CHANGELOG.md?raw';
+import { hasUnseen, newestChange, parseChangelog } from '../changelog';
 import { openHowToPlay } from '../ui/how-to-play';
+import { openWhatsNew } from '../ui/whats-new';
 import { createGameScreen, showTitle, type GameScreen, type TitleOptions } from '../ui/screens';
 import { nextSelection, targetsFor } from '../ui/selection';
 import { restore, serialise, type RestoredGame } from './save';
@@ -16,7 +19,9 @@ import { AI_PLACE_MS, AI_ROLL_MS, ELIMINATION_MS, PAUSE_MS, PLACE_MS, ROLL_MS } 
 import type { UrlParams } from './url-params';
 
 const TITLE_KEY = 'hexdice:title';
+const SEEN_KEY = 'hexdice:changelog-seen';
 const SAVE_KEY = 'hexdice:save';
+const changelog = parseChangelog(changelogMarkdown);
 const DEFAULT_TITLE: TitleOptions = { players: 8, aiLevel: 'normal' };
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
@@ -39,6 +44,24 @@ function saveTitle(opts: TitleOptions): void {
   } catch {
     // Ignore: remembering the choice is a convenience.
   }
+}
+
+function seenChange(): string | null {
+  try {
+    return localStorage.getItem(SEEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function openChangelog(): void {
+  const newest = newestChange(changelog);
+  try {
+    if (newest) localStorage.setItem(SEEN_KEY, newest);
+  } catch {
+    // Ignore: the dot on What's new is a convenience.
+  }
+  openWhatsNew(changelog);
 }
 
 function readSave(): RestoredGame | null {
@@ -188,6 +211,7 @@ export class Controller {
       { on: this.sound.isOn(), toggle: () => this.toggleSound() },
       saved ? () => this.resume(saved) : undefined,
       () => openHowToPlay({ ...DEFAULT_RULES, ...this.ruleOverrides() }),
+      { unseen: hasUnseen(changelog, seenChange()), open: openChangelog },
     );
   }
 
