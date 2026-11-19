@@ -49,7 +49,7 @@ tests/        unit (Vitest), e2e (Playwright), fixtures (state builders)
 - Board: 30 territories on one continent. Lakes and rivers block adjacency; a river is crossed only at its ford.
 - Attack: needs 2+ dice. Both sides roll all their dice; ties go to the defender, so equal stacks win under 50%.
 - Failed attack (`drawAttrition`): a draw drops the stack to the defender's dice count (losing at least 1), a loss drops it to 1.
-- End of turn: one die per territory in your largest connected group, +1 per player you knocked out. New dice land only on territories bordering an enemy, max 8 each; overflow goes to a reserve (max 64).
+- End of turn: one die per territory in your largest connected group, +1 per player you knocked out. New dice land only on territories bordering an enemy, max 8 each. What doesn't fit goes to the territories just behind the front, nearest it first (`frontlineOverflow: 'behind'`), and only then to a reserve (max 64).
 - Connection bonus (`catchup`): +2 dice per extra group a capture joins, only for players below the average territory count.
 - Last stand: the first time a turn ends with two players left (in a game that started with three or more), the one with fewer territories gets +1 die on each.
 - Seat compensation adjusts starting dice by turn order.
