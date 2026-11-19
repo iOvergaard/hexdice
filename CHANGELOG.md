@@ -4,10 +4,11 @@ What changed in Hexdice, newest first. Players see this under What's new on the 
 
 `npm run changelog` adds new `feat`, `rules`, `fix` and `perf` commits on top. Edit the wording freely, but keep the shape: `## DD-MM-YYYY`, then `- **New:**`, `**Rules:**`, `**Fixed:**` or `**Faster:**` lines.
 
-<!-- changelog: up to e8066c3ad36e289f068ac071ed2c69feb5219d57 -->
+<!-- changelog: up to 59dbf7baf30df1bca581287bccc0edbc1e7e0f5c -->
 
 ## 19-11-2026
 
+- **New:** Play offline after your first visit; new versions arrive the next time you open it online
 - **New:** What's new on the title screen
 
 ## 18-11-2026
