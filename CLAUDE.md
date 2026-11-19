@@ -12,6 +12,7 @@ npm run e2e                  # Playwright desktop+phone (gate 3), own dev server
 npm run changelog            # add new player-facing commits to CHANGELOG.md (`-- --check`: fail if it's behind)
 npm run pacing               # seconds you wait between turns per speed; needs `npm run dev` running
 npm run icons                # regenerate favicon, home-screen icons and link-preview image from scripts/icons.ts
+npm run screenshots          # README screenshots from a seeded game (docs/screenshots/); needs `npm run dev` running
 npm run build
 ```
 
