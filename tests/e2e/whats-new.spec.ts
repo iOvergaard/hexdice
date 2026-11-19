@@ -10,6 +10,8 @@ test("what's new lists the player-facing changes and remembers you've read them"
   await expect(dialog.getByRole('heading', { name: "What's new" })).toBeVisible();
   await expect(dialog.getByRole('heading', { name: '18-11-2026' })).toBeVisible();
   await expect(dialog).toContainText('Last stand for the smaller of the last two players');
+  // Each line shows when it reached the game.
+  await expect(dialog.getByText('13:54').first()).toBeVisible();
   // Docs, chores and prototypes stay out.
   await expect(dialog).not.toContainText('Sim results');
   await expect(dialog).not.toContainText('as a setting');

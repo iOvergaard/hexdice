@@ -95,8 +95,9 @@ Commits follow Conventional Commits (`type(scope): subject`). `feat`, `rules`, `
 - Write player-facing subjects for players, in British English. One change per commit.
 - Everything else uses `docs`, `chore`, `test`, `ci`, `refactor`, `style` or `proto`, and stays out of the changelog.
 - A prototype that becomes the default needs its own `feat` or `rules` commit, or players never hear of it.
-- `CHANGELOG.md` keeps hand edits: polish wording or add a missing change by hand. Keep the shape: `## DD-MM-YYYY`, then `- **New:**`, `**Rules:**`, `**Fixed:**` or `**Faster:**` lines.
-- Dates are commit dates. If a change shipped on a later day, move it by hand.
+- `CHANGELOG.md` keeps hand edits: polish wording or add a missing change by hand. Keep the shape: `## DD-MM-YYYY`, then `- HH:MM **New:**`, `**Rules:**`, `**Fixed:**` or `**Faster:**` lines. The time is optional on hand-added lines.
+- Each line carries the Danish time it reached main. A branch's commits take the time of the merge that brought them in, so generate the changelog on main after merging, not on the branch.
+- Every session documents its own work: whatever it merges to main lands in `CHANGELOG.md` in the same push.
 - History before the first deploy (`ce33ad5`) isn't listed.
 - CI on main runs `npm run changelog -- --check`, so a push with an unlisted player-facing commit fails before deploying. The changelog check and the commit history need `fetch-depth: 0` in CI; keep it.
 
