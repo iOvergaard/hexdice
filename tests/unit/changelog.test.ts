@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { changelogMarker, hasUnseen, mergeDays, newestChange, parseChangelog, parseLog, renderChangelog } from '../../src/changelog';
+import { changelogMarker, currentVersion, hasUnseen, mergeDays, newestChange, parseChangelog, parseLog, renderChangelog } from '../../src/changelog';
 import type { Changelog } from '../../src/changelog';
 
 const log = (...lines: Array<[string, string, string]>) => lines.map((l) => l.join('\x1f')).join('\n') + '\n';
@@ -86,6 +86,13 @@ describe('CHANGELOG.md', () => {
 
   it('has no marker before it is first generated', () => {
     expect(changelogMarker('# Changelog\n')).toBeNull();
+  });
+
+  it('names the version by the newest change that has a hash', () => {
+    expect(currentVersion(sample)).toBe('deb5154');
+    const handAddedOnTop: Changelog = { ...sample, days: [{ date: '19-11-2026', changes: [{ kind: 'new', text: 'Written by hand' }] }, ...sample.days] };
+    expect(currentVersion(handAddedOnTop)).toBe('deb5154');
+    expect(currentVersion({ online: '17-11-2026', days: [] })).toBeNull();
   });
 
   it('flags changes the player has not seen yet', () => {

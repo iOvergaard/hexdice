@@ -102,6 +102,12 @@ export function newestChange(log: Changelog): string | null {
   return day?.changes[0] ? `${day.date} ${day.changes[0].text}` : null;
 }
 
+/** The version a player is on: the hash of the newest change in their build, or null if no line has one. */
+export function currentVersion(log: Changelog): string | null {
+  for (const day of log.days) for (const change of day.changes) if (change.hash) return change.hash;
+  return null;
+}
+
 /** True when the newest change isn't the one the player saw last. */
 export function hasUnseen(log: Changelog, seen: string | null): boolean {
   const newest = newestChange(log);

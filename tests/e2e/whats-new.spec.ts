@@ -10,11 +10,14 @@ test("what's new lists the player-facing changes and remembers you've read them"
   await expect(dialog.getByRole('heading', { name: "What's new" })).toBeVisible();
   await expect(dialog.getByRole('heading', { name: '18-11-2026' })).toBeVisible();
   await expect(dialog).toContainText('Last stand for the smaller of the last two players');
-  // Each line links its commit, and the panel names the build you're playing.
+  // Each line links its commit.
   const hash = dialog.getByRole('link', { name: '7c440fb' });
   await expect(hash).toHaveAttribute('href', 'https://github.com/iOvergaard/hexdice/commit/7c440fb');
-  await expect(dialog.getByTestId('build')).toHaveText(/^[0-9a-f]{7}$/);
-  await expect(dialog).toContainText("You're playing build");
+  // The version is the newest change's hash, so it matches the first line, which is marked as yours.
+  const newest = dialog.locator('.change-hash').nth(1);
+  await expect(dialog.getByTestId('version')).toHaveText((await newest.textContent())!);
+  await expect(newest).toHaveClass(/is-current/);
+  await expect(dialog).toContainText("You're on version");
   // Docs, chores and prototypes stay out.
   await expect(dialog).not.toContainText('Sim results');
   await expect(dialog).not.toContainText('as a setting');

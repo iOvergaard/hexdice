@@ -1293,6 +1293,12 @@
   text-decoration: underline;
 }
 
+/* The line whose hash is the version you're on. */
+.change-hash.is-current {
+  color: var(--text);
+  font-weight: 700;
+}
+
 .change-tag {
   flex: none;
   display: inline-block;

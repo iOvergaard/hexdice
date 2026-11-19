@@ -112,7 +112,7 @@ Commits follow Conventional Commits (`type(scope): subject`). `feat`, `rules`, `
 - A change sits under the day (Danish time) it reached main, and a branch's commits count from their merge. So generate the changelog on main after merging, not on the branch.
 - Whatever a session merges to main lands in `CHANGELOG.md` in the same push. CI on main runs `npm run changelog -- --check` and fails before deploying if a player-facing commit is unlisted.
 - The check reads the commit history, so keep `fetch-depth: 0` in CI. History before the first deploy (`ce33ad5`) isn't listed.
-- What's new also names the build being played: `__BUILD__`, the short hash `vite.config.ts` reads from git at build time (`dev` without git).
+- What's new names the version you're on: the hash of the newest change in the build (`currentVersion` in `src/changelog.ts`), and marks that line. The exact commit a deploy came from is in `/version.txt`.
 
 ## Git and deploys
 
