@@ -8,6 +8,8 @@ declare global {
 }
 
 test('reload mid-game, continue, and land on the same position', async ({ page }, info) => {
+  // Random seed and AI turns at Normal speed: this ran 14–32 s on main, past the 30 s default.
+  test.setTimeout(60_000);
   await page.goto('/');
   await expect(page.getByTestId('continue')).toHaveCount(0);
   await page.getByTestId('players-4').click();
