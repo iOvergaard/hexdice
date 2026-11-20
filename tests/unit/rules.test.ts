@@ -577,8 +577,8 @@ describe('shaken: a defender that holds', () => {
     throw new Error(`no ${outcome} found`);
   }
 
-  it('is off by default: a stack that drew can attack again, and nothing is shaken', () => {
-    expect(DEFAULT_RULES.shaken).toBe(false);
+  it('is on by default; off, a stack that drew can attack again and nothing is shaken', () => {
+    expect(DEFAULT_RULES.shaken).toBe(true);
     const { state, events } = hold('draw', false);
     expect(state.territories[0]!.dice).toBe(4);
     expect(canAttackFrom(state, 0)).toBe(true);

@@ -70,12 +70,12 @@ describe('how to play', () => {
     expect(text({ lastStandDice: 0 })).not.toContain('The final');
   });
 
-  it('explains the shaken rule when it is on, and leaves it out when off', () => {
-    const attack = section('Attacking', { shaken: true })!;
+  it('explains the shaken rule with the default rules, and leaves it out when off', () => {
+    const attack = section('Attacking')!;
     expect(attack).toContain('the defender is shaken until your turn ends: a tie against it goes to you');
     expect(attack).toContain("can't attack again this turn");
-    expect(section('Tips', { shaken: true })).toContain('finish it off from another side');
-    expect(text().toLowerCase()).not.toContain('shaken');
+    expect(section('Tips')).toContain('finish it off from another side');
+    expect(text({ shaken: false }).toLowerCase()).not.toContain('shaken');
   });
 
   it('explains who Normal gangs up on, the crosshair that marks them and the bar at each player count', () => {

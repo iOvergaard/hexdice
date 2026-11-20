@@ -23,11 +23,13 @@ function tieAt(s: GameState, from: number, to: number): number {
 const state = (page: import('@playwright/test').Page) => page.evaluate(() => structuredClone(window.__hexdice!.state()!));
 
 test('a defender that holds is shaken: the attacking stack is spent, and a tie against it goes to you', async ({ page }, info) => {
-  await page.goto('/?seed=42&players=4&speed=slow&sound=off&shaken=on');
+  // The default rules, no ?shaken param.
+  await page.goto('/?seed=42&players=4&speed=slow&sound=off');
   await page.waitForFunction(() => !!window.__hexdice);
   await page.evaluate(() => window.__hexdice!.idle());
   // Two of your stacks, 6 and 4 dice, border an AI territory holding 4.
   const s = await state(page);
+  expect(s.config.shaken).toBe(true);
   const me = s.players.find((p) => p.kind === 'human')!.id;
   expect(s.current).toBe(me);
   const t = s.territories.find((x) => x.owner !== me && x.neighbours.filter((n) => s.territories[n]!.owner === me).length >= 2)!;

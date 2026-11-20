@@ -44,6 +44,8 @@ Take every territory on the map. A player left with none is out.
 - The territory you took stays selected while it can attack again: tap the next target to carry on, or tap it again to let go.
 - **Lose:** your territory drops to 1 die.
 - **Draw:** it drops to as many dice as the defender had, losing at least 1.
+- If the defender holds, your stack is **spent**: it can't attack again this turn. And the defender is **shaken** until your turn ends: a tie against it goes to you.
+- Spent stacks turn grey, and shaken ones get a broken amber outline, so you can see which territories you've already tried. The badge on a shaken target counts the tie for you.
 - Attack as often as you like, then end your turn.
 
 <details>
@@ -59,7 +61,7 @@ Take every territory on the map. A player left with none is out.
 | **7** | 100% | 100% | 99% | 96% | 86% | 69% | 47% | 27% |
 | **8** | 100% | 100% | 100% | 99% | 95% | 84% | 67% | 47% |
 
-Rounded to whole percent. Equal stacks win less than half the time, because ties go to the defender.
+Rounded to whole percent. Equal stacks win less than half the time, because ties go to the defender. Against a shaken territory the tie is yours, so equal stacks win 53–56%.
 
 </details>
 
@@ -94,6 +96,7 @@ Rounded to whole percent. Equal stacks win less than half the time, because ties
 - Stay just under the size the computer players gang up on: one and a half times the average number of territories, and at least 8. Hold back there until four players are left, then go for it.
 - A short front line gets your new dice where the fighting is, and water makes a cheap wall.
 - Knocking out a weak player pays every turn after.
+- A failed attack isn't wasted: the defender is shaken, so finish it off from another side.
 
 <p align="center">
   <img src="docs/screenshots/game-phone.jpg" alt="The same game on a phone, with the map turned upright and the player bar below it" width="250">
