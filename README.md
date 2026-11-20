@@ -41,6 +41,7 @@ Take every territory on the map. A player left with none is out.
 - On your turn, tap one of your territories with 2 or more dice, then an enemy territory next to it.
 - Both sides roll all their dice and the higher total wins. **A tie goes to the defender.** The badge on the target shows your chance of winning.
 - **Win:** you take the territory and move in all your dice but one.
+- The territory you took stays selected while it can attack again: tap the next target to carry on, or tap it again to let go.
 - **Lose:** your territory drops to 1 die.
 - **Draw:** it drops to as many dice as the defender had, losing at least 1.
 - Attack as often as you like, then end your turn.

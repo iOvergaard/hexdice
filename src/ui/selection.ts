@@ -22,6 +22,17 @@ export function nextSelection(
   return none;
 }
 
+/** After your attack resolves: a fresh capture stays selected while it can attack on, so the next tap carries on from it. */
+export function selectionAfterAttack(
+  state: GameState,
+  attack: { from: TerritoryId; to: TerritoryId },
+  canAttack: CanAttack,
+): TerritoryId | null {
+  const taken = state.territories[attack.to];
+  if (state.winner !== null || !taken || taken.owner !== state.current || taken.dice < 2) return null;
+  return targetsFor(state, attack.to, canAttack).length > 0 ? attack.to : null;
+}
+
 export function targetsFor(state: GameState, from: TerritoryId, canAttack: CanAttack): TerritoryId[] {
   return (state.territories[from]?.neighbours ?? []).filter((to) => canAttack(from, to));
 }

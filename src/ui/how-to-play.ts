@@ -32,6 +32,7 @@ export function helpSections(rules: RulesConfig): HelpSection[] {
       'On your turn, tap one of your territories with 2 or more dice, then an enemy territory next to it.',
       'Both sides roll all their dice and the higher total wins: a tie goes to the defender. The badge on the target shows your chance of winning.',
       'Win: you take the territory and move in all your dice but one.',
+      'The territory you took stays selected while it can attack again: tap the next target to carry on, or tap it again to let go.',
       ...loss[rules.lossRule],
       'Attack as often as you like, then end your turn.',
     ],

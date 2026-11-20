@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { nextSelection, targetsFor } from '../../src/ui/selection';
+import { nextSelection, selectionAfterAttack, targetsFor } from '../../src/ui/selection';
 import { buildState } from '../fixtures/state';
 import type { GameState } from '../../src/engine/types';
 
@@ -48,6 +48,52 @@ describe('nextSelection', () => {
 
   it('tapping sea clears selection', () => {
     expect(nextSelection(state, 0, null, can)).toEqual({ selected: null, attack: null });
+  });
+});
+
+describe('selectionAfterAttack', () => {
+  // After the attack: player 0 took 1 from 0 and moved in 2 dice; 2 (1 die) and 4 (5 dice) are still player 1's.
+  const after = (dice1: number, owner1 = 0, winner: number | null = null): GameState => ({
+    ...buildState({
+      owners: [0, owner1, 1, 0, 1, 0],
+      dice: [1, dice1, 1, 4, 5, 2],
+      edges: [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5]],
+      players: 2,
+    }),
+    winner,
+  });
+
+  it('keeps a fresh capture with 2+ dice and a target selected', () => {
+    const s = after(2);
+    expect(selectionAfterAttack(s, { from: 0, to: 1 }, canAttack(s))).toBe(1);
+  });
+
+  it('then the next tap on a target attacks on from it', () => {
+    const s = after(2);
+    const selected = selectionAfterAttack(s, { from: 0, to: 1 }, canAttack(s));
+    expect(nextSelection(s, selected, 2, canAttack(s))).toEqual({ selected: null, attack: { from: 1, to: 2 } });
+  });
+
+  it('clears a capture left with 1 die', () => {
+    const s = after(1);
+    expect(selectionAfterAttack(s, { from: 0, to: 1 }, canAttack(s))).toBeNull();
+  });
+
+  it('clears a capture with no enemy next to it', () => {
+    const s = after(3);
+    s.territories[2]!.owner = 0;
+    expect(selectionAfterAttack(s, { from: 0, to: 1 }, canAttack(s))).toBeNull();
+  });
+
+  it('clears after a failed attack, even if the attacker still has 2+ dice', () => {
+    const s = after(2, 1);
+    expect(selectionAfterAttack(s, { from: 3, to: 2 }, canAttack(s))).toBeNull();
+    expect(selectionAfterAttack(s, { from: 0, to: 1 }, canAttack(s))).toBeNull();
+  });
+
+  it('clears when the capture won the game', () => {
+    const s = after(2, 0, 0);
+    expect(selectionAfterAttack(s, { from: 0, to: 1 }, canAttack(s))).toBeNull();
   });
 });
 
