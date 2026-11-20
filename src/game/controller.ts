@@ -495,6 +495,7 @@ export class Controller {
       this.screen!.overlay.show(this.ending(this.humans() === 1 ? 'You were eliminated' : 'All human players were eliminated', 'out'), {
         onTitle: () => this.toTitle(),
         onReplay: null,
+        onCopy: this.record(),
         onWatch: () => {
           this.watching = true;
           this.paused = false;
@@ -572,7 +573,15 @@ export class Controller {
       onTitle: () => this.toTitle(),
       onReplay: this.replayable ? () => void this.replay() : null,
       onWatch: null,
+      onCopy: this.record(),
     });
+  }
+
+  /** The game so far as config plus moves, for replaying it elsewhere; none after a debug load, whose log starts mid-game. */
+  private record(): (() => string) | null {
+    if (!this.replayable || !this.config) return null;
+    const config = this.config;
+    return () => serialise(config, this.actionLog, this.aiRng.state);
   }
 
   private ending(title: string, mood: Mood): Ending {

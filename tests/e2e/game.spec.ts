@@ -202,6 +202,8 @@ test('eliminated player can watch the rest', async ({ page }, info) => {
   await expect(page.getByTestId('ending-sub')).toHaveText(/^You came (2nd|3rd) of 3\.$/);
   await expect(page.getByTestId('ending-caption')).toContainText('took your last one in round');
   await expect(page.getByTestId('overlay-title')).toBeVisible();
+  // A loaded position's moves aren't the whole game, so there's nothing to copy.
+  await expect(page.getByTestId('overlay-copy')).toHaveCount(0);
   await shot(page, info, 'eliminated');
   const before = await page.evaluate(() => window.__hexdice!.actions().length);
   await page.waitForTimeout(300);

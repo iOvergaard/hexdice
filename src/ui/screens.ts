@@ -243,7 +243,32 @@ export class PreviewPrompt {
   }
 }
 
-/** Over the board: who won, how the map changed hands, and Replay and Title (or Watch the rest). */
+/** Copies the game to the clipboard; where the browser won't, shows it in a field with the text selected. */
+function copyGame(text: string, status: HTMLElement): void {
+  const fallback = (): void => {
+    status.textContent = 'Select the text below and copy it.';
+    const field = el('textarea', 'overlay-copy-text');
+    field.dataset.testid = 'overlay-copy-text';
+    field.readOnly = true;
+    field.rows = 3;
+    field.value = text;
+    field.setAttribute('aria-label', 'Game record');
+    status.after(field);
+    field.focus({ preventScroll: true });
+    field.setSelectionRange(0, text.length);
+  };
+  status.parentElement?.querySelector('.overlay-copy-text')?.remove();
+  status.hidden = false;
+  if (!navigator.clipboard?.writeText) return fallback();
+  navigator.clipboard.writeText(text).then(
+    () => {
+      status.textContent = 'Copied. Paste it anywhere to keep or share the game.';
+    },
+    fallback,
+  );
+}
+
+/** Over the board: who won, how the map changed hands, then Replay (or Watch the rest), Title and Copy game. */
 export class GameOverOverlay {
   private readonly el: HTMLElement;
   private readonly body: HTMLElement;
@@ -261,7 +286,11 @@ export class GameOverOverlay {
     container.append(this.el);
   }
 
-  show(ending: Ending, actions: { onTitle: () => void; onReplay: (() => void) | null; onWatch: (() => void) | null }): void {
+  /** `onCopy` returns the game record to copy; null leaves the button out. */
+  show(
+    ending: Ending,
+    actions: { onTitle: () => void; onReplay: (() => void) | null; onWatch: (() => void) | null; onCopy?: (() => string) | null },
+  ): void {
     this.el.className = `overlay mood-${ending.mood}`;
     const card = renderEnding(ending);
     const buttons: HTMLButtonElement[] = [];
@@ -279,6 +308,16 @@ export class GameOverOverlay {
     t.addEventListener('click', actions.onTitle);
     buttons.push(t);
     this.actions.replaceChildren(...buttons);
+    const onCopy = actions.onCopy;
+    if (onCopy) {
+      const b = button('Copy game', 'overlay-copy', 'btn btn-quiet');
+      const status = el('p', 'overlay-copy-status');
+      status.dataset.testid = 'overlay-copy-status';
+      status.setAttribute('role', 'status');
+      status.hidden = true;
+      b.addEventListener('click', () => copyGame(onCopy(), status));
+      this.actions.append(b, status);
+    }
     card.append(this.actions);
     this.body.replaceChildren(card);
     this.el.hidden = false;

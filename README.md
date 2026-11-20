@@ -103,7 +103,7 @@ Rounded to whole percent. Equal stacks win less than half the time, because ties
 - **Offline.** After one visit the game loads without a connection. A new version arrives the next time you open it online.
 - **Continue.** Close the tab mid-game and pick up exactly where you left off.
 - **How to play and What's new** are one tap away on the title screen. What's new lists every change by its commit and tells you which version you're on.
-- **Game over** opens with the winner's colours, shows how the map changed hands, and ends with a scoreboard: who went out when, and everyone's attacks won and defences held. Then replay the whole game, or watch the rest if you're knocked out early.
+- **Game over** opens with the winner's colours, shows how the map changed hands, and ends with a scoreboard: who went out when, and everyone's attacks won and defences held. Then replay the whole game, or watch the rest if you're knocked out early. Copy game puts the seed, the rules and every move on your clipboard, so the game can be replayed and looked at move by move elsewhere.
 - **Speed and sound.** Four speeds from Slow to Instant, a skip-to-my-turn button, and synthesised sound with a speaker toggle.
 - **Keyboard.** Space ends your turn, or skips ahead while the computer plays; Escape cancels a selection.
 
