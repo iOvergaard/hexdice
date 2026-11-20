@@ -95,7 +95,7 @@ Caveats: the hero is a Normal clone with filters, not a human, and the table is 
 
 `?seed=N&players=8&ai=normal` on the live site starts that exact game at once, skipping the title and the preview. Without `players` and `ai`, the game uses the last title-screen settings. The preview screen shows "Seed N", and a game exported from the save carries it as `config.seed`. From a seed, or better an exported game, the script rebuilds any position the same way the controller does (`makeConfig(defaultSeats(players - 1, ai), seed)`, AI rng `seed ^ 0x9e3779b9`).
 
-To export a game in progress on the live site, run `copy(localStorage.getItem('hexdice:save'))` in the browser console. That copies the config, every action and the AI's random state. The save is deleted at game over. [iOvergaard/hexdice#11](https://github.com/iOvergaard/hexdice/pull/11) (open) adds a Copy game button to the end-of-game card.
+To export a game in progress on the live site, run `copy(localStorage.getItem('hexdice:save'))` in the browser console. That copies the config, every action and the AI's random state. The save is deleted at game over. [iOvergaard/hexdice#11](https://github.com/iOvergaard/hexdice/pull/11) (merged 20-11-2026) adds a Copy game button to the end-of-game card.
 
 ## Scenarios
 
