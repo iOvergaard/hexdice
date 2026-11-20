@@ -5,6 +5,7 @@
       "Bash(npx *)",
       "Bash(E2E_PORT=* npm *)",
       "Bash(npm run dev)",
+      "Bash(npm run dev *)",
       "mcp__Claude_Browser",
       "mcp__Claude_Code_iOS_Simulator",
       "Bash(xcrun simctl *)",
