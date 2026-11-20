@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { changelogMarker, currentVersion, hasUnseen, mergeDays, newestChange, parseChangelog, parseLog, renderChangelog } from '../../src/changelog';
+import { changelogMarker, currentVersion, forPlayers, hasUnseen, mergeDays, newestChange, parseChangelog, parseLog, renderChangelog } from '../../src/changelog';
 import type { Changelog } from '../../src/changelog';
 
 const log = (...lines: Array<[string, string, string]>) => lines.map((l) => l.join('\x1f')).join('\n') + '\n';
@@ -93,6 +93,19 @@ describe('CHANGELOG.md', () => {
     const handAddedOnTop: Changelog = { ...sample, days: [{ date: '19-11-2026', changes: [{ kind: 'new', text: 'Written by hand' }] }, ...sample.days] };
     expect(currentVersion(handAddedOnTop)).toBe('deb5154');
     expect(currentVersion({ online: '17-11-2026', days: [] })).toBeNull();
+  });
+
+  it('shows players only the new features and fixes', () => {
+    const rulesOnlyDay = { date: '19-11-2026', changes: [{ hash: 'c0ffee1', kind: 'rules' as const, text: 'Fairer starting dice' }] };
+    const shown = forPlayers({ ...sample, days: [rulesOnlyDay, ...sample.days] });
+    expect(shown.days.map((d) => [d.date, d.changes.map((c) => c.text)])).toEqual([
+      ['18-11-2026', ['Last stand']],
+      ['17-11-2026', ['Colours you can tell apart']],
+    ]);
+    expect(shown.online).toBe('17-11-2026');
+    expect(currentVersion(shown)).toBe('deb5154');
+    // A deploy with only a rules change doesn't light the dot.
+    expect(hasUnseen(shown, '18-11-2026 Last stand')).toBe(false);
   });
 
   it('flags changes the player has not seen yet', () => {

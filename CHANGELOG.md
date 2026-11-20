@@ -1,6 +1,6 @@
 # Changelog
 
-What changed in Hexdice, newest first. Players see this under What's new on the title screen.
+What changed in Hexdice, newest first. Players see the New and Fixed lines under What's new on the title screen.
 
 `npm run changelog` adds new `feat`, `rules`, `fix` and `perf` commits on top, each with its commit hash, under the day it reached main. Edit the wording freely, but keep the shape: `## DD-MM-YYYY`, then `- <hash> **New:**`, `**Rules:**`, `**Fixed:**` or `**Faster:**` lines (the hash is optional).
 

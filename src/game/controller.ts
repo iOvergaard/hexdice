@@ -7,7 +7,7 @@ import { defaultSeats } from '../engine/seats';
 import { createGame } from '../engine/setup';
 import type { Action, AiLevel, GameConfig, GameEvent, GameState, RulesConfig, Speed, TerritoryId } from '../engine/types';
 import changelogMarkdown from '../../CHANGELOG.md?raw';
-import { hasUnseen, newestChange, parseChangelog } from '../changelog';
+import { forPlayers, hasUnseen, newestChange, parseChangelog } from '../changelog';
 import { openHowToPlay } from '../ui/how-to-play';
 import { openWhatsNew } from '../ui/whats-new';
 import { createGameScreen, showTitle, type GameScreen, type TitleOptions } from '../ui/screens';
@@ -23,7 +23,7 @@ import type { UrlParams } from './url-params';
 const TITLE_KEY = 'hexdice:title';
 const SEEN_KEY = 'hexdice:changelog-seen';
 const SAVE_KEY = 'hexdice:save';
-const changelog = parseChangelog(changelogMarkdown);
+const changelog = forPlayers(parseChangelog(changelogMarkdown));
 const DEFAULT_TITLE: TitleOptions = { players: 8, aiLevel: 'normal' };
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
