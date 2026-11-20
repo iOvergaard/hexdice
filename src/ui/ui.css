@@ -723,6 +723,72 @@
   display: block;
 }
 
+/* End of turn: who, the dice still to land and the pile itself, with what it's made of underneath. */
+.roll-pile {
+  grid-column: 1 / -1;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.roll.is-pile .roll-side,
+.roll.is-pile .roll-mid {
+  display: none;
+}
+
+.roll.is-pile .roll-pile {
+  display: flex;
+}
+
+/* A long name gives way; the pile keeps its size. */
+.roll-pile-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.roll-pile .roll-who {
+  min-width: 0;
+}
+
+.roll-pile .roll-dice {
+  flex: none;
+}
+
+.roll-pile-count {
+  min-width: 2ch;
+  text-align: right;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.roll-pile.is-empty .roll-pile-count {
+  color: var(--muted);
+}
+
+/* A die that has landed leaves its place empty, so the pile shrinks without the row shifting. */
+.roll-pile .die {
+  transition: opacity 0.12s, transform 0.12s;
+}
+
+.roll-pile .die.is-gone {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+.roll-pile-caption {
+  margin: 0;
+  text-align: center;
+  font-weight: 700;
+  color: var(--muted);
+}
+
 /* ---------- reinforcement placements ---------- */
 
 .board .layer-placements {
@@ -1636,6 +1702,9 @@
   }
   .is-rolling .die {
     animation: none;
+  }
+  .roll-pile .die {
+    transition: none;
   }
   .token-body,
   .board .territory {

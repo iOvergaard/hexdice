@@ -24,6 +24,8 @@ const TOKEN_TOP = 34;
 /** Units are drawn larger than their base art; more so on a rotated board, where the whole map is drawn smaller. */
 const UNIT_SCALE = 1.35;
 const PORTRAIT_UNIT_SCALE = 1.5;
+/** How far placement-float in ui.css lifts a floating label before it fades, in view units. */
+const FLOAT_LIFT = 14;
 
 function svg<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, string | number> = {}, cls?: string): SVGElementTagNameMap[K] {
   const el = document.createElementNS(SVG_NS, tag);
@@ -99,11 +101,18 @@ export class BoardView {
   private mapH = 0;
   /** Land bounds plus a sea margin, in map units: the view zooms to the continent. */
   private crop = { x: 0, y: 0, w: 0, h: 0 };
+  /** The visible part of the board, in view units: the viewBox. */
+  private view = { x: 0, y: 0, w: 0, h: 0 };
   /** Where each token is drawn, in view units, after overlapping tokens are nudged apart. */
   private tokenAt: Point[] = [];
   private rotated = false;
   private tapHandler: (territory: TerritoryId | null) => void = () => {};
   private interactive = true;
+  private state: GameState | null = null;
+  /** Dice still to land per territory while reinforcements drain in; its stack is drawn that much shorter. */
+  private readonly pending = new Map<TerritoryId, number>();
+  /** Finishes the running placements at once; a new board mustn't get the old one's labels. */
+  private endPlacements: (() => void) | null = null;
 
   /** `scenery`: a still picture (the title screen) with no taps, test hooks or accessible name. */
   constructor(
@@ -148,6 +157,7 @@ export class BoardView {
 
   render(state: GameState, view: BoardViewState): void {
     if (this.board !== state.board) this.build(state);
+    this.state = state;
     this.interactive = view.interactive;
     this.odds = view.odds ?? new Map();
     this.selected = view.selected;
@@ -171,11 +181,11 @@ export class BoardView {
       node.group.classList.toggle('is-selected', view.selected === id);
       node.group.classList.toggle('is-target', targets.has(id));
       node.group.classList.toggle('is-attack', view.attack?.from === id || view.attack?.to === id);
-      node.group.classList.toggle('is-full', t.dice >= state.config.maxDice);
+      node.group.classList.toggle('is-full', t.dice - (this.pending.get(id) ?? 0) >= state.config.maxDice);
       for (const cls of ['is-selected', 'is-target', 'is-attack', 'is-full']) {
         node.token.classList.toggle(cls, node.group.classList.contains(cls));
       }
-      node.units.update(t.dice, identity);
+      node.units.update(t.dice - (this.pending.get(id) ?? 0), identity);
 
       const key = t.neighbours.map((nb) => state.territories[nb]!.owner === t.owner ? 's' : 'd').join('');
       if (key !== node.borderKey) {
@@ -198,36 +208,94 @@ export class BoardView {
     this.placeTokens();
   }
 
-  /** Pulses each territory that received dice and floats a "+N" over it. */
-  showPlacements(placed: TerritoryId[], durationMs: number): Promise<void> {
+  /**
+   * Pulses each territory that received dice and floats a "+N" over it. With a `drain` share, the dice land one at a
+   * time over that share of the time, each stack growing as they do, and `onLand` hears how many have landed so far.
+   */
+  showPlacements(placed: TerritoryId[], durationMs: number, drain = 0, onLand?: (landed: number) => void): Promise<void> {
     if (durationMs <= 0 || placed.length === 0) return Promise.resolve();
-    const counts = new Map<TerritoryId, number>();
-    for (const id of placed) counts.set(id, (counts.get(id) ?? 0) + 1);
-    const labels: SVGElement[] = [];
-    const pulsed: SVGElement[] = [];
+    this.endPlacements?.();
+    const t0 = performance.now();
     const scale = this.rotated ? PORTRAIT_UNIT_SCALE : UNIT_SCALE;
-    for (const [id, count] of counts) {
-      const geo = this.geometry[id];
-      const node = this.nodes[id];
-      if (!geo || !node) continue;
-      node.token.classList.add('is-placed');
-      pulsed.push(node.token);
-      const p = this.tokenAt[id] ?? this.toView(geo.centre);
-      const label = svg('text', { x: n(p.x), y: n(p.y - (TOKEN_TOP + 4) * scale), 'text-anchor': 'middle' }, 'placement');
-      label.dataset.testid = `placement-${id}`;
-      label.style.fontSize = `${n(40 * scale)}px`;
-      label.style.setProperty('--dur', `${durationMs}ms`);
-      label.textContent = `+${count}`;
-      this.placeLayer.append(label);
-      labels.push(label);
+    const counts = new Map<TerritoryId, number>();
+    const labels = new Map<TerritoryId, SVGTextElement>();
+    const pulsed: SVGElement[] = [];
+    if (drain > 0) {
+      for (const id of placed) this.pending.set(id, (this.pending.get(id) ?? 0) + 1);
+      for (const id of this.pending.keys()) this.drawUnits(id);
+      this.placeTokens();
     }
-    return new Promise((resolve) =>
-      setTimeout(() => {
-        for (const l of labels) l.remove();
+
+    let landed = 0;
+    const land = (upTo: number) => {
+      for (; landed < upTo; landed++) {
+        const id = placed[landed]!;
+        const count = (counts.get(id) ?? 0) + 1;
+        counts.set(id, count);
+        if (drain > 0) {
+          this.pending.set(id, (this.pending.get(id) ?? 1) - 1);
+          this.drawUnits(id);
+        }
+        const geo = this.geometry[id];
+        const node = this.nodes[id];
+        if (!geo || !node) continue;
+        let label = labels.get(id);
+        if (!label) {
+          node.token.classList.add('is-placed');
+          pulsed.push(node.token);
+          const p = this.tokenAt[id] ?? this.toView(geo.centre);
+          label = svg('text', { x: n(p.x), y: n(p.y - (TOKEN_TOP + 4) * scale), 'text-anchor': 'middle' }, 'placement');
+          label.dataset.testid = `placement-${id}`;
+          label.style.fontSize = `${n(40 * scale)}px`;
+          // A later die's label fades with the rest.
+          label.style.setProperty('--dur', `${Math.round(durationMs - (performance.now() - t0))}ms`);
+          labels.set(id, label);
+        }
+        label.textContent = `+${count}`;
+        if (!label.isConnected) {
+          this.placeLayer.append(label);
+          this.keepInView(label);
+        }
+      }
+      if (drain > 0) this.placeTokens();
+      onLand?.(landed);
+    };
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    if (drain > 0) for (let i = 1; i <= placed.length; i++) timers.push(setTimeout(() => land(i), (durationMs * drain * i) / placed.length));
+    else land(placed.length);
+
+    return new Promise((resolve) => {
+      const finish = () => {
+        for (const t of timers) clearTimeout(t);
+        clearTimeout(end);
+        this.endPlacements = null;
+        if (this.pending.size > 0) {
+          const ids = [...this.pending.keys()];
+          this.pending.clear();
+          for (const id of ids) this.drawUnits(id);
+          this.placeTokens();
+        }
+        for (const l of labels.values()) l.remove();
         for (const t of pulsed) t.classList.remove('is-placed');
+        // Timers run late in a background tab: the dice still count as landed.
+        if (landed < placed.length) onLand?.(placed.length);
         resolve();
-      }, durationMs),
-    );
+      };
+      const end = setTimeout(finish, durationMs);
+      this.endPlacements = finish;
+    });
+  }
+
+  /** Redraws a territory's stack, short of any dice still to land on it. */
+  private drawUnits(id: TerritoryId): void {
+    const t = this.state?.territories[id];
+    const node = this.nodes[id];
+    if (!t || !node) return;
+    const dice = t.dice - (this.pending.get(id) ?? 0);
+    node.units.update(dice, this.state!.players[t.owner]?.identity ?? 0);
+    const full = dice >= this.state!.config.maxDice;
+    node.group.classList.toggle('is-full', full);
+    node.token.classList.toggle('is-full', full);
   }
 
   /** Where a territory's token sits vertically on screen, from 0 (top of the board) to 1 (bottom). */
@@ -302,12 +370,24 @@ export class BoardView {
     label.style.setProperty('--dur', `${durationMs}ms`);
     label.textContent = text;
     this.placeLayer.append(label);
+    this.keepInView(label);
     return new Promise((resolve) =>
       setTimeout(() => {
         label.remove();
         resolve();
       }, durationMs),
     );
+  }
+
+  /** Nudges a floating label, float included, inside the visible board: tokens at its edge would cut it off. */
+  private keepInView(label: SVGTextElement): void {
+    const b = label.getBBox();
+    const v = this.view;
+    const m = 4;
+    const dx = Math.max(0, v.x + m - b.x) - Math.max(0, b.x + b.width - (v.x + v.w - m));
+    const dy = Math.max(0, v.y + m + FLOAT_LIFT - b.y);
+    if (dx !== 0) label.setAttribute('x', String(n(Number(label.getAttribute('x')) + dx)));
+    if (dy !== 0) label.setAttribute('y', String(n(Number(label.getAttribute('y')) + dy)));
   }
 
   /** Map point to view point: the map is rotated a quarter turn clockwise on a portrait container. */
@@ -337,6 +417,7 @@ export class BoardView {
         v.h = h;
       }
     }
+    this.view = v;
     this.root.setAttribute('viewBox', `${n(v.x)} ${n(v.y)} ${n(v.w)} ${n(v.h)}`);
     this.world.setAttribute('transform', rotated ? `translate(${this.mapH} 0) rotate(90)` : '');
     this.root.classList.toggle('is-rotated', rotated);
@@ -436,6 +517,7 @@ export class BoardView {
   }
 
   private build(state: GameState): void {
+    this.endPlacements?.();
     const t0 = performance.now();
     const { board } = state;
     this.board = board;
