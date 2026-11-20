@@ -41,6 +41,7 @@ Take every territory on the map. A player left with none is out.
 - On your turn, tap one of your territories with 2 or more dice, then an enemy territory next to it.
 - Both sides roll all their dice and the higher total wins. **A tie goes to the defender.** The badge on the target shows your chance of winning.
 - **Win:** you take the territory and move in all your dice but one.
+- The territory you took stays selected while it can attack again: tap the next target to carry on, or tap it again to let go.
 - **Lose:** your territory drops to 1 die.
 - **Draw:** it drops to as many dice as the defender had, losing at least 1.
 - Attack as often as you like, then end your turn.
@@ -64,7 +65,7 @@ Rounded to whole percent. Equal stacks win less than half the time, because ties
 
 ### Reinforcements
 
-- When you end your turn you get 1 die for each territory in your **largest connected group**: the number by your name. The small number under it, by the little die, is how many dice you have on the map.
+- When you end your turn you get 1 die for each territory in your **largest connected group**: the number by your name. The small numbers under it count your dice on the map, by the little die, and the territories you hold, by the little hexagon.
 - You also get +1 die per turn for every player you knock out, for the rest of the game.
 - New dice land at random on your territories that border an enemy, up to 8 per territory.
 - Dice that don't fit on your front line go to the territories just behind it, nearest the front first. They wait in your reserve (up to 64, shown as +N by your name) only once every territory you hold is full, and come with your next reinforcements.
@@ -83,6 +84,7 @@ Rounded to whole percent. Equal stacks win less than half the time, because ties
 
 - **Easy** attacks at random, even against long odds, and sometimes ends its turn early.
 - **Normal** attacks when the odds are at least even, or from a full stack of 8 when they are 30% or better. It prefers captures that grow its largest group, break up the leader's or knock a player out, and the whole table gangs up on anyone who runs away with the map. That includes you.
+- A **runaway** holds 8 territories or more with six to eight players in, 9 with five, 12 with four and 15 with three. A crosshair on their emblem in the player bar shows who that is, whenever a Normal computer player is left to go after them.
 
 ### Tips
 

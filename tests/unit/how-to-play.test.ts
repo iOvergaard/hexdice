@@ -12,14 +12,15 @@ const section = (heading: string, overrides: Partial<RulesConfig> = {}) =>
   helpSections({ ...DEFAULT_RULES, ...overrides }).find((s) => s.heading === heading)?.lines.join('\n');
 
 describe('how to play', () => {
-  it('covers the goal, attacks, reinforcements, linking, the final and tips with the default rules', () => {
-    expect(helpSections(DEFAULT_RULES).map((s) => s.heading)).toEqual(['Goal', 'The map', 'Attacking', 'Reinforcements', 'Linking up', 'The final', 'Tips']);
+  it('covers the goal, attacks, reinforcements, linking, the final, runaways and tips with the default rules', () => {
+    expect(helpSections(DEFAULT_RULES).map((s) => s.heading)).toEqual(['Goal', 'The map', 'Attacking', 'Reinforcements', 'Linking up', 'The final', 'Runaways', 'Tips']);
   });
 
   it('says ties go to the defender and what a failed attack costs', () => {
     const attack = section('Attacking')!;
     expect(attack).toContain('a tie goes to the defender');
     expect(attack).toContain('all your dice but one');
+    expect(attack).toContain('The territory you took stays selected while it can attack again');
     expect(attack).toContain('Lose: your territory drops to 1 die');
     expect(attack).toContain('Draw: it drops to as many dice as the defender had');
   });
@@ -33,7 +34,7 @@ describe('how to play', () => {
   it('explains income from the largest group, front-line placement, the reserve and knockouts', () => {
     const r = section('Reinforcements')!;
     expect(r).toContain('largest connected group');
-    expect(r).toContain('The small number under it, by the little die, is how many dice you have on the map.');
+    expect(r).toContain('The small numbers under it count your dice on the map, by the little die, and the territories you hold, by the little hexagon.');
     expect(r).toContain('border an enemy');
     expect(r).toContain(`up to ${DEFAULT_RULES.maxDice}`);
     expect(r).toContain(`up to ${DEFAULT_RULES.maxReserve}`);
@@ -75,6 +76,14 @@ describe('how to play', () => {
     expect(attack).toContain("can't attack again this turn");
     expect(section('Tips', { shaken: true })).toContain('finish it off from another side');
     expect(text().toLowerCase()).not.toContain('shaken');
+  });
+
+  it('explains who Normal gangs up on, the crosshair that marks them and the bar at each player count', () => {
+    const r = section('Runaways')!;
+    expect(r).toContain('On Normal, the computer players gang up on anyone who runs away with the map, you included.');
+    expect(r).toContain('A crosshair on the emblem in the player bar');
+    expect(r).toContain('A runaway holds 8 territories or more with six to eight players in, 9 with five, 12 with four and 15 with three.');
+    expect(section('Runaways', { territoryCount: 40 })).toContain('A runaway holds 8 territories or more with eight players in, 9 with seven, 10 with six, 12 with five, 15 with four and 20 with three.');
   });
 
   it('only mentions rivers and fords when the map has them', () => {

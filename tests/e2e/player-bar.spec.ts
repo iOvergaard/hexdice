@@ -7,18 +7,22 @@ declare global {
   }
 }
 
-test('each player shows their total dice next to their income, and the bar still fits', async ({ page }, info) => {
+test('each player shows their total dice and territories under their income, and the bar still fits', async ({ page }, info) => {
   await page.goto('/?seed=42&players=8&speed=instant&sound=off');
   await page.waitForFunction(() => !!window.__hexdice?.state());
   await page.evaluate(() => window.__hexdice!.idle());
   const totals = await page.evaluate(() => {
     const s = window.__hexdice!.state()!;
-    return s.players.map((p) => s.territories.filter((t) => t.owner === p.id).reduce((n, t) => n + t.dice, 0));
+    return s.players.map((p) => {
+      const mine = s.territories.filter((t) => t.owner === p.id);
+      return { dice: mine.reduce((n, t) => n + t.dice, 0), held: mine.length };
+    });
   });
-  for (const [id, total] of totals.entries()) {
-    const dice = page.getByTestId(`player-${id}`).locator('.chip-dice');
-    await expect(dice).toHaveText(String(total));
-    await expect(page.getByTestId(`player-${id}`)).toHaveAttribute('aria-label', new RegExp(`, ${total} dice`));
+  for (const [id, { dice, held }] of totals.entries()) {
+    const chip = page.getByTestId(`player-${id}`);
+    await expect(chip.locator('.chip-dice')).toHaveText(String(dice));
+    await expect(chip.locator('.chip-held')).toHaveText(String(held));
+    await expect(chip).toHaveAttribute('aria-label', new RegExp(`, ${dice} dice, ${held} territor(y|ies)`));
   }
   // Nothing in a chip spills over its edge.
   const spill = await page.evaluate(() =>

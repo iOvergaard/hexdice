@@ -1,4 +1,5 @@
 import { chooseAction } from '../ai';
+import { gangedUpOn } from '../ai/runaway';
 import { DEFAULT_RULES, makeConfig, randomSeed } from '../engine/config';
 import { Rng } from '../engine/rng';
 import { applyAction, attackOdds, isLegalAttack, largestGroup } from '../engine/rules';
@@ -11,12 +12,12 @@ import { openHowToPlay } from '../ui/how-to-play';
 import { openWhatsNew } from '../ui/whats-new';
 import { createGameScreen, showTitle, type GameScreen, type TitleOptions } from '../ui/screens';
 import type { Ending, Mood } from '../ui/ending';
-import { nextSelection, targetsFor } from '../ui/selection';
+import { nextSelection, selectionAfterAttack, targetsFor } from '../ui/selection';
 import { restore, serialise, type RestoredGame } from './save';
 import { loadSoundOn, Sound } from './sound';
 import { cuesFor } from './sound-cues';
 import { summarise } from './summary';
-import { AI_PLACE_MS, AI_ROLL_MS, ELIMINATION_MS, PAUSE_MS, PLACE_MS, ROLL_MS } from './timing';
+import { AI_PLACE_MS, AI_ROLL_MS, DRAIN_SHARE, ELIMINATION_MS, PAUSE_MS, PLACE_MS, ROLL_MS } from './timing';
 import type { UrlParams } from './url-params';
 
 const TITLE_KEY = 'hexdice:title';
@@ -124,14 +125,18 @@ export class Controller {
   }
 
   start(): void {
-    if (this.params.seed !== null || this.params.players !== null) {
-      const stored = loadTitle();
-      const opts = { players: this.params.players ?? stored.players, aiLevel: this.params.aiLevel ?? stored.aiLevel };
-      this.newGame(opts, this.params.seed ?? randomSeed());
-      this.begin();
-    } else {
-      this.toTitle(readSave());
-    }
+    const saved = readSave();
+    const link = this.params.seed !== null || this.params.players !== null;
+    // A link starts its game at once, unless that would replace a game in progress: then the title offers both.
+    if (link && !saved) this.playLink();
+    else this.toTitle(saved, link ? () => this.playLink() : undefined);
+  }
+
+  private playLink(): void {
+    const stored = loadTitle();
+    const opts = { players: this.params.players ?? stored.players, aiLevel: this.params.aiLevel ?? stored.aiLevel };
+    this.newGame(opts, this.params.seed ?? randomSeed());
+    this.begin();
   }
 
   private save(): void {
@@ -206,7 +211,7 @@ export class Controller {
   }
 
   // ---- screen flow ----
-  private toTitle(saved: RestoredGame | null = null): void {
+  private toTitle(saved: RestoredGame | null = null, onLink?: () => void): void {
     if (!saved) clearSave();
     this.gen++;
     this.sound.stopAll();
@@ -227,6 +232,7 @@ export class Controller {
       () => openHowToPlay({ ...DEFAULT_RULES, ...this.ruleOverrides() }),
       { unseen: hasUnseen(changelog, seenChange()), open: openChangelog },
       titleScene,
+      onLink,
     );
   }
 
@@ -311,7 +317,8 @@ export class Controller {
     screen.hud.onSpeedChange((s) => {
       this.speed = s;
     });
-    screen.hud.onQuit(() => this.toTitle());
+    // Quit keeps a game you're still in, so the title offers Continue; one you're out of has nothing to continue.
+    screen.hud.onQuit(() => this.toTitle(this.state?.players.some((p) => p.kind === 'human' && p.alive) ? readSave() : null));
     screen.hud.onHelp(() => openHowToPlay(this.state?.config ?? this.config ?? DEFAULT_RULES));
     screen.hud.onSoundToggle(() => {
       this.toggleSound();
@@ -374,6 +381,7 @@ export class Controller {
     this.renderBoard(interactive);
     this.screen!.hud.render(s, {
       largestGroups: s.players.map((p) => (p.alive ? largestGroup(s, p.id) : 0)),
+      gangedUpOn: gangedUpOn(s),
       canEndTurn: interactive,
       skip: this.canSkip() ? (s.players.some((p) => p.kind === 'human' && p.alive) && !this.autoplay ? 'turn' : 'end') : null,
       speed: this.speed,
@@ -417,6 +425,7 @@ export class Controller {
     this.renderAll();
     await this.play(action, gen, this.speed, true);
     if (gen !== this.gen) return;
+    if (action.type === 'attack') this.selected = selectionAfterAttack(this.state!, action, this.canAttack);
     this.busy = false;
     this.kick();
   }
@@ -469,13 +478,22 @@ export class Controller {
     }
     const reinforced = events.find((e) => e.type === 'reinforced');
     if (reinforced) {
-      const name = next.players[reinforced.player]?.name ?? '';
-      const parts = [`${name} +${reinforced.placed.length}`, `largest group ${reinforced.largestGroup}`];
+      const player = next.players[reinforced.player]!;
+      const saved = before.players[reinforced.player]!.reserve;
+      const parts = [`largest group ${reinforced.largestGroup}`];
       if (reinforced.bonus > 0) parts.push(`+${reinforced.bonus} knockout bonus`);
+      if (saved > 0) parts.push(`${saved} from reserve`);
       if (reinforced.reserve > 0) parts.push(`${reinforced.reserve} in reserve`);
-      this.screen!.roll.message(parts.join(' · '));
+      const ms = (byAi ? AI_PLACE_MS : PLACE_MS)[speed];
+      const drain = ms > 0 ? DRAIN_SHARE[speed] : 0;
+      // The pile is every die on offer this turn, the old reserve's included; what doesn't fit on the board stays as the new one.
+      const total = reinforced.placed.length + reinforced.reserve;
+      // A wrapped line never starts with a dot.
+      const join = (first: string) => [first, ...parts].join(' · ');
+      const left = drain > 0 ? this.screen!.roll.pile(player, total, join(`+${reinforced.placed.length}`)) : null;
+      if (!left) this.screen!.roll.message(join(`${player.name} +${reinforced.placed.length}`));
       if (cues.place) this.sound.place(cues.place);
-      await this.screen!.board.showPlacements(reinforced.placed, (byAi ? AI_PLACE_MS : PLACE_MS)[speed]);
+      await this.screen!.board.showPlacements(reinforced.placed, ms, drain, left ? (landed) => left(total - landed) : undefined);
       if (gen !== this.gen) return;
     }
     const stand = events.find((e) => e.type === 'lastStand');

@@ -55,6 +55,42 @@ function makeSide(role: 'defender' | 'attacker'): Side {
   return { el, who, dice, sum, cost };
 }
 
+interface Pile {
+  el: HTMLElement;
+  who: HTMLElement;
+  count: HTMLElement;
+  dice: HTMLElement;
+  caption: HTMLElement;
+}
+
+function makePile(): Pile {
+  const el = document.createElement('div');
+  el.className = 'roll-pile';
+  el.dataset.testid = 'roll-pile';
+  const who = document.createElement('div');
+  who.className = 'roll-who';
+  // The caption says it in words; screen readers shouldn't hear every die land.
+  const count = document.createElement('div');
+  count.className = 'roll-pile-count';
+  count.dataset.testid = 'roll-pile-count';
+  count.setAttribute('aria-hidden', 'true');
+  const dice = document.createElement('div');
+  dice.className = 'roll-dice';
+  dice.setAttribute('aria-hidden', 'true');
+  const caption = document.createElement('p');
+  caption.className = 'roll-pile-caption';
+  caption.dataset.testid = 'roll-pile-caption';
+  const row = document.createElement('div');
+  row.className = 'roll-pile-row';
+  row.append(who, count, dice);
+  el.append(row, caption);
+  return { el, who, count, dice, caption };
+}
+
+/** Cubes drawn in a reinforcement pile at most; a bigger pile drains in proportion. */
+const PILE_CUBES = 12;
+const PILE_FACES = [5, 2, 6, 3, 1, 4];
+
 export const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** Share of a roll spent tumbling; the dice land then and the result shows at the end. Sound times its rattle to it. */
@@ -67,6 +103,7 @@ export class RollView {
   private readonly mid: HTMLElement;
   private readonly hint: HTMLElement;
   private readonly msg: HTMLElement;
+  private readonly pileView = makePile();
   private timer: ReturnType<typeof setInterval> | null = null;
   private settleTimer: ReturnType<typeof setTimeout> | null = null;
   private finish: (() => void) | null = null;
@@ -85,13 +122,13 @@ export class RollView {
     this.msg = document.createElement('p');
     this.msg.className = 'roll-message';
     this.msg.dataset.testid = 'roll-message';
-    this.root.append(this.defender.el, this.mid, this.attacker.el, this.hint, this.msg);
+    this.root.append(this.defender.el, this.mid, this.attacker.el, this.hint, this.msg, this.pileView.el);
     container.append(this.root);
   }
 
   show(event: AttackRolledEvent, state: GameState, durationMs: number): Promise<void> {
     this.stop();
-    this.root.classList.remove('is-idle', 'is-settled', 'is-message');
+    this.root.classList.remove('is-idle', 'is-settled', 'is-message', 'is-pile');
     this.msg.textContent = '';
     this.root.classList.add('is-rolling');
 
@@ -167,10 +204,37 @@ export class RollView {
     this.msg.textContent = text;
   }
 
+  /** End of turn: a player's new dice as a pile that drains as they land. Returns a setter for the dice still in it. */
+  pile(player: Player, total: number, caption: string): (left: number) => void {
+    this.clear();
+    this.root.classList.remove('is-idle');
+    this.root.classList.add('is-pile');
+    const p = this.pileView;
+    const colour = playerColour(player.identity);
+    p.el.style.setProperty('--c', colour);
+    p.el.style.setProperty('--cd', darken(colour));
+    p.el.style.setProperty('--pip', pipColour(colour));
+    const name = document.createElement('span');
+    name.className = 'roll-name';
+    name.textContent = player.name;
+    p.who.replaceChildren(emblemSvg(player.identity), name);
+    const cubes = Array.from({ length: Math.min(total, PILE_CUBES) }, (_, i) => dieFace(PILE_FACES[i % PILE_FACES.length]!));
+    p.dice.replaceChildren(...cubes);
+    p.caption.textContent = caption;
+    const set = (left: number) => {
+      const shown = total > 0 ? Math.ceil((left / total) * cubes.length) : 0;
+      cubes.forEach((c, i) => c.classList.toggle('is-gone', i >= shown));
+      p.count.textContent = String(left);
+      p.el.classList.toggle('is-empty', left === 0);
+    };
+    set(total);
+    return set;
+  }
+
   clear(): void {
     this.stop();
     this.msg.textContent = '';
-    this.root.classList.remove('is-rolling', 'is-settled', 'is-message');
+    this.root.classList.remove('is-rolling', 'is-settled', 'is-message', 'is-pile');
     this.root.classList.add('is-idle');
     for (const s of [this.attacker, this.defender]) {
       s.el.classList.remove('is-winner', 'is-loser');
