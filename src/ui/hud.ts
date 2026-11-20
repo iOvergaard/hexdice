@@ -116,7 +116,11 @@ export class Hud {
   render(state: GameState, opts: HudOptions): void {
     const humans = state.players.filter((p) => p.kind === 'human').length;
     const dice = state.players.map(() => 0);
-    for (const t of state.territories) dice[t.owner]! += t.dice;
+    const held = state.players.map(() => 0);
+    for (const t of state.territories) {
+      dice[t.owner]! += t.dice;
+      held[t.owner]!++;
+    }
     this.chips.replaceChildren(
       ...state.players.map((p) => {
         const group = opts.largestGroups[p.id] ?? 0;
@@ -136,7 +140,7 @@ export class Hud {
         li.append(el('span', 'chip-name', isYou ? 'You' : p.name));
         if (p.alive) {
           const stats = el('span', 'chip-stats');
-          stats.append(el('span', 'chip-group', String(group)), el('span', 'chip-dice', String(dice[p.id])));
+          stats.append(el('span', 'chip-group', String(group)), el('span', 'chip-dice', String(dice[p.id])), el('span', 'chip-held', String(held[p.id])));
           li.append(stats);
           if (p.reserve > 0) li.append(el('span', 'chip-reserve', `+${p.reserve}`));
           const bonus = p.knockouts * state.config.eliminationBonus;
@@ -152,7 +156,7 @@ export class Hud {
         }
         li.setAttribute(
           'aria-label',
-          `${isYou ? 'You' : p.name}${p.alive ? `, largest group ${group}, ${dice[p.id]} dice${p.reserve > 0 ? `, reserve ${p.reserve}` : ''}${p.knockouts * state.config.eliminationBonus > 0 ? `, knockout bonus ${p.knockouts * state.config.eliminationBonus} per turn` : ''}` : ', eliminated'}${current ? ', playing now' : ''}`,
+          `${isYou ? 'You' : p.name}${p.alive ? `, largest group ${group}, ${dice[p.id]} dice, ${held[p.id]} ${held[p.id] === 1 ? 'territory' : 'territories'}${p.reserve > 0 ? `, reserve ${p.reserve}` : ''}${p.knockouts * state.config.eliminationBonus > 0 ? `, knockout bonus ${p.knockouts * state.config.eliminationBonus} per turn` : ''}` : ', eliminated'}${current ? ', playing now' : ''}`,
         );
         return li;
       }),

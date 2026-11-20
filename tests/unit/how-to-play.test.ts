@@ -33,7 +33,7 @@ describe('how to play', () => {
   it('explains income from the largest group, front-line placement, the reserve and knockouts', () => {
     const r = section('Reinforcements')!;
     expect(r).toContain('largest connected group');
-    expect(r).toContain('The small number under it, by the little die, is how many dice you have on the map.');
+    expect(r).toContain('The small numbers under it count your dice on the map, by the little die, and the territories you hold, by the little hexagon.');
     expect(r).toContain('border an enemy');
     expect(r).toContain(`up to ${DEFAULT_RULES.maxDice}`);
     expect(r).toContain(`up to ${DEFAULT_RULES.maxReserve}`);

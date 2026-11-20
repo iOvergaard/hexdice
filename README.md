@@ -64,7 +64,7 @@ Rounded to whole percent. Equal stacks win less than half the time, because ties
 
 ### Reinforcements
 
-- When you end your turn you get 1 die for each territory in your **largest connected group**: the number by your name. The small number under it, by the little die, is how many dice you have on the map.
+- When you end your turn you get 1 die for each territory in your **largest connected group**: the number by your name. The small numbers under it count your dice on the map, by the little die, and the territories you hold, by the little hexagon.
 - You also get +1 die per turn for every player you knock out, for the rest of the game.
 - New dice land at random on your territories that border an enemy, up to 8 per territory.
 - Dice that don't fit on your front line go to the territories just behind it, nearest the front first. They wait in your reserve (up to 64, shown as +N by your name) only once every territory you hold is full, and come with your next reinforcements.
