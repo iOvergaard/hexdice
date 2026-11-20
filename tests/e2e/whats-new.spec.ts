@@ -18,7 +18,9 @@ test("what's new lists the player-facing changes and remembers you've read them"
   await expect(dialog.getByTestId('version')).toHaveText((await newest.textContent())!);
   await expect(newest).toHaveClass(/is-current/);
   await expect(dialog).toContainText("You're on version");
-  // Docs, chores and prototypes stay out.
+  // Only new features and fixes: rules, speed-ups, docs, chores and prototypes stay out.
+  await expect(dialog.locator('.change-tag.is-rules, .change-tag.is-perf')).toHaveCount(0);
+  await expect(dialog).not.toContainText('Catch-up connection bonus on by default');
   await expect(dialog).not.toContainText('Sim results');
   await expect(dialog).not.toContainText('as a setting');
   await expect(dialog).toContainText('Hexdice went online on 17-11-2026.');

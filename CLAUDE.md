@@ -105,18 +105,18 @@ A hands-on report goes in `playtest/DD-MM-YYYY-<change>.md` with screenshots and
 
 ## Commits and What's new
 
-Commits follow Conventional Commits (`type(scope): subject`). `feat`, `rules`, `fix` and `perf` commits are player-facing: `npm run changelog` copies their subject, capitalised, into `CHANGELOG.md`, and the title screen's What's new shows that file.
+Commits follow Conventional Commits (`type(scope): subject`). `feat`, `rules`, `fix` and `perf` commits are player-facing: `npm run changelog` copies their subject, capitalised, into `CHANGELOG.md`. The title screen's What's new shows only the `feat` and `fix` lines (New and Fixed, `forPlayers` in `src/changelog.ts`); `rules` and `perf` lines stay in the file.
 
 - Write player-facing subjects for players, in British English. One change per commit.
 - Everything else uses `docs`, `chore`, `test`, `ci`, `refactor`, `style` or `proto`, and stays out of the changelog.
-- A prototype that becomes the default needs its own `feat` or `rules` commit, or players never hear of it.
+- A prototype that becomes the default needs its own `feat` commit, or players never hear of it in the game (a `rules` commit only reaches `CHANGELOG.md`).
 - `CHANGELOG.md` keeps hand edits. Keep the shape: `## DD-MM-YYYY`, then `- <hash> **New:**`, `**Rules:**`, `**Fixed:**` or `**Faster:**` lines. The hash is optional on hand-added lines.
 - Don't run `npm run changelog` on a branch. After each merge, the deploy workflow's changelog job runs it on main, commits the result as `chore(changelog): up to <sha>`, and the same run deploys that commit. Its push only touches `CHANGELOG.md`, which the `paths` filter skips, so it doesn't start a second deploy. Pull main afterwards.
 - The job pushes with a deploy key (`CHANGELOG_DEPLOY_KEY` in the `changelog` environment, which only main can use). That key is the only thing allowed past main's ruleset.
 - A change sits under the day (Danish time) it reached main, and a branch's commits count from their merge.
 - Hand edits to `CHANGELOG.md` go through a PR. One that changes nothing else doesn't deploy on its own: run the workflow by hand.
 - Before deploying, the deploy job runs `npm run changelog -- --check`, and it won't deploy if a player-facing commit is unlisted. The check reads the commit history, so keep `fetch-depth: 0` there. History before the first deploy (`ce33ad5`) isn't listed.
-- What's new names the version you're on: the hash of the newest change in the build (`currentVersion` in `src/changelog.ts`), and marks that line. The exact commit a deploy came from is in `/version.txt`.
+- What's new names the version you're on: the hash of the newest New or Fixed line in the build (`currentVersion` in `src/changelog.ts`), and marks that line. The exact commit a deploy came from is in `/version.txt`.
 
 ## Git and deploys
 

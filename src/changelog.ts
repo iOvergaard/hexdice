@@ -76,7 +76,7 @@ export function renderChangelog(log: Changelog, upTo: string): string {
   const days = log.days.map((d) => `## ${d.date}\n\n${d.changes.map((c) => `- ${c.hash ? `${c.hash} ` : ''}**${KIND_LABEL[c.kind]}:** ${c.text}\n`).join('')}`);
   return [
     '# Changelog\n',
-    'What changed in Hexdice, newest first. Players see this under What\'s new on the title screen.\n',
+    'What changed in Hexdice, newest first. Players see the New and Fixed lines under What\'s new on the title screen.\n',
     '`npm run changelog` adds new `feat`, `rules`, `fix` and `perf` commits on top, each with its commit hash, under the day it reached main. Edit the wording freely, but keep the shape: `## DD-MM-YYYY`, then `- <hash> **New:**`, `**Rules:**`, `**Fixed:**` or `**Faster:**` lines (the hash is optional).\n',
     `<!-- changelog: up to ${upTo} -->\n`,
     ...days,
@@ -94,6 +94,15 @@ export function parseChangelog(md: string): Changelog {
     if (change && kind && days.length > 0) days.at(-1)!.changes.push({ ...(change[1] ? { hash: change[1] } : {}), kind, text: change[3]! });
   }
   return { days: days.filter((d) => d.changes.length > 0), online: ONLINE.exec(md)?.[1] ?? '' };
+}
+
+/** What's new shows only these; `rules` and `perf` lines stay in CHANGELOG.md. */
+const PLAYER_KINDS: ReadonlySet<ChangeKind> = new Set(['new', 'fix']);
+
+/** The changelog as players see it: new features and fixes, without the days that had neither. */
+export function forPlayers(log: Changelog): Changelog {
+  const days = log.days.map((d) => ({ ...d, changes: d.changes.filter((c) => PLAYER_KINDS.has(c.kind)) }));
+  return { ...log, days: days.filter((d) => d.changes.length > 0) };
 }
 
 /** The newest change as a stable key, for remembering what a player has seen. */
