@@ -88,6 +88,8 @@ Rounded to whole percent. Equal stacks win less than half the time, because ties
 
 - Attack with more dice than the defender.
 - Keep your territories joined up: your largest group is your income.
+- Attack from your largest group: captures elsewhere add no income and leave thin stacks behind.
+- Stay just under the size the computer players gang up on: one and a half times the average number of territories, and at least 8. Hold back there until four players are left, then go for it.
 - A short front line gets your new dice where the fighting is, and water makes a cheap wall.
 - Knocking out a weak player pays every turn after.
 
