@@ -145,3 +145,24 @@ test('Quit from a game you are out of leaves nothing to continue', async ({ page
   await expect(page.getByTestId('title')).toBeVisible();
   await expect(page.getByTestId('continue')).toHaveCount(0);
 });
+
+test('a link opened mid-game offers your game and the linked one, and replaces yours only when you pick the link', async ({ page }, info) => {
+  const before = await gameInProgress(page);
+  await page.goto('/?seed=42&players=4&speed=instant&sound=off');
+  await expect(page.getByTestId('title')).toBeVisible();
+  await expect(page.getByTestId('play-link')).toBeVisible();
+  await page.screenshot({ path: `playtest/screens/keep-save-${info.project.name}-link.png` });
+  await continueGame(page);
+  expect(await position(page)).toEqual(before);
+
+  // Opened again, the link is one tap away, and playing it makes it the game you continue.
+  await page.goto('/?seed=42&players=4&speed=instant&sound=off');
+  await page.getByTestId('play-link').click();
+  await page.waitForFunction(() => !!window.__hexdice?.state());
+  await page.evaluate(() => window.__hexdice!.idle());
+  expect(await position(page)).toMatchObject({ seed: 42, round: 1 });
+  await page.goto('/?sound=off');
+  await expect(page.getByTestId('play-link')).toHaveCount(0);
+  await continueGame(page);
+  expect((await position(page)).seed).toBe(42);
+});
