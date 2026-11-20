@@ -15,7 +15,7 @@ Issue #4 asked for "a pile of dice next to the player bar that drains as each di
 - **Caption wrapping.** A non-breaking space before each "·", so a wrapped line never starts with a dot.
 - **UI only.** The engine's `reinforced` event already lists the dice in placement order; the board replays it. `data-dice`, the HUD chips and the saved game see the real state throughout; only the drawn stacks lag behind for the drain.
 
-**Where it sits.** In the roll strip, not next to the player bar. The strip already carries the end-of-turn line, has a fixed height at every width (124 / 96 / 76 px), and is where your eye already is for "what just happened". Next to the bar it would have had to float over the board or grow the bar, and the phone bar has to stay one row at 375 px. If Jacob would rather have it by the bar, the pile is self-contained in `RollView.pile()` and can move.
+**Where it sits.** In the roll strip, not next to the player bar. The strip already carries the end-of-turn line, has a fixed height at every width (124 / 96 / 76 px), and is where your eye already is for "what just happened". Next to the bar it would have had to float over the board or grow the bar, and the phone bar has to stay one row at 375 px. Asked whether to keep it in the strip or move it by the bar, Jacob chose the strip (20-11-2026).
 
 ## 2. Floating labels at the edge of the board
 
