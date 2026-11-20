@@ -42,7 +42,8 @@ jobs:
       - name: Gate 1 · types and unit tests
         run: npm run check
       - name: CHANGELOG.md lists every player-facing commit
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        # On a PR this checks the merge GitHub would make, so a PR missing its changelog fails.
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
         run: npm run changelog -- --check
       - name: Gate 2 · AI-vs-AI simulation and game length
         # 1,000 eight-player games, so the game-length percentiles are stable.
