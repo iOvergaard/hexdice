@@ -68,6 +68,8 @@ export function showTitle(
   onHelp?: () => void,
   whatsNew?: { unseen: boolean; open: () => void },
   scene?: () => GameState,
+  /** A game link opened while a game is in progress: offered beside Continue instead of replacing it unasked. */
+  onLink?: () => void,
 ): void {
   let players = Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, initial.players));
   let aiLevel = initial.aiLevel;
@@ -128,6 +130,11 @@ export function showTitle(
     cont.addEventListener('click', onContinue);
     actions.append(cont);
     start.className = 'btn btn-big';
+  }
+  if (onLink) {
+    const link = button('Play linked game', 'play-link', 'btn btn-big');
+    link.addEventListener('click', onLink);
+    actions.append(link);
   }
   actions.append(start);
   const extras = el('div', 'title-extras');

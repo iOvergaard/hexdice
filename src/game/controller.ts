@@ -125,14 +125,18 @@ export class Controller {
   }
 
   start(): void {
-    if (this.params.seed !== null || this.params.players !== null) {
-      const stored = loadTitle();
-      const opts = { players: this.params.players ?? stored.players, aiLevel: this.params.aiLevel ?? stored.aiLevel };
-      this.newGame(opts, this.params.seed ?? randomSeed());
-      this.begin();
-    } else {
-      this.toTitle(readSave());
-    }
+    const saved = readSave();
+    const link = this.params.seed !== null || this.params.players !== null;
+    // A link starts its game at once, unless that would replace a game in progress: then the title offers both.
+    if (link && !saved) this.playLink();
+    else this.toTitle(saved, link ? () => this.playLink() : undefined);
+  }
+
+  private playLink(): void {
+    const stored = loadTitle();
+    const opts = { players: this.params.players ?? stored.players, aiLevel: this.params.aiLevel ?? stored.aiLevel };
+    this.newGame(opts, this.params.seed ?? randomSeed());
+    this.begin();
   }
 
   private save(): void {
@@ -207,7 +211,7 @@ export class Controller {
   }
 
   // ---- screen flow ----
-  private toTitle(saved: RestoredGame | null = null): void {
+  private toTitle(saved: RestoredGame | null = null, onLink?: () => void): void {
     if (!saved) clearSave();
     this.gen++;
     this.sound.stopAll();
@@ -228,6 +232,7 @@ export class Controller {
       () => openHowToPlay({ ...DEFAULT_RULES, ...this.ruleOverrides() }),
       { unseen: hasUnseen(changelog, seenChange()), open: openChangelog },
       titleScene,
+      onLink,
     );
   }
 
@@ -311,7 +316,8 @@ export class Controller {
     screen.hud.onSpeedChange((s) => {
       this.speed = s;
     });
-    screen.hud.onQuit(() => this.toTitle());
+    // Quit keeps a game you're still in, so the title offers Continue; one you're out of has nothing to continue.
+    screen.hud.onQuit(() => this.toTitle(this.state?.players.some((p) => p.kind === 'human' && p.alive) ? readSave() : null));
     screen.hud.onHelp(() => openHowToPlay(this.state?.config ?? this.config ?? DEFAULT_RULES));
     screen.hud.onSoundToggle(() => {
       this.toggleSound();
