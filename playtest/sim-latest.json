@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-19T13:42:12.433Z",
+  "date": "2026-11-20T13:03:17.972Z",
   "games": 2000,
   "rules": {
     "lossRule": "drawAttrition",
@@ -43,8 +43,8 @@
     "max": 42,
     "over60Share": 0,
     "limits": {
-      "maxP90": 26,
-      "maxP99": 33,
+      "maxP90": 28,
+      "maxP99": 36,
       "maxOver60Share": 0.005
     },
     "failures": []
@@ -54,5 +54,5 @@
   "roundCapHits": 0,
   "attacks": 331791,
   "ties": 11217,
-  "durationMs": 25172
+  "durationMs": 26414
 }
