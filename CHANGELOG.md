@@ -4,10 +4,11 @@ What changed in Hexdice, newest first. Players see the New and Fixed lines under
 
 `npm run changelog` adds new `feat`, `rules`, `fix` and `perf` commits on top, each with its commit hash, under the day it reached main. Edit the wording freely, but keep the shape: `## DD-MM-YYYY`, then `- <hash> **New:**`, `**Rules:**`, `**Fixed:**` or `**Faster:**` lines (the hash is optional).
 
-<!-- changelog: up to 394db40e15916ee73cc8a43ff143127d4e714b8b -->
+<!-- changelog: up to 4e99105e8b4d406f2697c7691033358e21587474 -->
 
 ## 20-11-2026
 
+- 85bd30c **New:** What's new shows only new features and fixes
 - 373aecc **New:** Copy your game from the end-of-game card, to replay or share it move by move
 - 90c5c7b **Rules:** Fairer starting dice by turn order in 3-, 6- and 7-player games
 
