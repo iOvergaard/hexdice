@@ -4,10 +4,11 @@ What changed in Hexdice, newest first. Players see the New and Fixed lines under
 
 `npm run changelog` adds new `feat`, `rules`, `fix` and `perf` commits on top, each with its commit hash, under the day it reached main. Edit the wording freely, but keep the shape: `## DD-MM-YYYY`, then `- <hash> **New:**`, `**Rules:**`, `**Fixed:**` or `**Faster:**` lines (the hash is optional).
 
-<!-- changelog: up to 2845381d4d4cde00da851286b8485ff24a955673 -->
+<!-- changelog: up to c651e2208d1698d32e559420221e610ae67f3c03 -->
 
 ## 20-11-2026
 
+- 706f6f0 **Rules:** A territory that holds against you is shaken: a tie against it goes to you for the rest of your turn, and the stack that attacked it can't attack again
 - 285f2de **New:** At the end of a turn, new dice wait in a pile and land one at a time
 - ed1e255 **Fixed:** Labels over territories at the board's edge are no longer cut off
 - bd16ac6 **New:** A crosshair in the player bar marks the runaway the computer players gang up on
