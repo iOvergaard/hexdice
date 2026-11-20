@@ -4,11 +4,11 @@ on:
   push:
     branches: [main]
     # Runs, and deploys, only when a push touches the game or its tests. Later patterns override earlier ones,
-    # so everything counts except Markdown (bar CHANGELOG.md, which What's new shows), docs, reports and repo settings.
+    # so everything counts except Markdown, docs, reports and repo settings. That includes CHANGELOG.md, so the
+    # changelog job's own push doesn't start a second run.
     paths:
       - '**'
       - '!**.md'
-      - 'CHANGELOG.md'
       - '!LICENSE'
       - '!docs/**'
       - '!playtest/**'
@@ -25,15 +25,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changelog:
+    # After a merge, commit CHANGELOG.md so What's new ships with this run's deploy.
+    name: Changelog
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Holds the deploy key that may push past main's ruleset; only main can use it.
+    environment: changelog
+    outputs:
+      sha: ${{ steps.commit.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ssh-key: ${{ secrets.CHANGELOG_DEPLOY_KEY }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Write and commit CHANGELOG.md
+        id: commit
+        run: |
+          npm run changelog
+          if ! git diff --quiet -- CHANGELOG.md; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -q -m "chore(changelog): up to ${GITHUB_SHA::7}" -- CHANGELOG.md
+            git push origin HEAD:main
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
   test:
     name: Types, unit tests and simulation
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
-        with:
-          # The changelog check reads the commit history.
-          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -41,9 +70,6 @@ jobs:
       - run: npm ci
       - name: Gate 1 · types and unit tests
         run: npm run check
-      - name: CHANGELOG.md lists every player-facing commit
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: npm run changelog -- --check
       - name: Gate 2 · AI-vs-AI simulation and game length
         # 1,000 eight-player games, so the game-length percentiles are stable.
         run: npm run sim -- --games 2000 --out "$RUNNER_TEMP/sim.json"
@@ -78,7 +104,7 @@ jobs:
 
   deploy:
     name: Deploy to GitHub Pages
-    needs: [test, e2e]
+    needs: [changelog, test, e2e]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -91,11 +117,17 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          # The merge plus its changelog commit; the changelog check reads the history.
+          ref: ${{ needs.changelog.outputs.sha }}
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: CHANGELOG.md lists every player-facing commit
+        run: npm run changelog -- --check
       - run: npm run build
       - name: Record the commit this build comes from
         # Written after the build, so the offline worker doesn't cache it and players aren't asked to update for it.

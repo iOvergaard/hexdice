@@ -110,19 +110,22 @@ Commits follow Conventional Commits (`type(scope): subject`). `feat`, `rules`, `
 - Everything else uses `docs`, `chore`, `test`, `ci`, `refactor`, `style` or `proto`, and stays out of the changelog.
 - A prototype that becomes the default needs its own `feat` or `rules` commit, or players never hear of it.
 - `CHANGELOG.md` keeps hand edits. Keep the shape: `## DD-MM-YYYY`, then `- <hash> **New:**`, `**Rules:**`, `**Fixed:**` or `**Faster:**` lines. The hash is optional on hand-added lines.
-- A change sits under the day (Danish time) it reached main, and a branch's commits count from their merge. So generate the changelog on main after merging, not on the branch.
-- Whatever a session merges to main lands in `CHANGELOG.md` in the same push. CI on main runs `npm run changelog -- --check` and fails before deploying if a player-facing commit is unlisted.
-- The check reads the commit history, so keep `fetch-depth: 0` in CI. History before the first deploy (`ce33ad5`) isn't listed.
+- Don't run `npm run changelog` on a branch. After each merge, the deploy workflow's changelog job runs it on main, commits the result as `chore(changelog): up to <sha>`, and the same run deploys that commit. Its push only touches `CHANGELOG.md`, which the `paths` filter skips, so it doesn't start a second deploy. Pull main afterwards.
+- The job pushes with a deploy key (`CHANGELOG_DEPLOY_KEY` in the `changelog` environment, which only main can use). That key is the only thing allowed past main's ruleset.
+- A change sits under the day (Danish time) it reached main, and a branch's commits count from their merge.
+- Hand edits to `CHANGELOG.md` go through a PR. One that changes nothing else doesn't deploy on its own: run the workflow by hand.
+- Before deploying, the deploy job runs `npm run changelog -- --check`, and it won't deploy if a player-facing commit is unlisted. The check reads the commit history, so keep `fetch-depth: 0` there. History before the first deploy (`ce33ad5`) isn't listed.
 - What's new names the version you're on: the hash of the newest change in the build (`currentVersion` in `src/changelog.ts`), and marks that line. The exact commit a deploy came from is in `/version.txt`.
 
 ## Git and deploys
 
-- `main` is the integration branch. Feature work happens on branches (`feat/…`, `fix/…`, `proto/…`) or in agent worktrees under `.claude/worktrees/`.
-- Merge with `git merge --no-ff <branch> -m "Merge <branch>: <summary>"`, then run `npm run changelog` and commit it as `chore(changelog): …`.
-- A push to main runs `.github/workflows/deploy.yml`. Three jobs run side by side: check, changelog check and sim of 2,000 games; e2e on desktop; and e2e on phone. Then comes a deploy to GitHub Pages, which writes the commit it came from to `/version.txt`.
+- `main` is the integration branch. Every task gets its own branch (`feat/…`, `fix/…`, `ci/…`, `proto/…`, or a session's worktree branch) and its own pull request to main.
+- Open the PR with `gh pr create` once the gates pass locally, with the Claude Code footer at the end of the body. Bind it to your session (`bind_pr`), so the app archives the session when the PR merges.
+- Every PR runs the three test jobs of `.github/workflows/deploy.yml` side by side: check and sim of 2,000 games; e2e on desktop; and e2e on phone. All three must pass before it merges (a ruleset on main). The merge to main runs them again next to the changelog job, then deploys to GitHub Pages, which writes the commit it came from to `/version.txt`.
+- Merge with a merge commit, `gh pr merge <n> --merge --subject "Merge <branch>: <summary>"`. Never squash or rebase, since the changelog reads main's merge commits.
 - On CI a failed browser test gets one retry. One that passes on the retry shows as flaky in the run's annotations: fix it, don't live with it.
-- Its `paths` filter skips pushes that only touch Markdown (except `CHANGELOG.md`), `LICENSE`, `docs/`, `playtest/`, `.claude/` or `.github/FUNDING.yml`. Add new non-game paths there. To deploy anyway, run the workflow by hand.
-- **Ask Jacob before every push to main**, and before merging into it.
-- After a push, `gh run watch <id> --exit-status`. If it deployed, `curl -s https://hexdice.snebold.dk/version.txt` prints the commit you pushed.
+- Its `paths` filter skips pushes to main that only touch Markdown (`CHANGELOG.md` included), `LICENSE`, `docs/`, `playtest/`, `.claude/` or `.github/FUNDING.yml`. Add new non-game paths there. To deploy anyway, run the workflow by hand.
+- **Ask Jacob before every push to main**, and before merging into it. Merging a PR counts.
+- After a merge or push, `gh run watch <id> --exit-status`. If it deployed, `curl -s https://hexdice.snebold.dk/version.txt` prints the merge commit, or the changelog commit on top of it.
 - Never force-push, never amend or rebase pushed commits, never bypass commit signing.
 - Clean up after yourself once your work is merged and deployed: `git worktree remove` your worktree, delete your merged local branches with `git branch -d`, and stop the dev servers you started (Jacob, 19-11-2026). Never `git branch -D`, never delete remote branches, and leave other sessions' worktrees and branches alone.
