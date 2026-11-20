@@ -4,7 +4,7 @@ What changed in Hexdice, newest first. Players see this under What's new on the 
 
 `npm run changelog` adds new `feat`, `rules`, `fix` and `perf` commits on top, each with its commit hash, under the day it reached main. Edit the wording freely, but keep the shape: `## DD-MM-YYYY`, then `- <hash> **New:**`, `**Rules:**`, `**Fixed:**` or `**Faster:**` lines (the hash is optional).
 
-<!-- changelog: up to 060a68792aa96e3d404a2d2d9973e1dc39edd7ae -->
+<!-- changelog: up to 394db40e15916ee73cc8a43ff143127d4e714b8b -->
 
 ## 20-11-2026
 
