@@ -1,3 +1,5 @@
+import { runawayBar } from '../ai/runaway';
+import { MAX_PLAYERS } from '../engine/config';
 import type { RulesConfig } from '../engine/types';
 import { listSection, openPanel } from './panel';
 
@@ -7,6 +9,21 @@ export interface HelpSection {
 }
 
 const dice = (n: number) => `${n} ${n === 1 ? 'die' : 'dice'}`;
+const COUNT = ['', '', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight'];
+
+/** The runaway bar from the most players down to three: "8 territories or more with six to eight players in, 9 with five, …". */
+function runawayBars(territories: number): string {
+  const parts: string[] = [];
+  for (let alive = MAX_PLAYERS; alive >= 3; ) {
+    const bar = runawayBar(territories, alive);
+    let low = alive;
+    while (low > 3 && runawayBar(territories, low - 1) === bar) low--;
+    const players = low < alive ? `${COUNT[low]} to ${COUNT[alive]}` : COUNT[low];
+    parts.push(parts.length === 0 ? `${bar} territories or more with ${players} players in` : `${bar} with ${players}`);
+    alive = low - 1;
+  }
+  return parts.length === 1 ? parts[0]! : `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
+}
 
 /** The rules in plain words, following the settings the game is played with. */
 export function helpSections(rules: RulesConfig): HelpSection[] {
@@ -44,7 +61,7 @@ export function helpSections(rules: RulesConfig): HelpSection[] {
     weighted: `New dice land at random on your territories, up to ${rules.maxDice} per territory, three times as likely on ones that border an enemy.`,
   }[rules.reinforcement];
   const income = [
-    'When you end your turn you get 1 die for each territory in your largest connected group: the number by your name. The small number under it, by the little die, is how many dice you have on the map.',
+    'When you end your turn you get 1 die for each territory in your largest connected group: the number by your name. The small numbers under it count your dice on the map, by the little die, and the territories you hold, by the little hexagon.',
   ];
   if (rules.eliminationBonus > 0) income.push(`You also get +${dice(rules.eliminationBonus)} per turn for every player you knock out, for the rest of the game.`);
   const reserve = `(up to ${rules.maxReserve}), shown as +N by your name, and come with your next reinforcements.`;
@@ -75,6 +92,13 @@ export function helpSections(rules: RulesConfig): HelpSection[] {
       ],
     });
   }
+  sections.push({
+    heading: 'Runaways',
+    lines: [
+      'On Normal, the computer players gang up on anyone who runs away with the map, you included. A crosshair on the emblem in the player bar shows who that is.',
+      `A runaway holds ${runawayBars(rules.territoryCount)}.`,
+    ],
+  });
 
   const tips = ['Attack with more dice than the defender: equal stacks win less than half the time.', 'Keep your territories joined up. Your largest group is your income.', 'Attack from your largest group. Captures elsewhere add no income and leave thin stacks behind.', 'Stay just under the size the computer players gang up on: one and a half times the average number of territories, and at least 8. Hold back there until four players are left, then go for it.'];
   if (rules.reinforcement === 'frontline') tips.push('A short front line gets your new dice where the fighting is, and water makes a cheap wall.');
