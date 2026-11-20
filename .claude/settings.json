@@ -3,6 +3,7 @@
     "allow": [
       "Bash(npm *)",
       "Bash(npx *)",
+      "Bash(E2E_PORT=* npm *)",
       "mcp__Claude_Browser",
       "mcp__Claude_Code_iOS_Simulator",
       "Bash(xcrun simctl *)",
