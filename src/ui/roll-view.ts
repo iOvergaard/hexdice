@@ -121,9 +121,10 @@ export class RollView {
       const d = event.defendRolls.length;
       const draw = event.attackSum === event.defendSum;
       const left = event.success ? 1 : diceAfterFailedAttack(state.config, a, d, draw);
-      this.attacker.cost.textContent = event.success ? `${a - 1} moved in` : `${a} → ${left}`;
-      this.defender.cost.textContent = event.success ? `lost ${d}` : `kept ${d}`;
-      this.mid.textContent = event.success ? 'Captured' : draw ? 'Draw' : 'Held';
+      const held = !event.success && state.config.shaken;
+      this.attacker.cost.textContent = event.success ? `${a - 1} moved in` : `${a} → ${left}${held && left >= 2 ? ' · spent' : ''}`;
+      this.defender.cost.textContent = event.success ? `lost ${d}` : held ? 'shaken' : `kept ${d}`;
+      this.mid.textContent = event.success ? (draw ? 'Tie · captured' : 'Captured') : draw ? 'Draw' : 'Held';
       this.root.classList.remove('is-rolling');
       this.root.classList.add('is-settled');
       const done = this.finish;

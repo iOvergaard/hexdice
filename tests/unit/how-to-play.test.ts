@@ -69,12 +69,20 @@ describe('how to play', () => {
     expect(text({ lastStandDice: 0 })).not.toContain('The final');
   });
 
+  it('explains the shaken rule when it is on, and leaves it out when off', () => {
+    const attack = section('Attacking', { shaken: true })!;
+    expect(attack).toContain('the defender is shaken until your turn ends: a tie against it goes to you');
+    expect(attack).toContain("can't attack again this turn");
+    expect(section('Tips', { shaken: true })).toContain('finish it off from another side');
+    expect(text().toLowerCase()).not.toContain('shaken');
+  });
+
   it('only mentions rivers and fords when the map has them', () => {
     expect(section('The map')).toContain('ford');
     expect(section('The map', { riverCount: 0 })).not.toContain('ford');
   });
 
   it('never uses an em dash', () => {
-    for (const lossRule of ['classic', 'attrition', 'drawAttrition', 'halfStack'] as const) expect(text({ lossRule })).not.toContain('—');
+    for (const lossRule of ['classic', 'attrition', 'drawAttrition', 'halfStack'] as const) expect(text({ lossRule, shaken: true })).not.toContain('—');
   });
 });

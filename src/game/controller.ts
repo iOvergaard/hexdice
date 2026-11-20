@@ -1,8 +1,7 @@
 import { chooseAction } from '../ai';
 import { DEFAULT_RULES, makeConfig, randomSeed } from '../engine/config';
-import { winProbability } from '../engine/odds';
 import { Rng } from '../engine/rng';
-import { applyAction, isLegalAttack, largestGroup } from '../engine/rules';
+import { applyAction, attackOdds, isLegalAttack, largestGroup } from '../engine/rules';
 import { defaultSeats } from '../engine/seats';
 import { createGame } from '../engine/setup';
 import type { Action, AiLevel, GameConfig, GameEvent, GameState, RulesConfig, Speed, TerritoryId } from '../engine/types';
@@ -236,6 +235,7 @@ export class Controller {
     return {
       ...(this.params.reinforcement ? { reinforcement: this.params.reinforcement } : {}),
       ...(this.params.connectionBonus ? { connectionBonus: this.params.connectionBonus } : {}),
+      ...(this.params.shaken !== null ? { shaken: this.params.shaken } : {}),
     };
   }
 
@@ -364,9 +364,7 @@ export class Controller {
 
   private oddsFor(state: GameState, from: TerritoryId): Map<TerritoryId, number> {
     const odds = new Map<TerritoryId, number>();
-    for (const to of targetsFor(state, from, this.canAttack)) {
-      odds.set(to, winProbability(state.territories[from]!.dice, state.territories[to]!.dice));
-    }
+    for (const to of targetsFor(state, from, this.canAttack)) odds.set(to, attackOdds(state, from, to));
     return odds;
   }
 
@@ -449,6 +447,8 @@ export class Controller {
       const lost = before.territories[roll.from]!.dice - next.territories[roll.from]!.dice;
       void this.screen!.board.showLoss(roll.from, lost, (byAi ? AI_PLACE_MS : PLACE_MS)[speed] * 1.5);
     }
+    const shook = events.find((e) => e.type === 'shaken');
+    if (shook) void this.screen!.board.showShaken(shook.territory, (byAi ? AI_PLACE_MS : PLACE_MS)[speed] * 1.5);
     const linked = events.find((e) => e.type === 'linked');
     if (linked) void this.screen!.board.showLink(linked.territory, linked.bonus, (byAi ? AI_PLACE_MS : PLACE_MS)[speed] * 2);
     const out = events.find((e) => e.type === 'playerEliminated');

@@ -11,6 +11,7 @@ describe('parseUrlParams', () => {
       sound: false,
       reinforcement: null,
       connectionBonus: null,
+      shaken: null,
     });
   });
   it('clamps players to 2..8', () => {
@@ -26,7 +27,7 @@ describe('parseUrlParams', () => {
     expect(p.speed).toBeNull();
   });
   it('returns all null for an empty string', () => {
-    expect(parseUrlParams('')).toEqual({ seed: null, players: null, aiLevel: null, speed: null, sound: null, reinforcement: null, connectionBonus: null });
+    expect(parseUrlParams('')).toEqual({ seed: null, players: null, aiLevel: null, speed: null, sound: null, reinforcement: null, connectionBonus: null, shaken: null });
   });
   it('reads a connection bonus, ignores unknown ones', () => {
     expect(parseUrlParams('?link=catchup').connectionBonus).toBe('catchup');
@@ -43,5 +44,12 @@ describe('parseUrlParams', () => {
     expect(parseUrlParams('?sound=on').sound).toBe(true);
     expect(parseUrlParams('?sound=off').sound).toBe(false);
     expect(parseUrlParams('?sound=loud').sound).toBeNull();
+  });
+
+  it('reads shaken=on and shaken=off, ignores anything else', () => {
+    expect(parseUrlParams('?shaken=on').shaken).toBe(true);
+    expect(parseUrlParams('?shaken=off').shaken).toBe(false);
+    expect(parseUrlParams('?shaken=yes').shaken).toBeNull();
+    expect(parseUrlParams('').shaken).toBeNull();
   });
 });

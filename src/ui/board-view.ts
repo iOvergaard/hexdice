@@ -102,6 +102,8 @@ export class BoardView {
   /** Where each token is drawn, in view units, after overlapping tokens are nudged apart. */
   private tokenAt: Point[] = [];
   private rotated = false;
+  /** The visible part of the board, in view units. */
+  private viewBox = { x: 0, y: 0, w: 0, h: 0 };
   private tapHandler: (territory: TerritoryId | null) => void = () => {};
   private interactive = true;
 
@@ -172,7 +174,9 @@ export class BoardView {
       node.group.classList.toggle('is-target', targets.has(id));
       node.group.classList.toggle('is-attack', view.attack?.from === id || view.attack?.to === id);
       node.group.classList.toggle('is-full', t.dice >= state.config.maxDice);
-      for (const cls of ['is-selected', 'is-target', 'is-attack', 'is-full']) {
+      node.group.classList.toggle('is-shaken', state.shaken.includes(id));
+      node.group.classList.toggle('is-spent', state.spent.includes(id) && t.dice >= 2);
+      for (const cls of ['is-selected', 'is-target', 'is-attack', 'is-full', 'is-shaken', 'is-spent']) {
         node.token.classList.toggle(cls, node.group.classList.contains(cls));
       }
       node.units.update(t.dice, identity);
@@ -291,7 +295,12 @@ export class BoardView {
     await Promise.all([this.showPlacements(placed.filter((id) => id !== at), durationMs), this.floatLabel(at, 'Last stand!', 'stand', durationMs)]);
   }
 
-  private floatLabel(territory: TerritoryId, text: string, kind: 'loss' | 'link' | 'stand', durationMs: number): Promise<void> {
+  /** Floats an amber "Shaken!" over a defender that just held. */
+  showShaken(territory: TerritoryId, durationMs: number): Promise<void> {
+    return this.floatLabel(territory, 'Shaken!', 'shaken', durationMs);
+  }
+
+  private floatLabel(territory: TerritoryId, text: string, kind: 'loss' | 'link' | 'stand' | 'shaken', durationMs: number): Promise<void> {
     const geo = this.geometry[territory];
     if (durationMs <= 0 || !geo) return Promise.resolve();
     const scale = this.rotated ? PORTRAIT_UNIT_SCALE : UNIT_SCALE;
@@ -302,6 +311,22 @@ export class BoardView {
     label.style.setProperty('--dur', `${durationMs}ms`);
     label.textContent = text;
     this.placeLayer.append(label);
+    // Keep a label near the board's edge on screen, and lift it clear of a label already showing (a loss next to "Shaken!").
+    const box = label.getBBox();
+    const v = this.viewBox;
+    if (box.width > 0 && v.w > box.width) {
+      const x = Math.min(Math.max(p.x, v.x + box.width / 2), v.x + v.w - box.width / 2);
+      label.setAttribute('x', String(n(x)));
+      box.x += x - p.x;
+    }
+    for (const other of this.placeLayer.querySelectorAll<SVGTextElement>('text.placement')) {
+      if (other === label) continue;
+      const o = other.getBBox();
+      if (box.x < o.x + o.width && o.x < box.x + box.width && box.y < o.y + o.height && o.y < box.y + box.height) {
+        label.setAttribute('y', String(n(Number(label.getAttribute('y')) - (box.y + box.height - o.y) - 4)));
+        break;
+      }
+    }
     return new Promise((resolve) =>
       setTimeout(() => {
         label.remove();
@@ -338,6 +363,7 @@ export class BoardView {
       }
     }
     this.root.setAttribute('viewBox', `${n(v.x)} ${n(v.y)} ${n(v.w)} ${n(v.h)}`);
+    this.viewBox = v;
     this.world.setAttribute('transform', rotated ? `translate(${this.mapH} 0) rotate(90)` : '');
     this.root.classList.toggle('is-rotated', rotated);
     this.placeTokens();
