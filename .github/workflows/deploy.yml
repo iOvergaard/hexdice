@@ -48,20 +48,21 @@ jobs:
       - name: Write and commit CHANGELOG.md
         id: commit
         run: |
-          # A re-run finds the commit its first attempt pushed on top of this merge: deploy that, as writing it again can't push.
-          git fetch -q origin main
-          tip=$(git rev-parse origin/main)
-          if [ "$(git rev-parse "$tip^")" = "$GITHUB_SHA" ] && git show "$tip:CHANGELOG.md" | grep -qF "<!-- changelog: up to $GITHUB_SHA -->"; then
-            git checkout -q "$tip"
-          else
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          # Build on the newest main and retry: a merge that starts no run of its own (docs, .claude) can land meanwhile.
+          for attempt in 1 2 3; do
+            git fetch -q origin main
+            git checkout -q --detach origin/main
+            # The tip is already a changelog commit (a re-run, or a run that got there first): deploy it as it is.
+            git show HEAD:CHANGELOG.md | grep -qF "<!-- changelog: up to $(git rev-parse HEAD^) -->" && break
             npm run changelog
-            if ! git diff --quiet -- CHANGELOG.md; then
-              git config user.name 'github-actions[bot]'
-              git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-              git commit -q -m "chore(changelog): up to ${GITHUB_SHA::7}" -- CHANGELOG.md
-              git push origin HEAD:main
-            fi
-          fi
+            git diff --quiet -- CHANGELOG.md && break
+            head=$(git rev-parse HEAD)
+            git commit -q -m "chore(changelog): up to ${head::7}" -- CHANGELOG.md
+            git push -q origin HEAD:main && break
+            [ "$attempt" -lt 3 ] || exit 1
+          done
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
   test:
