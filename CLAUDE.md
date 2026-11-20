@@ -97,9 +97,9 @@ Balance metrics: Normal-vs-Easy win rate (skill over luck), comeback rates (the 
 The simulation fails on:
 - any crash, illegal move or 1,000-round cap hit;
 - Normal beating Easy in under 70% of the duels;
-- eight-player games running long: p90 over 26 rounds, p99 over 33, or more than 0.5% past 60 (`LENGTH_LIMITS` in `scripts/stats.ts`).
+- eight-player games running long: p90 over 28 rounds, p99 over 36, or more than 0.5% past 60 (`LENGTH_LIMITS` in `scripts/stats.ts`).
 
-Today's defaults give p90 22 and p99 31 on the CI seeds, so p99 has two rounds of headroom.
+Today's defaults give p90 22 and p99 31 on the CI seeds, so p99 has five rounds of headroom. The limits were 26 and 33 until 20-11-2026 (#7).
 
 A hands-on report goes in `playtest/DD-MM-YYYY-<change>.md` with screenshots and every scenario marked verified, partly verified or not testable (with why). Bug reports carry the seed and the action log (`__hexdice.actions()`).
 

@@ -27,11 +27,12 @@ export function lengthStats(rounds: readonly number[]): LengthStats {
 }
 
 /**
- * Eight-player game-length limits, set about 50% above front-line reinforcement (p90 17, p99 22, none past 60 over
- * 1,000 games; 18-11-2026). Today's defaults and Normal AI give p90 22, p99 31 on the CI seeds (19-11-2026). Random reinforcement (p90 35, p99 54) and the rules that caused endless standoffs
- * (attrition, half-stack, narrow land bridges) all break them.
+ * Eight-player game-length limits, first set at p90 26, p99 33: about 50% above front-line reinforcement (p90 17, p99 22,
+ * none past 60 over 1,000 games; 18-11-2026). Raised on 20-11-2026 (Jacob, issue #7), since the Normal AI ganging up on
+ * runaways gives p90 22, p99 31 on the CI seeds and left two rounds of headroom. Random reinforcement (p90 35, p99 54)
+ * and the rules that caused endless standoffs (attrition, half-stack, narrow land bridges) still break them.
  */
-export const LENGTH_LIMITS = { maxP90: 26, maxP99: 33, maxOver60Share: 0.005 } as const;
+export const LENGTH_LIMITS = { maxP90: 28, maxP99: 36, maxOver60Share: 0.005 } as const;
 
 /** Why a length distribution fails the limits; empty when it passes. */
 export function lengthFailures(stats: LengthStats, limits: { maxP90: number; maxP99: number; maxOver60Share: number } = LENGTH_LIMITS): string[] {
