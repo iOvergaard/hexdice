@@ -2,11 +2,9 @@ import { winProbability } from '../engine/odds';
 import type { Rng } from '../engine/rng';
 import { diceAfterFailedAttack, largestGroup, legalAttacks } from '../engine/rules';
 import type { Action, GameState, PlayerId, Territory } from '../engine/types';
+import { runaways } from './runaway';
 
 const MIN_WIN = 0.5;
-/** A runaway holds at least this many times the average territories of the players still in, and at least RUNAWAY_MIN. */
-const RUNAWAY_RATIO = 1.5;
-const RUNAWAY_MIN = 8;
 /** Added to any attack on a runaway, so the table gangs up on whoever pulls away (19-11-2026). */
 const RUNAWAY_BONUS = 0.6;
 /** Per territory an attack cuts from the leader's largest group. */
@@ -31,14 +29,6 @@ function leader(state: GameState): PlayerId | null {
     }
   }
   return best;
-}
-
-/** Alive opponents holding well above the average territory count. */
-function runaways(state: GameState): Set<PlayerId> {
-  const alive = state.players.filter((p) => p.alive && p.id !== state.current);
-  const average = state.territories.length / (alive.length + 1);
-  const held = (id: PlayerId) => state.territories.filter((t) => t.owner === id).length;
-  return new Set(alive.map((p) => p.id).filter((id) => held(id) >= Math.max(RUNAWAY_MIN, RUNAWAY_RATIO * average)));
 }
 
 /** Odds-driven: take good fights that grow its group, break the leader's or hit a runaway; never stalls on a full board. */
