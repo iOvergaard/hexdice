@@ -50,6 +50,7 @@ tests/        unit (Vitest), e2e (Playwright), fixtures (state builders)
 
 - Board: 30 territories on one continent. Lakes and rivers block adjacency; a river is crossed only at its ford.
 - Attack: needs 2+ dice. Both sides roll all their dice; ties go to the defender, so equal stacks win under 50%.
+- Shaken (`shaken`): when a defender holds, the attacking stack is spent for the turn, and a tie against that defender goes to the attacker until the turn ends. No other bonus (Jacob, 20-11-2026).
 - Failed attack (`drawAttrition`): a draw drops the stack to the defender's dice count (losing at least 1), a loss drops it to 1.
 - End of turn: one die per territory in your largest connected group, +1 per player you knocked out. New dice land only on territories bordering an enemy, max 8 each. What doesn't fit goes to the territories just behind the front, nearest it first (`frontlineOverflow: 'behind'`), and only then to a reserve (max 64).
 - Connection bonus (`catchup`): +2 dice per extra group a capture joins, only for players below the average territory count.
@@ -99,7 +100,7 @@ The simulation fails on:
 - Normal beating Easy in under 70% of the duels;
 - eight-player games running long: p90 over 28 rounds, p99 over 36, or more than 0.5% past 60 (`LENGTH_LIMITS` in `scripts/stats.ts`).
 
-Today's defaults give p90 22 and p99 31 on the CI seeds, so p99 has five rounds of headroom. The limits were 26 and 33 until 20-11-2026 (#7).
+Today's defaults give p90 22 and p99 33 on the CI seeds (31 before the shaken rule became the default), so p99 has three rounds of headroom. The limits were 26 and 33 until 20-11-2026 (#7).
 
 A hands-on report goes in `playtest/DD-MM-YYYY-<change>.md` with screenshots and every scenario marked verified, partly verified or not testable (with why). Bug reports carry the seed and the action log (`__hexdice.actions()`).
 
