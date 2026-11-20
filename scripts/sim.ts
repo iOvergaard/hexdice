@@ -30,6 +30,9 @@ const lastStandDice = Number(arg('last-stand', String(DEFAULT_RULES.lastStandDic
 const frontlineOverflow = arg('overflow', DEFAULT_RULES.frontlineOverflow) as FrontlineOverflow;
 if (!['behind', 'reserve'].includes(frontlineOverflow)) throw new Error(`unknown --overflow ${frontlineOverflow}`);
 const seatTables = Number(arg('seat-tables', String(DEFAULT_RULES.seatTables)));
+const shakenArg = arg('shaken', DEFAULT_RULES.shaken ? 'on' : 'off');
+if (!['on', 'off'].includes(shakenArg)) throw new Error(`unknown --shaken ${shakenArg}`);
+const shaken = shakenArg === 'on';
 
 let crashes = 0;
 let illegalActions = 0;
@@ -39,6 +42,9 @@ let ties = 0;
 let links = 0;
 let linkDice = 0;
 let lastStands = 0;
+let shakes = 0;
+let shakenAttacks = 0;
+let shakenWins = 0;
 
 interface Result {
   winner: number | null;
@@ -48,7 +54,7 @@ interface Result {
 
 function play(levels: AiLevel[], seed: number): Result {
   try {
-    let state = createGame(makeConfig(aiSeats(levels), seed, { lossRule, eliminationBonus, reinforcement, connectionBonus, lastStandDice, frontlineOverflow, seatTables }));
+    let state = createGame(makeConfig(aiSeats(levels), seed, { lossRule, eliminationBonus, reinforcement, connectionBonus, lastStandDice, frontlineOverflow, seatTables, shaken }));
     const rng = new Rng(seed ^ 0x9e3779b9);
     while (state.winner === null) {
       if (state.round > ROUND_CAP) {
@@ -63,6 +69,7 @@ function play(levels: AiLevel[], seed: number): Result {
       const result = applyAction(state, action);
       for (const e of result.events) {
         if (e.type === 'lastStand') lastStands++;
+        if (e.type === 'shaken') shakes++;
         if (e.type === 'linked') {
           links++;
           linkDice += e.bonus;
@@ -70,6 +77,10 @@ function play(levels: AiLevel[], seed: number): Result {
         if (e.type !== 'attackRolled') continue;
         attacks++;
         if (e.attackSum === e.defendSum) ties++;
+        if (e.shaken) {
+          shakenAttacks++;
+          if (e.success) shakenWins++;
+        }
       }
       state = result.state;
     }
@@ -112,9 +123,10 @@ const tooLong = lengthFailures(lengths);
 const result = {
   date: new Date().toISOString(),
   games,
-  rules: { lossRule, eliminationBonus, reinforcement, connectionBonus, lastStandDice, frontlineOverflow, seatTables },
+  rules: { lossRule, eliminationBonus, reinforcement, connectionBonus, lastStandDice, frontlineOverflow, seatTables, shaken },
   links: { count: links, dice: linkDice },
   lastStands,
+  shaken: { holds: shakes, attacks: shakenAttacks, wins: shakenWins },
   normalVsEasy: { games: duelGames, normalWins, winRate },
   eightPlayer: { games: eightGames, avgRounds: eightGames ? roundSum / eightGames : 0, maxRounds, winsBySeat },
   gameLength: { ...lengths, limits: LENGTH_LIMITS, failures: tooLong },
@@ -128,7 +140,8 @@ const result = {
 writeFileSync(out, JSON.stringify(result, null, 2) + '\n');
 
 console.log(`Links: ${links} (${linkDice} bonus dice) · last stands: ${lastStands}`);
-console.log(`Rules: lossRule=${lossRule} eliminationBonus=${eliminationBonus} reinforcement=${reinforcement} connection=${connectionBonus} lastStand=${lastStandDice} overflow=${frontlineOverflow} seatTables=${seatTables}; ${attacks} attacks, ${ties} draws (${((ties / Math.max(1, attacks)) * 100).toFixed(1)}%)`);
+if (shaken) console.log(`Shaken: ${shakes} holds; ${shakenAttacks} attacks on a shaken defender, ${shakenWins} won`);
+console.log(`Rules: lossRule=${lossRule} eliminationBonus=${eliminationBonus} reinforcement=${reinforcement} connection=${connectionBonus} lastStand=${lastStandDice} overflow=${frontlineOverflow} seatTables=${seatTables} shaken=${shakenArg}; ${attacks} attacks, ${ties} draws (${((ties / Math.max(1, attacks)) * 100).toFixed(1)}%)`);
 console.log(`Normal vs Easy: ${normalWins}/${duelGames} (${(winRate * 100).toFixed(1)}%)`);
 console.log(`8-player: avg ${result.eightPlayer.avgRounds.toFixed(1)} rounds, max ${maxRounds}, wins by seat [${winsBySeat.join(', ')}]`);
 console.log(

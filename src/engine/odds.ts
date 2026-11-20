@@ -27,11 +27,12 @@ const TABLE: number[][] = Array.from({ length: MAX_TABLE_DICE + 1 }, (_, a) =>
   Array.from({ length: MAX_TABLE_DICE + 1 }, (_, d) => (a === 0 || d === 0 ? 0 : computeWinProbability(a, d))),
 );
 
-/** P(attacker sum > defender sum); ties go to the defender. Both counts 1..8. */
-export function winProbability(attackDice: number, defendDice: number): number {
+/** P(attacker sum > defender sum); ties go to the defender, or to the attacker against a shaken defender. Both counts 1..8. */
+export function winProbability(attackDice: number, defendDice: number, tiesToAttacker = false): number {
   const p = TABLE[attackDice]?.[defendDice];
   if (!Number.isInteger(attackDice) || !Number.isInteger(defendDice) || attackDice < 1 || defendDice < 1 || p === undefined) {
     throw new RangeError(`dice counts must be integers 1–${MAX_TABLE_DICE}`);
   }
-  return p;
+  // P(a >= d) = 1 - P(d > a)
+  return tiesToAttacker ? 1 - TABLE[defendDice]![attackDice]! : p;
 }

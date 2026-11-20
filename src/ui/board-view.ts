@@ -182,7 +182,9 @@ export class BoardView {
       node.group.classList.toggle('is-target', targets.has(id));
       node.group.classList.toggle('is-attack', view.attack?.from === id || view.attack?.to === id);
       node.group.classList.toggle('is-full', t.dice - (this.pending.get(id) ?? 0) >= state.config.maxDice);
-      for (const cls of ['is-selected', 'is-target', 'is-attack', 'is-full']) {
+      node.group.classList.toggle('is-shaken', state.shaken.includes(id));
+      node.group.classList.toggle('is-spent', state.spent.includes(id) && t.dice >= 2);
+      for (const cls of ['is-selected', 'is-target', 'is-attack', 'is-full', 'is-shaken', 'is-spent']) {
         node.token.classList.toggle(cls, node.group.classList.contains(cls));
       }
       node.units.update(t.dice - (this.pending.get(id) ?? 0), identity);
@@ -359,7 +361,12 @@ export class BoardView {
     await Promise.all([this.showPlacements(placed.filter((id) => id !== at), durationMs), this.floatLabel(at, 'Last stand!', 'stand', durationMs)]);
   }
 
-  private floatLabel(territory: TerritoryId, text: string, kind: 'loss' | 'link' | 'stand', durationMs: number): Promise<void> {
+  /** Floats an amber "Shaken!" over a defender that just held. */
+  showShaken(territory: TerritoryId, durationMs: number): Promise<void> {
+    return this.floatLabel(territory, 'Shaken!', 'shaken', durationMs);
+  }
+
+  private floatLabel(territory: TerritoryId, text: string, kind: 'loss' | 'link' | 'stand' | 'shaken', durationMs: number): Promise<void> {
     const geo = this.geometry[territory];
     if (durationMs <= 0 || !geo) return Promise.resolve();
     const scale = this.rotated ? PORTRAIT_UNIT_SCALE : UNIT_SCALE;
@@ -371,6 +378,16 @@ export class BoardView {
     label.textContent = text;
     this.placeLayer.append(label);
     this.keepInView(label);
+    // Lift it clear of a label already showing, such as the "−N" next to "Shaken!".
+    const box = label.getBBox();
+    for (const other of this.placeLayer.querySelectorAll<SVGTextElement>('text.placement')) {
+      if (other === label) continue;
+      const o = other.getBBox();
+      if (box.x < o.x + o.width && o.x < box.x + box.width && box.y < o.y + o.height && o.y < box.y + box.height) {
+        label.setAttribute('y', String(n(Number(label.getAttribute('y')) - (box.y + box.height - o.y) - 4)));
+        break;
+      }
+    }
     return new Promise((resolve) =>
       setTimeout(() => {
         label.remove();

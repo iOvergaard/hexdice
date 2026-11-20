@@ -54,6 +54,11 @@ describe('save', () => {
     expect(restore(JSON.stringify({ v: 1, config, actions: [] }))?.aiRngState).toBeNull();
   });
 
+  it('replays saves from before the shaken rule without it', () => {
+    const { shaken: _, ...old } = makeConfig(defaultSeats(3), 11);
+    expect(restore(JSON.stringify({ v: 1, config: old, actions: [] }))?.config.shaken).toBe(false);
+  });
+
   it('replays saves from before overflow behind the front with the reserve rule', () => {
     const { frontlineOverflow: _, ...old } = makeConfig(defaultSeats(3), 11);
     expect(restore(JSON.stringify({ v: 1, config: old, actions: [] }))?.config.frontlineOverflow).toBe('reserve');

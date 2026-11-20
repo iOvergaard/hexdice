@@ -1,3 +1,4 @@
+import { canAttackFrom } from '../engine/rules';
 import type { GameState, TerritoryId } from '../engine/types';
 
 export interface SelectionResult {
@@ -17,9 +18,7 @@ export function nextSelection(
   const none: SelectionResult = { selected: null, attack: null };
   if (tapped === null || tapped === selected) return none;
   if (selected !== null && canAttack(selected, tapped)) return { selected: null, attack: { from: selected, to: tapped } };
-  const t = state.territories[tapped];
-  if (t && t.owner === state.current && t.dice >= 2) return { selected: tapped, attack: null };
-  return none;
+  return canAttackFrom(state, tapped) ? { selected: tapped, attack: null } : none;
 }
 
 /** After your attack resolves: a fresh capture stays selected while it can attack on, so the next tap carries on from it. */

@@ -460,6 +460,18 @@
   stroke-width: 6;
 }
 
+/* Shaken: held this turn, so a tie against it goes to the attacker. A broken outline in amber. */
+.is-shaken .token-plate {
+  stroke: #ffad5c;
+  stroke-width: 5;
+  stroke-dasharray: 7 5;
+}
+
+/* Spent: its attack failed this turn, so it can't attack again. */
+.board .token.is-spent .token-body {
+  filter: grayscale(0.85) brightness(0.75);
+}
+
 .token-body {
   transition: transform 0.12s;
 }
@@ -802,6 +814,10 @@
 .placement.is-link,
 .placement.is-stand {
   fill: #ffd34d;
+}
+
+.placement.is-shaken {
+  fill: #ffad5c;
 }
 
 .placement {

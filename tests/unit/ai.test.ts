@@ -83,6 +83,16 @@ describe('ai', () => {
     expect(picks).toContain('endTurn');
   });
 
+  it('normal attacks an equal stack once it is shaken, and no level attacks from a spent stack', () => {
+    const even = buildState({ owners: [0, 1], dice: [4, 4], edges: [[0, 1]], rules: { shaken: true } });
+    expect(chooseAction(even, 'normal', new Rng(1))).toEqual({ type: 'endTurn' });
+    expect(chooseAction({ ...even, shaken: [1] }, 'normal', new Rng(1))).toEqual({ type: 'attack', from: 0, to: 1 });
+    const spent = { ...buildState({ owners: [0, 1], dice: [8, 1], edges: [[0, 1]], rules: { shaken: true } }), spent: [0] };
+    for (const level of LEVELS) {
+      for (let seed = 0; seed < 20; seed++) expect(chooseAction(spent, level, new Rng(seed))).toEqual({ type: 'endTurn' });
+    }
+  });
+
   it('is deterministic for the same rng seed', () => {
     const state = createGame(makeConfig(aiSeats(['easy', 'normal', 'normal', 'easy']), 7));
     for (const level of LEVELS) {

@@ -16,7 +16,7 @@ npm run screenshots          # README screenshots from a seeded game (docs/scree
 npm run build
 ```
 
-- `sim` flags: `--games`, `--seed`, `--out`, `--loss-rule`, `--reinforcement`, `--overflow`, `--connection`, `--last-stand <dice>`, `--elimination-bonus`, `--seat-tables`.
+- `sim` flags: `--games`, `--seed`, `--out`, `--loss-rule`, `--reinforcement`, `--overflow`, `--connection`, `--last-stand <dice>`, `--elimination-bonus`, `--seat-tables`, `--shaken on|off`.
 - Several sessions often run at once. If port 5190 is taken, run `E2E_PORT=5197 npm run e2e`.
 
 ## Docs
@@ -72,7 +72,7 @@ Easy attacks at random. Jacob finds Normal hard enough; a Hard AI is parked.
 - Input: pointer events only, nothing hover-only, the whole territory is the tap target.
 - Phone: the title row and the game bar (round, speed, ?, sound, Quit) each fit one row at 375 px.
 - Test hooks: `data-territory="<id>"` on territories, `data-testid` on controls, `window.__hexdice` in dev (`state`, `actions`, `events`, `attack`, `endTurn`, `autoplay`, `load`, `idle`, `sounds`). E2E tests set up a position with `__hexdice.load(state)`; see `tests/e2e/link.spec.ts` and `last-stand.spec.ts`.
-- URL params for tests and repro links: `?seed= &players= &ai=easy|normal &speed=slow|normal|fast|instant &sound=on|off &reinforce=random|frontline|weighted &link=off|flat|smaller|catchup`.
+- URL params for tests and repro links: `?seed= &players= &ai=easy|normal &speed=slow|normal|fast|instant &sound=on|off &reinforce=random|frontline|weighted &link=off|flat|smaller|catchup &shaken=on|off`.
 - `import type` for types (`verbatimModuleSyntax`). No new dependencies without asking Jacob, and don't upgrade any unprompted.
 - UI copy in British English, no em dashes; dates DD-MM-YYYY.
 - Local storage keys start with `hexdice:` (`title`, `save`, `sound`, `changelog-seen`). Wrap every access in try/catch.

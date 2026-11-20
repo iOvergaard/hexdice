@@ -1,13 +1,23 @@
+import { winProbability } from './odds';
 import { Rng } from './rng';
 import { IllegalActionError } from './types';
 import type { Action, ActionResult, GameEvent, GameState, PlayerId, RulesConfig, Territory, TerritoryId } from './types';
 
-export function isLegalAttack(state: GameState, from: TerritoryId, to: TerritoryId): boolean {
-  if (state.winner !== null) return false;
+/** The current player may attack out of this territory: theirs, 2+ dice, and not spent this turn. */
+export function canAttackFrom(state: GameState, from: TerritoryId): boolean {
   const src = state.territories[from];
+  return state.winner === null && !!src && src.owner === state.current && src.dice >= 2 && !state.spent.includes(from);
+}
+
+export function isLegalAttack(state: GameState, from: TerritoryId, to: TerritoryId): boolean {
   const dst = state.territories[to];
-  if (!src || !dst) return false;
-  return src.owner === state.current && dst.owner !== state.current && src.dice >= 2 && src.neighbours.includes(to);
+  if (!dst || !canAttackFrom(state, from)) return false;
+  return dst.owner !== state.current && state.territories[from]!.neighbours.includes(to);
+}
+
+/** Chance that this attack captures, counting a shaken defender. */
+export function attackOdds(state: GameState, from: TerritoryId, to: TerritoryId): number {
+  return winProbability(state.territories[from]!.dice, state.territories[to]!.dice, state.shaken.includes(to));
 }
 
 /** Dice left on the attacking territory after a failed attack (a draw or a clear loss), per the loss rule. */
@@ -103,14 +113,21 @@ function resolveAttack(s: GameState, from: TerritoryId, to: TerritoryId, rng: Rn
   const defendRolls = rollDice(rng, dst.dice);
   const attackSum = sum(attackRolls);
   const defendSum = sum(defendRolls);
-  const success = attackSum > defendSum;
-  events.push({ type: 'attackRolled', attacker, defender, from, to, attackRolls, defendRolls, attackSum, defendSum, success });
+  const shaken = s.shaken.includes(to);
+  const success = attackSum > defendSum || (shaken && attackSum === defendSum);
+  events.push({ type: 'attackRolled', attacker, defender, from, to, attackRolls, defendRolls, attackSum, defendSum, success, ...(shaken ? { shaken } : {}) });
 
   if (!success) {
     src.dice = diceAfterFailedAttack(s.config, src.dice, dst.dice, attackSum === defendSum);
+    if (s.config.shaken) {
+      s.spent = [...s.spent, from];
+      if (!shaken) s.shaken = [...s.shaken, to];
+      events.push({ type: 'shaken', territory: to, spent: from });
+    }
     return;
   }
 
+  if (shaken) s.shaken = s.shaken.filter((id) => id !== to);
   const joined = s.config.connectionBonus === 'off' || !linkEarnsBonus(s, attacker) ? [] : groupSizesAround(s, attacker, to);
   dst.owner = attacker;
   dst.dice = src.dice - 1;
@@ -246,6 +263,8 @@ function lastStand(s: GameState, events: GameEvent[]): void {
 
 /** Mutates the (already cloned) state: hands play to the next alive player. */
 function advanceTurn(s: GameState, events: GameEvent[]): void {
+  s.spent = [];
+  s.shaken = [];
   const count = s.players.length;
   let id = s.current;
   do {

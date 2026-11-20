@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { sumDistribution, winProbability } from '../../src/engine/odds';
 
-function bruteForce(a: number, d: number): number {
+function bruteForce(a: number, d: number, tiesToAttacker = false): number {
   const rolls = (n: number): number[] => {
     let sums = [0];
     for (let i = 0; i < n; i++) sums = sums.flatMap((s) => [1, 2, 3, 4, 5, 6].map((f) => s + f));
@@ -10,7 +10,7 @@ function bruteForce(a: number, d: number): number {
   const as = rolls(a);
   const ds = rolls(d);
   let wins = 0;
-  for (const x of as) for (const y of ds) if (x > y) wins++;
+  for (const x of as) for (const y of ds) if (x > y || (tiesToAttacker && x === y)) wins++;
   return wins / (as.length * ds.length);
 }
 
@@ -25,6 +25,13 @@ describe('odds', () => {
 
   it('ties favour the defender', () => {
     for (let n = 1; n <= 8; n++) expect(winProbability(n, n)).toBeLessThan(0.5);
+  });
+
+  it('against a shaken defender, ties go to the attacker', () => {
+    for (let a = 1; a <= 3; a++) for (let d = 1; d <= 3; d++) expect(winProbability(a, d, true)).toBeCloseTo(bruteForce(a, d, true), 12);
+    for (let a = 1; a <= 8; a++) for (let d = 1; d <= 8; d++) expect(winProbability(a, d, true)).toBeCloseTo(1 - winProbability(d, a), 12);
+    for (let n = 1; n <= 8; n++) expect(winProbability(n, n, true)).toBeGreaterThan(0.5);
+    expect(() => winProbability(1, 9, true)).toThrow(RangeError);
   });
 
   it('more attack dice never lower the odds', () => {

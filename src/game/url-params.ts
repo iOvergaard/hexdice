@@ -12,6 +12,8 @@ export interface UrlParams {
   reinforcement: ReinforcementRule | null;
   /** ?link=off|flat|smaller|catchup tries a connection bonus (prototype). */
   connectionBonus: ConnectionBonusRule | null;
+  /** ?shaken=on|off tries the shaken rule (prototype). */
+  shaken: boolean | null;
 }
 
 const AI_LEVELS: readonly string[] = ['easy', 'normal'];
@@ -28,6 +30,7 @@ export function parseUrlParams(search: string): UrlParams {
   const sound = q.get('sound');
   const reinforce = q.get('reinforce');
   const link = q.get('link');
+  const shaken = q.get('shaken');
   const players = playersRaw !== null && /^\d+$/.test(playersRaw) ? Number(playersRaw) : null;
   return {
     seed: seedRaw !== null && /^\d+$/.test(seedRaw) ? Number(seedRaw) >>> 0 : null,
@@ -37,5 +40,6 @@ export function parseUrlParams(search: string): UrlParams {
     sound: sound === 'on' ? true : sound === 'off' ? false : null,
     reinforcement: reinforce !== null && REINFORCEMENTS.includes(reinforce) ? (reinforce as ReinforcementRule) : null,
     connectionBonus: link !== null && LINKS.includes(link) ? (link as ConnectionBonusRule) : null,
+    shaken: shaken === 'on' ? true : shaken === 'off' ? false : null,
   };
 }

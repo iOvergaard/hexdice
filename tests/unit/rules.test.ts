@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_RULES, makeConfig } from '../../src/engine/config';
 import { Rng } from '../../src/engine/rng';
-import { applyAction, isLegalAttack, largestGroup, legalAttacks } from '../../src/engine/rules';
+import { applyAction, canAttackFrom, isLegalAttack, largestGroup, legalAttacks } from '../../src/engine/rules';
+import { defaultSeats } from '../../src/engine/seats';
+import { createGame } from '../../src/engine/setup';
 import { IllegalActionError } from '../../src/engine/types';
 import type { AttackRolledEvent, GameEvent, GameState, LossRule } from '../../src/engine/types';
 import { buildState } from '../fixtures/state';
@@ -556,5 +559,97 @@ describe('last stand', () => {
     const { state, events } = applyAction(final(undefined, { lastStandDice: 0 }), { type: 'endTurn' });
     expect(stands(events)).toEqual([]);
     expect(state.territories.slice(3).map((t) => t.dice)).toEqual([4, 1]);
+  });
+});
+
+describe('shaken: a defender that holds', () => {
+  /** P0's 6 dice on t0 attack P1's 4 on t1; P0's 4 on t2 also borders t1. */
+  const base = (shaken: boolean, seed = 1) => buildState({ owners: [0, 1, 0], dice: [6, 4, 4], edges: [[0, 1], [1, 2]], seed, rules: { shaken } });
+
+  /** First seed whose attack from t0 on t1 ends in the outcome, with the state it started from. */
+  function hold(outcome: 'draw' | 'loss', shaken = true) {
+    for (let seed = 1; seed <= 20_000; seed++) {
+      const before = base(shaken, seed);
+      const result = applyAction(before, { type: 'attack', from: 0, to: 1 });
+      const e = rolled(result.events);
+      if (outcome === 'draw' ? e.attackSum === e.defendSum : e.attackSum < e.defendSum) return { before, ...result };
+    }
+    throw new Error(`no ${outcome} found`);
+  }
+
+  it('is off by default: a stack that drew can attack again, and nothing is shaken', () => {
+    expect(DEFAULT_RULES.shaken).toBe(false);
+    const { state, events } = hold('draw', false);
+    expect(state.territories[0]!.dice).toBe(4);
+    expect(canAttackFrom(state, 0)).toBe(true);
+    expect(isLegalAttack(state, 0, 1)).toBe(true);
+    expect(state.spent).toEqual([]);
+    expect(state.shaken).toEqual([]);
+    expect(events.some((e) => e.type === 'shaken')).toBe(false);
+  });
+
+  it('after a draw, the attacking stack is spent for the turn and the defender is shaken', () => {
+    const { state, events } = hold('draw');
+    expect(state.territories[0]!.dice).toBe(4);
+    expect(canAttackFrom(state, 0)).toBe(false);
+    expect(isLegalAttack(state, 0, 1)).toBe(false);
+    expect(legalAttacks(state)).toEqual([{ from: 2, to: 1 }]);
+    expect(state.spent).toEqual([0]);
+    expect(state.shaken).toEqual([1]);
+    expect(events).toContainEqual({ type: 'shaken', territory: 1, spent: 0 });
+  });
+
+  it('a clear loss shakes the defender too', () => {
+    const { state, events } = hold('loss');
+    expect(state.territories[0]!.dice).toBe(1);
+    expect(state.shaken).toEqual([1]);
+    expect(events).toContainEqual({ type: 'shaken', territory: 1, spent: 0 });
+  });
+
+  it('a tie against a shaken defender goes to the attacker', () => {
+    let ties = 0;
+    for (let seed = 1; seed <= 600; seed++) {
+      const s = { ...buildState({ owners: [0, 1, 1], dice: [2, 2, 1], edges: [[0, 1], [1, 2]], seed, rules: { shaken: true } }), shaken: [1] };
+      const { state, events } = applyAction(s, { type: 'attack', from: 0, to: 1 });
+      const e = rolled(events);
+      expect(e.shaken).toBe(true);
+      if (e.attackSum !== e.defendSum) continue;
+      ties++;
+      expect(e.success).toBe(true);
+      expect(state.territories[1]).toMatchObject({ owner: 0, dice: 1 });
+      expect(state.shaken).toEqual([]);
+    }
+    expect(ties).toBeGreaterThan(0);
+  });
+
+  it('ties still go to a defender that is not shaken', () => {
+    let ties = 0;
+    for (let seed = 1; seed <= 600; seed++) {
+      const s = buildState({ owners: [0, 1], dice: [2, 2], edges: [[0, 1]], seed, rules: { shaken: true } });
+      const e = rolled(applyAction(s, { type: 'attack', from: 0, to: 1 }).events);
+      expect(e.shaken).toBeUndefined();
+      if (e.attackSum !== e.defendSum) continue;
+      ties++;
+      expect(e.success).toBe(false);
+    }
+    expect(ties).toBeGreaterThan(0);
+  });
+
+  it('wears off when the turn ends', () => {
+    const next = applyAction(hold('draw').state, { type: 'endTurn' }).state;
+    expect(next.spent).toEqual([]);
+    expect(next.shaken).toEqual([]);
+  });
+
+  it('leaves the state it was given alone', () => {
+    const { before } = hold('draw');
+    expect(before.spent).toEqual([]);
+    expect(before.shaken).toEqual([]);
+  });
+
+  it('a new game starts with nothing spent or shaken', () => {
+    const s = createGame(makeConfig(defaultSeats(3), 5, { shaken: true }));
+    expect(s.spent).toEqual([]);
+    expect(s.shaken).toEqual([]);
   });
 });

@@ -78,5 +78,5 @@ export function createGame(config: GameConfig): GameState {
     }
   }
 
-  return { config, board, territories, players, current: 0, round: 1, rngState: rng.state, winner: null, finalStarted: n <= 2 };
+  return { config, board, territories, players, current: 0, round: 1, rngState: rng.state, winner: null, finalStarted: n <= 2, spent: [], shaken: [] };
 }

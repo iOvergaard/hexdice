@@ -24,6 +24,12 @@ describe('nextSelection', () => {
     expect(nextSelection(state, null, 0, can)).toEqual({ selected: 0, attack: null });
   });
 
+  it('tapping a spent stack does not select it', () => {
+    const spent = { ...state, spent: [0] };
+    expect(nextSelection(spent, null, 0, can)).toEqual({ selected: null, attack: null });
+    expect(nextSelection(spent, 3, 0, can)).toEqual({ selected: null, attack: null });
+  });
+
   it('tapping own 1-die territory clears selection', () => {
     expect(nextSelection(state, 0, 2, can)).toEqual({ selected: null, attack: null });
     expect(nextSelection(state, null, 2, can)).toEqual({ selected: null, attack: null });
