@@ -182,13 +182,6 @@ Hex orientation and coordinate storage, exact map-growth algorithm, palette and 
   3. *Front-line reinforcement* (above) puts the new dice where you just fought.
   Pairs naturally with the `attrition` loss rule, which already stops a failed attack from emptying the stack.
 
-- **Ideas from the Dice Wars review** (19-11-2026; parked by Jacob on 20-11-2026). A product-owner agent played Dice Wars and audited Hexdice's assets: nothing copied, and the one identical prompt was reworded ("Play on this map?"). Its ideas, most promising first:
-  1. *Show who the table is ganging up on:* mark the runaway the Normal AI is targeting in the player bar, so you can join in or brace. UI only. Trade-off: it shows how the AI decides, and adds clutter.
-  2. *Spot a runaway by share of dice, not just territories:* a player sitting on full stacks slips past today's territory test. An AI change; front-line reinforcement concentrates dice, so it may fire too often. Judge it in the simulator: Normal beats Easy, game length, how often a runaway forms.
-  3. *Show reinforcements as a pile:* a pile of dice by the player bar that drains as they land, so "largest group = income" is visible. UI only. Trade-off: animation time, which must vanish at Fast and Instant, and room on a phone.
-  4. *Keep a fresh capture selected:* after a win, the captured territory stays selected so you can attack on from it, for fewer taps in long turns (`src/ui/selection.ts` clears it today). Trade-off: accidental attacks, so it needs a clear highlight and an easy cancel.
-  5. *A "Classic" preset:* the bare rules (random reinforcement, any failed attack drops to 1, no bonuses) as an option for genre veterans, and a baseline that keeps each added rule honest. Trade-off: two rule sets to test, and its own seat tuning.
-
-  Not to take, from the same review: Dice Wars' look, random reinforcement as the default, a hard 40% cut-off for ganging up, ending your game at knockout, and two similar greens.
+- **From 20-11-2026, parked ideas are GitHub issues** with the `parked` label, so each one keeps its own trail of numbers and decisions. The Dice Wars review's five ideas are iOvergaard/hexdice#2 to #6. What it advised not to take is #8, closed as not planned.
 
 v0.1 keeps the door open without building any of it: roll events carry every die face, territories and players are plain data that can gain a `feature` or `powers` field, and the rules keep attack, reinforcement and turn-advance as separate steps a power could hook into.
