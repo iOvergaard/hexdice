@@ -1,3 +1,5 @@
+import { runawayBar } from '../ai/runaway';
+import { MAX_PLAYERS } from '../engine/config';
 import type { RulesConfig } from '../engine/types';
 import { listSection, openPanel } from './panel';
 
@@ -7,6 +9,21 @@ export interface HelpSection {
 }
 
 const dice = (n: number) => `${n} ${n === 1 ? 'die' : 'dice'}`;
+const COUNT = ['', '', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight'];
+
+/** The runaway bar from the most players down to three: "8 territories or more with six to eight players in, 9 with five, …". */
+function runawayBars(territories: number): string {
+  const parts: string[] = [];
+  for (let alive = MAX_PLAYERS; alive >= 3; ) {
+    const bar = runawayBar(territories, alive);
+    let low = alive;
+    while (low > 3 && runawayBar(territories, low - 1) === bar) low--;
+    const players = low < alive ? `${COUNT[low]} to ${COUNT[alive]}` : COUNT[low];
+    parts.push(parts.length === 0 ? `${bar} territories or more with ${players} players in` : `${bar} with ${players}`);
+    alive = low - 1;
+  }
+  return parts.length === 1 ? parts[0]! : `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
+}
 
 /** The rules in plain words, following the settings the game is played with. */
 export function helpSections(rules: RulesConfig): HelpSection[] {
@@ -74,6 +91,13 @@ export function helpSections(rules: RulesConfig): HelpSection[] {
       ],
     });
   }
+  sections.push({
+    heading: 'Runaways',
+    lines: [
+      'On Normal, the computer players gang up on anyone who runs away with the map, you included. A crosshair on the emblem in the player bar shows who that is.',
+      `A runaway holds ${runawayBars(rules.territoryCount)}.`,
+    ],
+  });
 
   const tips = ['Attack with more dice than the defender: equal stacks win less than half the time.', 'Keep your territories joined up. Your largest group is your income.'];
   if (rules.reinforcement === 'frontline') tips.push('A short front line gets your new dice where the fighting is, and water makes a cheap wall.');

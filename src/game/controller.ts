@@ -1,4 +1,5 @@
 import { chooseAction } from '../ai';
+import { gangedUpOn } from '../ai/runaway';
 import { DEFAULT_RULES, makeConfig, randomSeed } from '../engine/config';
 import { winProbability } from '../engine/odds';
 import { Rng } from '../engine/rng';
@@ -376,6 +377,7 @@ export class Controller {
     this.renderBoard(interactive);
     this.screen!.hud.render(s, {
       largestGroups: s.players.map((p) => (p.alive ? largestGroup(s, p.id) : 0)),
+      gangedUpOn: gangedUpOn(s),
       canEndTurn: interactive,
       skip: this.canSkip() ? (s.players.some((p) => p.kind === 'human' && p.alive) && !this.autoplay ? 'turn' : 'end') : null,
       speed: this.speed,

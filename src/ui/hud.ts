@@ -1,10 +1,12 @@
-import type { GameState, Speed } from '../engine/types';
+import type { GameState, PlayerId, Speed } from '../engine/types';
 import { emblemPath, playerColour } from './identity';
 import { soundToggle, type SoundToggle } from './sound-toggle';
 
 export interface HudOptions {
   /** Largest connected group per player id. */
   largestGroups: number[];
+  /** Runaways the Normal computer players gang up on (gangedUpOn in src/ai/runaway.ts). */
+  gangedUpOn: ReadonlySet<PlayerId>;
   canEndTurn: boolean;
   /** While AIs play, the End turn button becomes a skip button: to your next turn, or to the end once you're out. */
   skip: 'turn' | 'end' | null;
@@ -36,6 +38,19 @@ function emblemSvg(identity: number): SVGSVGElement {
   const p = document.createElementNS(SVG_NS, 'path');
   p.setAttribute('d', emblemPath(identity, 10));
   s.append(p);
+  return s;
+}
+
+/** The runaway mark: a crosshair, so it reads without colour. */
+function crosshairSvg(): SVGSVGElement {
+  const s = document.createElementNS(SVG_NS, 'svg');
+  s.setAttribute('viewBox', '-12 -12 24 24');
+  s.setAttribute('aria-hidden', 'true');
+  const ring = document.createElementNS(SVG_NS, 'circle');
+  ring.setAttribute('r', '6.5');
+  const ticks = document.createElementNS(SVG_NS, 'path');
+  ticks.setAttribute('d', 'M0 -11V-3M0 3V11M-11 0H-3M3 0H11');
+  s.append(ring, ticks);
   return s;
 }
 
@@ -131,11 +146,19 @@ export class Hud {
         li.classList.toggle('is-you', isYou);
         li.classList.toggle('is-out', !p.alive);
         const current = p.id === state.current && p.alive && state.winner === null;
+        const runaway = opts.gangedUpOn.has(p.id);
         li.classList.toggle('is-current', current);
         if (current) li.setAttribute('aria-current', 'true');
 
         const badge = el('span', 'chip-badge');
         badge.append(emblemSvg(p.identity));
+        if (runaway) {
+          const mark = el('span', 'chip-runaway');
+          mark.dataset.testid = `player-${p.id}-runaway`;
+          mark.title = `Runaway: the computer players are ganging up on ${isYou ? 'you' : 'them'}`;
+          mark.append(crosshairSvg());
+          badge.append(mark);
+        }
         li.append(badge);
         li.append(el('span', 'chip-name', isYou ? 'You' : p.name));
         if (p.alive) {
@@ -156,7 +179,7 @@ export class Hud {
         }
         li.setAttribute(
           'aria-label',
-          `${isYou ? 'You' : p.name}${p.alive ? `, largest group ${group}, ${dice[p.id]} dice, ${held[p.id]} ${held[p.id] === 1 ? 'territory' : 'territories'}${p.reserve > 0 ? `, reserve ${p.reserve}` : ''}${p.knockouts * state.config.eliminationBonus > 0 ? `, knockout bonus ${p.knockouts * state.config.eliminationBonus} per turn` : ''}` : ', eliminated'}${current ? ', playing now' : ''}`,
+          `${isYou ? 'You' : p.name}${p.alive ? `, largest group ${group}, ${dice[p.id]} dice, ${held[p.id]} ${held[p.id] === 1 ? 'territory' : 'territories'}${p.reserve > 0 ? `, reserve ${p.reserve}` : ''}${p.knockouts * state.config.eliminationBonus > 0 ? `, knockout bonus ${p.knockouts * state.config.eliminationBonus} per turn` : ''}${runaway ? `, runaway: the computer players are ganging up on ${isYou ? 'you' : 'them'}` : ''}` : ', eliminated'}${current ? ', playing now' : ''}`,
         );
         return li;
       }),

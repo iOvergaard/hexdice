@@ -805,6 +805,7 @@
 }
 
 .chip-badge {
+  position: relative;
   flex: none;
   display: grid;
   place-items: center;
@@ -872,6 +873,29 @@
   margin: 0 -1px;
   background: currentColor;
   clip-path: polygon(evenodd, 50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%, 50% 0, 50% 15%, 15% 33%, 15% 67%, 50% 85%, 85% 67%, 85% 33%, 50% 15%);
+}
+
+/* Runaway: the computer players gang up on this player. A crosshair on the emblem's corner, clear of the numbers and the You tag; it needs no colour or hover. */
+.chip-runaway {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: 0 0 0 1.5px var(--ink);
+}
+
+.chip-runaway svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.6;
+  stroke-linecap: round;
 }
 
 .chip-reserve {
