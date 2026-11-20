@@ -50,8 +50,8 @@ test('Copy game puts the whole game on the clipboard, and it replays to the boar
 test('"You were eliminated" copies the game up to your knockout', async ({ page, context }) => {
   test.setTimeout(120_000);
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-  // Seed 3 with eight players: if you only end your turn, you're out in round 6.
-  await page.goto('/?seed=3&players=8&speed=instant&sound=off');
+  // Seed 8 with eight players: if you only end your turn, you're out in round 9 (seed 3 did before the shaken rule).
+  await page.goto('/?seed=8&players=8&speed=instant&sound=off');
   await page.waitForFunction(() => !!window.__hexdice?.state());
   await page.evaluate(async () => {
     const open = () => !!document.querySelector('[data-testid=overlay]:not([hidden])');
