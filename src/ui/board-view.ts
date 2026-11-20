@@ -24,6 +24,8 @@ const TOKEN_TOP = 34;
 /** Units are drawn larger than their base art; more so on a rotated board, where the whole map is drawn smaller. */
 const UNIT_SCALE = 1.35;
 const PORTRAIT_UNIT_SCALE = 1.5;
+/** How far placement-float in ui.css lifts a floating label before it fades, in view units. */
+const FLOAT_LIFT = 14;
 
 function svg<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, string | number> = {}, cls?: string): SVGElementTagNameMap[K] {
   const el = document.createElementNS(SVG_NS, tag);
@@ -99,6 +101,8 @@ export class BoardView {
   private mapH = 0;
   /** Land bounds plus a sea margin, in map units: the view zooms to the continent. */
   private crop = { x: 0, y: 0, w: 0, h: 0 };
+  /** The visible part of the board, in view units: the viewBox. */
+  private view = { x: 0, y: 0, w: 0, h: 0 };
   /** Where each token is drawn, in view units, after overlapping tokens are nudged apart. */
   private tokenAt: Point[] = [];
   private rotated = false;
@@ -219,6 +223,7 @@ export class BoardView {
       label.style.setProperty('--dur', `${durationMs}ms`);
       label.textContent = `+${count}`;
       this.placeLayer.append(label);
+      this.keepInView(label);
       labels.push(label);
     }
     return new Promise((resolve) =>
@@ -302,12 +307,24 @@ export class BoardView {
     label.style.setProperty('--dur', `${durationMs}ms`);
     label.textContent = text;
     this.placeLayer.append(label);
+    this.keepInView(label);
     return new Promise((resolve) =>
       setTimeout(() => {
         label.remove();
         resolve();
       }, durationMs),
     );
+  }
+
+  /** Nudges a floating label, float included, inside the visible board: tokens at its edge would cut it off. */
+  private keepInView(label: SVGTextElement): void {
+    const b = label.getBBox();
+    const v = this.view;
+    const m = 4;
+    const dx = Math.max(0, v.x + m - b.x) - Math.max(0, b.x + b.width - (v.x + v.w - m));
+    const dy = Math.max(0, v.y + m + FLOAT_LIFT - b.y);
+    if (dx !== 0) label.setAttribute('x', String(n(Number(label.getAttribute('x')) + dx)));
+    if (dy !== 0) label.setAttribute('y', String(n(Number(label.getAttribute('y')) + dy)));
   }
 
   /** Map point to view point: the map is rotated a quarter turn clockwise on a portrait container. */
@@ -337,6 +354,7 @@ export class BoardView {
         v.h = h;
       }
     }
+    this.view = v;
     this.root.setAttribute('viewBox', `${n(v.x)} ${n(v.y)} ${n(v.w)} ${n(v.h)}`);
     this.world.setAttribute('transform', rotated ? `translate(${this.mapH} 0) rotate(90)` : '');
     this.root.classList.toggle('is-rotated', rotated);
