@@ -311,7 +311,8 @@ export class Controller {
     screen.hud.onSpeedChange((s) => {
       this.speed = s;
     });
-    screen.hud.onQuit(() => this.toTitle());
+    // Quit keeps a game you're still in, so the title offers Continue; one you're out of has nothing to continue.
+    screen.hud.onQuit(() => this.toTitle(this.state?.players.some((p) => p.kind === 'human' && p.alive) ? readSave() : null));
     screen.hud.onHelp(() => openHowToPlay(this.state?.config ?? this.config ?? DEFAULT_RULES));
     screen.hud.onSoundToggle(() => {
       this.toggleSound();
