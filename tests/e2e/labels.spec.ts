@@ -5,6 +5,7 @@ import type { GameState } from '../../src/engine/types';
 declare global {
   interface Window {
     __hexdice?: HexdiceDebug;
+    __overflow?: number;
   }
 }
 
@@ -30,17 +31,21 @@ test('a floating label over a territory at the top edge stays on the board', asy
     return id;
   });
 
+  // The label lives for under half a second, so it's measured the moment it's added.
+  await page.evaluate((id) => {
+    const svg = document.querySelector<SVGSVGElement>('[data-testid="board"]')!;
+    new MutationObserver(() => {
+      const t = svg.querySelector<SVGTextElement>(`[data-testid="placement-${id}"]`);
+      if (!t || window.__overflow !== undefined) return;
+      const vb = svg.viewBox.baseVal;
+      const b = t.getBBox();
+      // The float lifts the label 14 units before it fades; all of that stays inside the view.
+      window.__overflow = Math.max(0, vb.y - (b.y - 14), vb.x - b.x, b.x + b.width - (vb.x + vb.width));
+    }).observe(svg.querySelector('.layer-placements')!, { childList: true });
+  }, top);
   await page.getByTestId('speed').selectOption('slow');
   await page.getByTestId('end-turn').click();
-  const label = page.getByTestId(`placement-${top}`);
-  await expect(label).toBeVisible();
+  await page.waitForFunction(() => window.__overflow !== undefined);
   await page.screenshot({ path: `playtest/screens/label-top-edge-${info.project.name}.png` });
-  // The float lifts the label 14 units before it fades; all of that stays inside the view.
-  const overflow = await label.evaluate((el) => {
-    const t = el as unknown as SVGTextElement;
-    const vb = t.ownerSVGElement!.viewBox.baseVal;
-    const b = t.getBBox();
-    return Math.max(0, vb.y - (b.y - 14), vb.x - b.x, b.x + b.width - (vb.x + vb.width));
-  });
-  expect(overflow).toBe(0);
+  expect(await page.evaluate(() => window.__overflow)).toBe(0);
 });

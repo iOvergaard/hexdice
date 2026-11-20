@@ -17,7 +17,7 @@ import { restore, serialise, type RestoredGame } from './save';
 import { loadSoundOn, Sound } from './sound';
 import { cuesFor } from './sound-cues';
 import { summarise } from './summary';
-import { AI_PLACE_MS, AI_ROLL_MS, ELIMINATION_MS, PAUSE_MS, PLACE_MS, ROLL_MS } from './timing';
+import { AI_PLACE_MS, AI_ROLL_MS, DRAIN_SHARE, ELIMINATION_MS, PAUSE_MS, PLACE_MS, ROLL_MS } from './timing';
 import type { UrlParams } from './url-params';
 
 const TITLE_KEY = 'hexdice:title';
@@ -469,13 +469,22 @@ export class Controller {
     }
     const reinforced = events.find((e) => e.type === 'reinforced');
     if (reinforced) {
-      const name = next.players[reinforced.player]?.name ?? '';
-      const parts = [`${name} +${reinforced.placed.length}`, `largest group ${reinforced.largestGroup}`];
+      const player = next.players[reinforced.player]!;
+      const saved = before.players[reinforced.player]!.reserve;
+      const parts = [`largest group ${reinforced.largestGroup}`];
       if (reinforced.bonus > 0) parts.push(`+${reinforced.bonus} knockout bonus`);
+      if (saved > 0) parts.push(`${saved} from reserve`);
       if (reinforced.reserve > 0) parts.push(`${reinforced.reserve} in reserve`);
-      this.screen!.roll.message(parts.join(' · '));
+      const ms = (byAi ? AI_PLACE_MS : PLACE_MS)[speed];
+      const drain = ms > 0 ? DRAIN_SHARE[speed] : 0;
+      // The pile is every die on offer this turn, the old reserve's included; what doesn't fit on the board stays as the new one.
+      const total = reinforced.placed.length + reinforced.reserve;
+      // A wrapped line never starts with a dot.
+      const join = (first: string) => [first, ...parts].join(' · ');
+      const left = drain > 0 ? this.screen!.roll.pile(player, total, join(`+${reinforced.placed.length}`)) : null;
+      if (!left) this.screen!.roll.message(join(`${player.name} +${reinforced.placed.length}`));
       if (cues.place) this.sound.place(cues.place);
-      await this.screen!.board.showPlacements(reinforced.placed, (byAi ? AI_PLACE_MS : PLACE_MS)[speed]);
+      await this.screen!.board.showPlacements(reinforced.placed, ms, drain, left ? (landed) => left(total - landed) : undefined);
       if (gen !== this.gen) return;
     }
     const stand = events.find((e) => e.type === 'lastStand');

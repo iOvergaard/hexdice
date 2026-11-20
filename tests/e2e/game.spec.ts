@@ -6,6 +6,7 @@ import type { HexdiceDebug } from '../../src/debug';
 declare global {
   interface Window {
     __hexdice?: HexdiceDebug;
+    __strip?: string[];
   }
 }
 
@@ -217,9 +218,33 @@ test('shows where reinforcements land', async ({ page }, info) => {
   await page.goto('/?seed=42&players=4&speed=slow');
   await ready(page);
   await page.getByTestId('end-turn').click();
+  // Your new dice wait in a pile that drains as each one lands.
+  await expect(page.getByTestId('roll-pile')).toBeVisible();
+  await expect(page.getByTestId('roll-pile-caption')).toHaveText('+5 · largest group 5');
   await expect(page.locator('[data-testid^="placement-"]').first()).toBeVisible();
-  await expect(page.getByTestId('roll-message')).toContainText('largest group');
   await shot(page, info, 'reinforcements');
+  await expect(page.getByTestId('roll-pile-count')).toHaveText('0');
+});
+
+test('at Fast, reinforcements land at once without the pile', async ({ page }) => {
+  await page.goto('/?seed=42&players=4&speed=fast');
+  await ready(page);
+  // The message only shows for 300 ms, so record everything the strip shows while the round plays.
+  await page.evaluate(() => {
+    const roll = document.querySelector('[data-testid="roll"]')!;
+    const strip: string[] = (window.__strip = []);
+    new MutationObserver(() => strip.push(`${roll.className} | ${roll.querySelector('[data-testid="roll-message"]')!.textContent}`)).observe(roll, {
+      attributes: true,
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+  });
+  await page.getByTestId('end-turn').click();
+  await page.evaluate(() => window.__hexdice!.idle());
+  const strip = await page.evaluate(() => window.__strip!);
+  expect(strip.some((s) => s.includes('largest group'))).toBe(true);
+  expect(strip.some((s) => s.includes('is-pile'))).toBe(false);
 });
 
 test('shows a your-turn cue', async ({ page }, info) => {
