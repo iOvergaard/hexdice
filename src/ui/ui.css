@@ -1212,6 +1212,26 @@
   min-width: 96px;
 }
 
+.overlay-copy-status {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.overlay-copy-text {
+  flex-basis: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  font: 0.75rem/1.4 ui-monospace, 'SF Mono', Menlo, monospace;
+  color: var(--text);
+  background: var(--ink);
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  resize: none;
+}
+
 /* Wide screens: chart and story on the left, scoreboard on the right, so nothing needs scrolling. */
 @media (min-width: 900px) {
   .end-card {
