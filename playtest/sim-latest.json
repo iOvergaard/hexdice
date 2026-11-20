@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-20T13:03:17.972Z",
+  "date": "2026-11-20T14:24:20.553Z",
   "games": 2000,
   "rules": {
     "lossRule": "drawAttrition",
@@ -8,13 +8,19 @@
     "connectionBonus": "catchup",
     "lastStandDice": 1,
     "frontlineOverflow": "behind",
-    "seatTables": 2
+    "seatTables": 2,
+    "shaken": false
   },
   "links": {
     "count": 13987,
     "dice": 29186
   },
   "lastStands": 733,
+  "shaken": {
+    "holds": 0,
+    "attacks": 0,
+    "wins": 0
+  },
   "normalVsEasy": {
     "games": 1000,
     "normalWins": 907,
@@ -54,5 +60,5 @@
   "roundCapHits": 0,
   "attacks": 331791,
   "ties": 11217,
-  "durationMs": 26414
+  "durationMs": 60052
 }
