@@ -182,4 +182,6 @@ Hex orientation and coordinate storage, exact map-growth algorithm, palette and 
   3. *Front-line reinforcement* (above) puts the new dice where you just fought.
   Pairs naturally with the `attrition` loss rule, which already stops a failed attack from emptying the stack.
 
+- **From 20-11-2026, parked ideas are GitHub issues** with the `parked` label, so each one keeps its own trail of numbers and decisions. The Dice Wars review's five ideas are iOvergaard/hexdice#2 to #6. What it advised not to take is #8, closed as not planned.
+
 v0.1 keeps the door open without building any of it: roll events carry every die face, territories and players are plain data that can gain a `feature` or `powers` field, and the rules keep attack, reinforcement and turn-advance as separate steps a power could hook into.

@@ -21,7 +21,8 @@ npm run build
 
 ## Docs
 
-- `docs/plan.md`: the approved design. §3 is the authoritative rule set, with the reason for each rule. §11 lists parked ideas. The other files in `docs/` are earlier plans.
+- `docs/plan.md`: the approved design. §3 is the authoritative rule set, with the reason for each rule. §11 lists the parked ideas from before 20-11-2026. The other files in `docs/` are earlier plans.
+- GitHub issues: new parked ideas carry the `parked` label, and questions waiting on Jacob carry `decision`. Closed as "not planned" means decided against. Before proposing a rule, AI or UI change, search them, open and closed: `gh issue list --state all --search "<topic>"`.
 - `playtest/`: hands-on reports and `sim-latest.json`. `playtest/screens/` is gitignored; reports reference the images anyway.
 
 ## Architecture
