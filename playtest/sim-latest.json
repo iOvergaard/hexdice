@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-19T10:12:51.716Z",
+  "date": "2026-11-19T13:42:12.433Z",
   "games": 2000,
   "rules": {
     "lossRule": "drawAttrition",
@@ -7,7 +7,8 @@
     "reinforcement": "frontline",
     "connectionBonus": "catchup",
     "lastStandDice": 1,
-    "frontlineOverflow": "behind"
+    "frontlineOverflow": "behind",
+    "seatTables": 2
   },
   "links": {
     "count": 13987,
@@ -53,5 +54,5 @@
   "roundCapHits": 0,
   "attacks": 331791,
   "ties": 11217,
-  "durationMs": 25031
+  "durationMs": 25172
 }

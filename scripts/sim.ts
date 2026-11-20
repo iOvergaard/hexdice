@@ -29,6 +29,7 @@ if (!['off', 'flat', 'smaller', 'catchup'].includes(connectionBonus)) throw new 
 const lastStandDice = Number(arg('last-stand', String(DEFAULT_RULES.lastStandDice)));
 const frontlineOverflow = arg('overflow', DEFAULT_RULES.frontlineOverflow) as FrontlineOverflow;
 if (!['behind', 'reserve'].includes(frontlineOverflow)) throw new Error(`unknown --overflow ${frontlineOverflow}`);
+const seatTables = Number(arg('seat-tables', String(DEFAULT_RULES.seatTables)));
 
 let crashes = 0;
 let illegalActions = 0;
@@ -47,7 +48,7 @@ interface Result {
 
 function play(levels: AiLevel[], seed: number): Result {
   try {
-    let state = createGame(makeConfig(aiSeats(levels), seed, { lossRule, eliminationBonus, reinforcement, connectionBonus, lastStandDice, frontlineOverflow }));
+    let state = createGame(makeConfig(aiSeats(levels), seed, { lossRule, eliminationBonus, reinforcement, connectionBonus, lastStandDice, frontlineOverflow, seatTables }));
     const rng = new Rng(seed ^ 0x9e3779b9);
     while (state.winner === null) {
       if (state.round > ROUND_CAP) {
@@ -111,7 +112,7 @@ const tooLong = lengthFailures(lengths);
 const result = {
   date: new Date().toISOString(),
   games,
-  rules: { lossRule, eliminationBonus, reinforcement, connectionBonus, lastStandDice, frontlineOverflow },
+  rules: { lossRule, eliminationBonus, reinforcement, connectionBonus, lastStandDice, frontlineOverflow, seatTables },
   links: { count: links, dice: linkDice },
   lastStands,
   normalVsEasy: { games: duelGames, normalWins, winRate },
@@ -127,7 +128,7 @@ const result = {
 writeFileSync(out, JSON.stringify(result, null, 2) + '\n');
 
 console.log(`Links: ${links} (${linkDice} bonus dice) · last stands: ${lastStands}`);
-console.log(`Rules: lossRule=${lossRule} eliminationBonus=${eliminationBonus} reinforcement=${reinforcement} connection=${connectionBonus} lastStand=${lastStandDice} overflow=${frontlineOverflow}; ${attacks} attacks, ${ties} draws (${((ties / Math.max(1, attacks)) * 100).toFixed(1)}%)`);
+console.log(`Rules: lossRule=${lossRule} eliminationBonus=${eliminationBonus} reinforcement=${reinforcement} connection=${connectionBonus} lastStand=${lastStandDice} overflow=${frontlineOverflow} seatTables=${seatTables}; ${attacks} attacks, ${ties} draws (${((ties / Math.max(1, attacks)) * 100).toFixed(1)}%)`);
 console.log(`Normal vs Easy: ${normalWins}/${duelGames} (${(winRate * 100).toFixed(1)}%)`);
 console.log(`8-player: avg ${result.eightPlayer.avgRounds.toFixed(1)} rounds, max ${maxRounds}, wins by seat [${winsBySeat.join(', ')}]`);
 console.log(

@@ -1,20 +1,28 @@
 import { describe, expect, it } from 'vitest';
 import { makeConfig } from '../../src/engine/config';
 import { aiSeats, defaultSeats } from '../../src/engine/seats';
-import { SEAT_COMPENSATION, SEAT_COMPENSATION_CATCHUP, createGame } from '../../src/engine/setup';
+import { SEAT_COMPENSATION, SEAT_COMPENSATION_CATCHUP, SEAT_COMPENSATION_CATCHUP_2, createGame } from '../../src/engine/setup';
 
 const game = (players: number, seed = 1) => createGame(makeConfig(defaultSeats(players - 1), seed));
 
 describe('createGame', () => {
   it('compensates seats by turn order', () => {
-    for (const [n, base] of [[8, 11], [4, 22], [2, 45]] as const) {
+    for (const [n, base] of [[8, 11], [7, 12], [6, 15], [4, 22], [3, 30], [2, 45]] as const) {
       for (let seed = 1; seed <= 20; seed++) {
         const s = game(n, seed);
         s.players.forEach((p, seat) => {
           const total = s.territories.filter((t) => t.owner === p.id).reduce((a, t) => a + t.dice, 0);
-          expect(total, `${n} players, seat ${seat}`).toBe(base + SEAT_COMPENSATION_CATCHUP[n]![seat]!);
+          expect(total, `${n} players, seat ${seat}`).toBe(base + SEAT_COMPENSATION_CATCHUP_2[n]![seat]!);
         });
       }
+    }
+  });
+
+  it('keeps the first seat tables for games saved before the retune', () => {
+    for (const [n, base] of [[7, 12], [6, 15], [3, 30]] as const) {
+      const s = createGame(makeConfig(defaultSeats(n - 1), 5, { seatTables: 1 }));
+      const totals = s.players.map((p) => s.territories.filter((t) => t.owner === p.id).reduce((a, t) => a + t.dice, 0));
+      expect(totals, `${n} players`).toEqual(SEAT_COMPENSATION_CATCHUP[n]!.map((d) => base + d));
     }
   });
 
@@ -28,6 +36,7 @@ describe('createGame', () => {
     for (let n = 2; n <= 8; n++) {
       expect(SEAT_COMPENSATION[n]).toHaveLength(n);
       expect(SEAT_COMPENSATION_CATCHUP[n]).toHaveLength(n);
+      expect(SEAT_COMPENSATION_CATCHUP_2[n]).toHaveLength(n);
     }
   });
 

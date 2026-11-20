@@ -59,6 +59,11 @@ describe('save', () => {
     expect(restore(JSON.stringify({ v: 1, config: old, actions: [] }))?.config.frontlineOverflow).toBe('reserve');
   });
 
+  it('replays saves from before the seat retune with the first seat tables', () => {
+    const { seatTables: _, ...old } = makeConfig(defaultSeats(6), 11);
+    expect(restore(JSON.stringify({ v: 1, config: old, actions: [] }))?.config.seatTables).toBe(1);
+  });
+
   it('replays saves from before the last stand without it', () => {
     const { lastStandDice: _, ...old } = makeConfig(defaultSeats(3), 11);
     expect(restore(JSON.stringify({ v: 1, config: old, actions: [] }))?.config.lastStandDice).toBe(0);
