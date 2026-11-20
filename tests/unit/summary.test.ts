@@ -68,7 +68,7 @@ describe('summarise', () => {
       if (wins.length === 0) expect(upset).toBeNull();
       for (const w of wins) {
         if (w.type !== 'attackRolled') continue;
-        expect(upset!.chance).toBeLessThanOrEqual(winProbability(w.attackRolls.length, w.defendRolls.length));
+        expect(upset!.chance).toBeLessThanOrEqual(winProbability(w.attackRolls.length, w.defendRolls.length, w.shaken));
       }
     }
   });
