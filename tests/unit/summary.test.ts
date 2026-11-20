@@ -73,6 +73,12 @@ describe('summarise', () => {
     }
   });
 
+  it('rates a win on a tie against a shaken defender at the odds it had', () => {
+    const { start } = play(7, 4, () => true);
+    const roll: GameEvent = { type: 'attackRolled', attacker: 0, defender: 1, from: 0, to: 1, attackRolls: [3, 3], defendRolls: [4, 2], attackSum: 6, defendSum: 6, success: true, shaken: true };
+    expect(summarise(start, [roll], start).upsets[0]!.chance).toBeCloseTo(winProbability(2, 2, true), 12);
+  });
+
   it('ranks those still in by territories held while play goes on', () => {
     const { start, state, events } = play(42, 8, (_, ev) => ev.some((e) => e.type === 'playerEliminated'));
     const s = summarise(start, events, state);

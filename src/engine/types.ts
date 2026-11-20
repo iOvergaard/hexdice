@@ -50,6 +50,11 @@ export interface RulesConfig {
   maxDice: number;
   maxReserve: number;
   lossRule: LossRule;
+  /**
+   * When a defender holds (the attack fails), the attacking stack can't attack again that turn, and the defender is shaken
+   * for the rest of the turn: a tie against it goes to the attacker.
+   */
+  shaken: boolean;
   reinforcement: ReinforcementRule;
   frontlineOverflow: FrontlineOverflow;
   connectionBonus: ConnectionBonusRule;
@@ -139,6 +144,10 @@ export interface GameState {
   winner: PlayerId | null;
   /** A turn has ended with two players left, so the last stand is spent; true from the start with two seats. */
   finalStarted: boolean;
+  /** Under the shaken rule: the current player's territories whose attack failed this turn, so they can't attack again. */
+  spent: TerritoryId[];
+  /** Under the shaken rule: territories that held against the current player this turn; a tie against them goes to the attacker. */
+  shaken: TerritoryId[];
 }
 
 export type Action =
@@ -157,6 +166,8 @@ export type GameEvent =
       attackSum: number;
       defendSum: number;
       success: boolean;
+      /** The defender was shaken, so a tie went to the attacker. Left out otherwise. */
+      shaken?: boolean;
     }
   | { type: 'territoryCaptured'; territory: TerritoryId; previousOwner: PlayerId; newOwner: PlayerId; dice: number }
   | { type: 'playerEliminated'; player: PlayerId; by: PlayerId }
@@ -165,6 +176,8 @@ export type GameEvent =
   | { type: 'turnStarted'; player: PlayerId; round: number }
   /** A capture joined `groups` of the player's groups; `bonus` dice went on the territory, `toReserve` past the cap. */
   | { type: 'linked'; player: PlayerId; territory: TerritoryId; groups: number; bonus: number; toReserve: number }
+  /** Under the shaken rule, `territory` held: it's shaken for the rest of the turn, and `spent` can't attack again this turn. */
+  | { type: 'shaken'; territory: TerritoryId; spent: TerritoryId }
   /** The smaller of the last two players gained dice on each territory, up to the cap. placed: one territory id per die. */
   | { type: 'lastStand'; player: PlayerId; placed: TerritoryId[] }
   | { type: 'gameOver'; winner: PlayerId };

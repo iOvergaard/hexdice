@@ -1,6 +1,5 @@
-import { winProbability } from '../engine/odds';
 import type { Rng } from '../engine/rng';
-import { diceAfterFailedAttack, largestGroup, legalAttacks } from '../engine/rules';
+import { attackOdds, diceAfterFailedAttack, largestGroup, legalAttacks } from '../engine/rules';
 import type { Action, GameState, PlayerId, Territory } from '../engine/types';
 
 const MIN_WIN = 0.5;
@@ -57,7 +56,7 @@ export function chooseNormal(state: GameState, _rng: Rng): Action {
   for (const a of attacks) {
     const src = state.territories[a.from]!;
     const dst = state.territories[a.to]!;
-    const p = winProbability(src.dice, dst.dice);
+    const p = attackOdds(state, a.from, a.to);
     if (p < MIN_WIN && !(src.dice === max && p >= 0.3)) continue;
 
     const after = withOwner(state, a.to, me);
@@ -81,7 +80,7 @@ export function chooseNormal(state: GameState, _rng: Rng): Action {
   let fallback = attacks[0]!;
   let fallbackP = -1;
   for (const a of attacks) {
-    const p = winProbability(state.territories[a.from]!.dice, state.territories[a.to]!.dice);
+    const p = attackOdds(state, a.from, a.to);
     if (p > fallbackP) {
       fallback = a;
       fallbackP = p;

@@ -64,6 +64,8 @@ export function buildState(spec: GraphSpec): GameState {
     rngState: seed,
     winner: null,
     finalStarted: playerCount <= 2,
+    spent: [],
+    shaken: [],
   };
 }
 
@@ -124,5 +126,7 @@ export function fixtureBoardState(seed = 7, playerCount = 8): GameState {
     rngState: rng.state,
     winner: null,
     finalStarted: false,
+    spent: [],
+    shaken: [],
   };
 }

@@ -96,7 +96,7 @@ export function summarise(start: GameState, events: readonly GameEvent[], end: G
         if (e.success) by.attacksWon++;
         else on.defencesHeld++;
         if (!e.success) break;
-        const chance = winProbability(e.attackRolls.length, e.defendRolls.length);
+        const chance = winProbability(e.attackRolls.length, e.defendRolls.length, e.shaken);
         const best = upsets[e.attacker];
         if (!best || chance < best.chance) {
           upsets[e.attacker] = { round, attackDice: e.attackRolls.length, defendDice: e.defendRolls.length, chance };
