@@ -20,6 +20,7 @@ describe('how to play', () => {
     const attack = section('Attacking')!;
     expect(attack).toContain('a tie goes to the defender');
     expect(attack).toContain('all your dice but one');
+    expect(attack).toContain('The territory you took stays selected while it can attack again');
     expect(attack).toContain('Lose: your territory drops to 1 die');
     expect(attack).toContain('Draw: it drops to as many dice as the defender had');
   });

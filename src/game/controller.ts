@@ -12,7 +12,7 @@ import { openHowToPlay } from '../ui/how-to-play';
 import { openWhatsNew } from '../ui/whats-new';
 import { createGameScreen, showTitle, type GameScreen, type TitleOptions } from '../ui/screens';
 import type { Ending, Mood } from '../ui/ending';
-import { nextSelection, targetsFor } from '../ui/selection';
+import { nextSelection, selectionAfterAttack, targetsFor } from '../ui/selection';
 import { restore, serialise, type RestoredGame } from './save';
 import { loadSoundOn, Sound } from './sound';
 import { cuesFor } from './sound-cues';
@@ -419,6 +419,7 @@ export class Controller {
     this.renderAll();
     await this.play(action, gen, this.speed, true);
     if (gen !== this.gen) return;
+    if (action.type === 'attack') this.selected = selectionAfterAttack(this.state!, action, this.canAttack);
     this.busy = false;
     this.kick();
   }
