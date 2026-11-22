@@ -1381,7 +1381,7 @@
 }
 
 /* A phone's board is too short for the card, so the ending takes the whole screen. */
-@media (max-width: 719px) {
+@media (max-width: 719px), (orientation: landscape) and (max-height: 520px) {
   .overlay {
     position: fixed;
     border-radius: 0;
@@ -1615,7 +1615,8 @@
 
 /* ---------- phone ---------- */
 
-@media (max-width: 640px) {
+/* Phones, upright or on their side (a short landscape screen gets the side layout at the end of this file). */
+@media (max-width: 640px), (orientation: landscape) and (max-height: 520px) {
   /* One fixed height for dice and messages alike, so the board never jumps; 8 dice fit on one row. */
   .roll {
     --die: min(14px, 5.85vw - 8.3px);
@@ -1936,7 +1937,7 @@
 
 /* ---------- wide screens: give the map the height ---------- */
 
-@media (min-width: 720px) {
+@media (min-width: 720px) and (min-height: 521px) {
   /* Wide screens: the roll strip is one slim row (who, dice, sum over cost) so the map gets the height. */
   .roll {
     --die: 24px;
@@ -1969,7 +1970,7 @@
 
 /* Tablets: the one-row strip is short of room for 8 dice a side, so the cubes tuck as on phones,
    sized to fit two long names and two-digit totals without shrinking. From 1100 px they stand apart. */
-@media (min-width: 720px) and (max-width: 1099px) {
+@media (min-width: 720px) and (max-width: 1099px) and (min-height: 521px) {
   .roll {
     --die: min(24px, 5.85vw - 32.5px);
   }
@@ -1982,7 +1983,7 @@
 }
 
 /* Players and controls share one row when there is room for both; the chips go compact (emblem and number). */
-@media (min-width: 1180px) {
+@media (min-width: 1180px) and (min-height: 521px) {
   .hud {
     display: flex;
     align-items: center;
@@ -2012,5 +2013,128 @@
     flex: none;
     flex-wrap: nowrap;
     margin-top: 0;
+  }
+}
+
+/* ---------- short landscape: phones on their side ---------- */
+
+/* Stacked, the board got what the strip and the bar left: 25 px on a phone on its side with 8 players. Here the
+   map takes the whole height on the left, and the roll strip, players and controls share a column on the right.
+   The players scroll if they must; the controls and End turn always show. The insets keep clear of a notch. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .game {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 42vw, 380px);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      'board roll'
+      'board bar';
+    gap: 8px 10px;
+    height: 100dvh;
+    min-height: 0;
+    padding: max(8px, env(safe-area-inset-top)) max(var(--gutter), env(safe-area-inset-right))
+      max(8px, env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left));
+  }
+  .roll-slot {
+    grid-area: roll;
+  }
+  /* "7 moved in" and the total share one line of a side, so the strip gives up its padding and the labels shrink a little. */
+  .roll {
+    height: 88px;
+    padding: 6px 4px;
+    gap: 2px;
+  }
+  .roll-side {
+    padding: 2px;
+  }
+  /* "Tie · captured" breaks over two lines rather than squeezing the sides. */
+  .roll-mid {
+    min-width: 0;
+    max-width: 3.8rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+  }
+  .roll-cost {
+    font-size: 0.75rem;
+  }
+  .board-wrap {
+    grid-area: board;
+    min-height: 0;
+  }
+  .bar-slot {
+    grid-area: bar;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .hud {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  /* The padding, offset by the margin, keeps the You tag and the runaway mark inside the scroll box. */
+  .hud .chips {
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    gap: 8px 6px;
+    margin: 0 -2px 0 -8px;
+    padding: 8px 2px 2px 8px;
+  }
+  .chip {
+    padding: 3px;
+    gap: 3px;
+  }
+  .chip-stats {
+    line-height: 1;
+  }
+  .chip-badge {
+    width: 22px;
+    height: 22px;
+  }
+  .chip-badge .emblem {
+    width: 15px;
+    height: 15px;
+  }
+  .hud .controls {
+    margin-top: auto;
+    padding-top: 8px;
+    gap: 8px;
+  }
+  /* Round, speed, help, sound and Quit fill one row of the column; the speed menu gives way first. */
+  .controls-secondary {
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+  .speed {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .speed select {
+    width: 100%;
+    min-width: 0;
+    padding: 0 2px;
+  }
+  .controls-secondary .btn-icon {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .hud select,
+  .controls-secondary .btn {
+    min-height: 40px;
+  }
+  .end-turn {
+    flex: 1 1 100%;
+    min-height: 44px;
+  }
+  .preview {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .preview-actions .btn {
+    flex: 1;
+    min-height: 44px;
   }
 }
