@@ -9,9 +9,9 @@ declare global {
 
 const shot = (page: Page, info: TestInfo, name: string) => page.screenshot({ path: `playtest/screens/game-over-${info.project.name}-${name}.png` });
 
-/** Autoplays the seeded game to its end; with autoplay every seat, yours too, is played by the AI. */
+/** Autoplays the seeded game to its end; with autoplay every seat, yours too, is played by the AI. Hard, so the seeds keep the endings these tests were written for. */
 async function playToEnd(page: Page, query: string): Promise<void> {
-  await page.goto(`/?${query}&speed=instant&sound=off`);
+  await page.goto(`/?${query}&ai=hard&speed=instant&sound=off`);
   await page.waitForFunction(() => !!window.__hexdice?.state());
   await page.evaluate(() => window.__hexdice!.autoplay(true));
   await expect(page.getByTestId('overlay')).toBeVisible({ timeout: 90_000 });
@@ -92,7 +92,7 @@ test('a win stamps your emblem; reduced motion keeps the ending still', async ({
 
 test("a resumed game's ending still covers the moves before the reload", async ({ page }) => {
   test.setTimeout(150_000);
-  await page.goto('/?seed=42&players=8&speed=instant&sound=off');
+  await page.goto('/?seed=42&players=8&ai=hard&speed=instant&sound=off');
   await page.waitForFunction(() => !!window.__hexdice?.state());
   await page.evaluate(() => window.__hexdice!.autoplay(true));
   await page.waitForFunction(() => window.__hexdice!.state()!.players.filter((p) => !p.alive).length >= 2, null, { timeout: 60_000 });

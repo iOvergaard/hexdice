@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-20T15:03:42.622Z",
+  "date": "2026-11-23T10:49:01.407Z",
   "games": 2000,
   "rules": {
     "lossRule": "drawAttrition",
@@ -12,19 +12,24 @@
     "shaken": true
   },
   "links": {
-    "count": 14144,
-    "dice": 29512
+    "count": 14081,
+    "dice": 29360
   },
   "lastStands": 745,
   "shaken": {
-    "holds": 42997,
-    "attacks": 10266,
-    "wins": 6497
+    "holds": 44695,
+    "attacks": 10702,
+    "wins": 6698
+  },
+  "hardVsEasy": {
+    "games": 500,
+    "wins": 448,
+    "winRate": 0.896
   },
   "normalVsEasy": {
-    "games": 1000,
-    "normalWins": 886,
-    "winRate": 0.886
+    "games": 500,
+    "wins": 422,
+    "winRate": 0.844
   },
   "eightPlayer": {
     "games": 1000,
@@ -58,7 +63,7 @@
   "crashes": 0,
   "illegalActions": 0,
   "roundCapHits": 0,
-  "attacks": 333242,
-  "ties": 11492,
-  "durationMs": 54168
+  "attacks": 334088,
+  "ties": 11507,
+  "durationMs": 28894
 }

@@ -16,7 +16,7 @@ export interface UrlParams {
   shaken: boolean | null;
 }
 
-const AI_LEVELS: readonly string[] = ['easy', 'normal'];
+const AI_LEVELS: readonly string[] = ['easy', 'normal', 'hard'];
 const SPEEDS: readonly string[] = ['slow', 'normal', 'fast', 'instant'];
 const REINFORCEMENTS: readonly string[] = ['random', 'frontline', 'weighted'];
 const LINKS: readonly string[] = ['off', 'flat', 'smaller', 'catchup'];

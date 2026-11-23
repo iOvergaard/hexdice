@@ -80,7 +80,7 @@ describe('how to play', () => {
 
   it('explains who Normal gangs up on, the crosshair that marks them and the bar at each player count', () => {
     const r = section('Runaways')!;
-    expect(r).toContain('On Normal, the computer players gang up on anyone who runs away with the map, you included.');
+    expect(r).toContain('On Normal and Hard, the computer players gang up on anyone who runs away with the map, you included.');
     expect(r).toContain('A crosshair on the emblem in the player bar');
     expect(r).toContain('A runaway holds 8 territories or more with six to eight players in, 9 with five, 12 with four and 15 with three.');
     expect(section('Runaways', { territoryCount: 40 })).toContain('A runaway holds 8 territories or more with eight players in, 9 with seven, 10 with six, 12 with five, 15 with four and 20 with three.');

@@ -14,7 +14,7 @@ The point of v0.1 is a **solid, playable base to build your improvement ideas on
 
 **Goals (v0.1)**
 - Complete game loop: title → board preview → play → game over → replay or back to title.
-- 2–8 players: you + 1–7 AI, default you + 7 AI. Two AI levels (Easy, Normal).
+- 2–8 players: you + 1–7 AI, default you + 7 AI. Two AI levels (Easy, Normal). Three since 23-11-2026 (Easy, Normal, Hard): see **AI levels** in §3.
 - Clear player identity: every player has a colour, an emblem and a name; your seat is always marked "You".
 - Playable by touch at phone size (basic but usable); desktop mouse and keyboard too.
 - Seeded and deterministic: same seed + same moves = same game. Every bug is reproducible.
@@ -25,7 +25,7 @@ The point of v0.1 is a **solid, playable base to build your improvement ideas on
 - Mobile polish beyond basic touch play (gestures, zoom, install as an app).
 - Online multiplayer, accounts, persistence/save games.
 - Sound, map editor, undo, alternative rule sets.
-- A "Hard" AI (stretch only if time allows).
+- A "Hard" AI (stretch only if time allows). Done differently on 23-11-2026: the old Normal became Hard, and a new Normal sits between it and Easy (§3).
 
 **Anti-goals (would be a failure even if it runs)**
 - A Dice Wars clone in name or look.
@@ -67,6 +67,8 @@ This section is the complete, authoritative rule set. It's our design, not a par
 **Odds:** the engine precomputes the exact win probability for every a-vs-d dice matchup (1–8 each). The AI uses it, and the board shows it as an odds badge on each target once you pick an attacker.
 
 **Normal AI and runaways** (19-11-2026, Jacob's call): the Normal AI treats an opponent holding at least 1.5× the average territories of the players still in, and at least 8, as a runaway, and adds +0.6 to the score of any attack on them. Cutting the leader's largest group now counts 0.15 per territory instead of 0.06. The table gangs up on whoever pulls away, you included. Jacob chose this over rule changes (less income for big empires, more for players below the average): those made a formed runaway beatable only by pushing games past the length gate. Simulated (7 players, all-Normal, two sets of 1,500 games): a leader with 15 or more of the 30 territories at round 5 appears in 9% of games instead of 14%, and at round 8 in 43–45% instead of 56–58%. Once formed, it still wins 86–87%. Eight players: p90 22, p99 30–32 (was 19 and 26–27). Normal beats Easy 88.7–90.7%. Details in `playtest/19-11-2026-ai-gang-up.md`. Since 20-11-2026 the player bar shows everyone's territory count and marks the runaways (issue #2); the bar lives in `src/ai/runaway.ts`, shared by the AI, the player bar and How to play.
+
+**AI levels** (23-11-2026, Jacob's call): the AI described above is **Hard** now (`src/ai/hard.ts`, the same moves as before). Why: it never ignores its random numbers, never takes a bad attack and never stops with a good one left, so only the dice beat it, which is too much for a level called Normal. The new **Normal** (`src/ai/normal.ts`) plays Hard's move, except that a quarter of its moves (`NORMAL_SLIP`) are Easy's: an attack against the odds or an early end of turn. Jacob picked it over "Greedy" (best odds only, with no sense of groups, leader, runaways or knockouts), which scored about the same but makes the same blind-spot mistake every time. Simulated (one seat against three of a level, 1,200 four-player games each; fair share 25%): against Easy tables Hard wins 61%, Normal 51%, Greedy 49%; against Hard tables Normal wins 16%. 1v1 against Easy: Hard 88–90%, Normal 82–84%. Tables of eight Normals run shorter than Hard ones (p90 19, p99 27 against 21 and 32). Normal and Hard both gang up on runaways. The length gate stays on all-Hard tables, the longest. Version 1 saves (from before) load with their Normal players as Hard, so a game in progress keeps its opponents; a remembered title choice and `?ai=normal` links mean the new Normal. Parked: an even stronger level from issue #13 (focus-to4: one wins 41% against three Hard players), since a table of eight runs too long (p90 32, p99 41). Details in `playtest/23-11-2026-ai-levels.md`.
 
 ## 4. Approaches considered
 
@@ -121,7 +123,7 @@ Click own territory (≥ 2 dice) to select and highlight valid targets; click a 
 | Gate | Command | Passes when |
 |---|---|---|
 | 1. Unit | `npm run check` (tsc + Vitest) | Engine invariants hold: territory count constant, dice always 1–8 per territory, adjacency symmetric, attack/reinforcement/elimination/victory correct on fixture maps, odds table matches brute force. |
-| 2. Simulation | `npm run sim -- --games 500` | 0 crashes, 0 illegal actions, every game ends before a 1,000-turn cap, Normal beats Easy in ≥ 70% of 1v1 games (seat order alternated). If it falls short, the AI gets tuned; the threshold only moves with your OK. Since 17-11-2026 also a game-length gate on eight-player games (CI runs 2,000 games); since 18-11-2026, with front-line reinforcement and the catch-up connection bonus as defaults (p90 19, p99 26): p90 ≤ 26 rounds, p99 ≤ 33, at most 0.5% past 60. Raised on 20-11-2026 to p90 ≤ 28 and p99 ≤ 36 (Jacob's call, issue #7): the Normal AI ganging up on runaways had brought the CI seeds to p90 22, p99 31, two rounds under the old p99 limit. Stats (game length, seat win rates) saved to `playtest/sim-latest.json` so balance shifts show up between changes. |
+| 2. Simulation | `npm run sim -- --games 500` | 0 crashes, 0 illegal actions, every game ends before a 1,000-turn cap, Normal beats Easy in ≥ 70% of 1v1 games (seat order alternated); since 23-11-2026 Hard and the new Normal both have to, on half the duels each. If it falls short, the AI gets tuned; the threshold only moves with your OK. Since 17-11-2026 also a game-length gate on eight-player games (CI runs 2,000 games); since 18-11-2026, with front-line reinforcement and the catch-up connection bonus as defaults (p90 19, p99 26): p90 ≤ 26 rounds, p99 ≤ 33, at most 0.5% past 60. Raised on 20-11-2026 to p90 ≤ 28 and p99 ≤ 36 (Jacob's call, issue #7): the Normal AI ganging up on runaways had brought the CI seeds to p90 22, p99 31, two rounds under the old p99 limit. Stats (game length, seat win rates) saved to `playtest/sim-latest.json` so balance shifts show up between changes. |
 | 3. E2E | `npm run e2e` (Playwright) | Seeded game: a real attack by clicking territories, end turn, AI turn completes, HUD updates; plus a full game on autoplay to a game-over screen. Runs at desktop size and at phone size with touch. Screenshots saved. |
 | 4. Hands-on | Me, in the browser pane (you can watch) | I play real turns and write `playtest/DD-MM-YYYY-<change>.md`: screenshots, what felt off, and every scenario marked verified / partly verified / not testable (with why). |
 

@@ -5,7 +5,7 @@ import { soundToggle, type SoundToggle } from './sound-toggle';
 export interface HudOptions {
   /** Largest connected group per player id. */
   largestGroups: number[];
-  /** Runaways the Normal computer players gang up on (gangedUpOn in src/ai/runaway.ts). */
+  /** Runaways the Normal and Hard computer players gang up on (gangedUpOn in src/ai/runaway.ts). */
   gangedUpOn: ReadonlySet<PlayerId>;
   canEndTurn: boolean;
   /** While AIs play, the End turn button becomes a skip button: to your next turn, or to the end once you're out. */

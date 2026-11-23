@@ -13,7 +13,7 @@ declare global {
 const shot = (page: Page, info: TestInfo, name: string) => page.screenshot({ path: `playtest/screens/copy-game-${info.project.name}-${name}.png` });
 
 async function playToEnd(page: Page): Promise<void> {
-  await page.goto('/?seed=42&players=4&speed=instant&sound=off');
+  await page.goto('/?seed=42&players=4&ai=hard&speed=instant&sound=off');
   await page.waitForFunction(() => !!window.__hexdice?.state());
   await page.evaluate(() => window.__hexdice!.autoplay(true));
   await expect(page.getByTestId('overlay')).toBeVisible({ timeout: 90_000 });
@@ -22,7 +22,7 @@ async function playToEnd(page: Page): Promise<void> {
 /** Replays a copied record the way an analysis would: a fresh game, then every move in order. */
 function replay(record: string): GameState {
   const { v, config, actions } = JSON.parse(record) as { v: number; config: GameConfig; actions: Action[] };
-  expect(v).toBe(1);
+  expect(v).toBe(2);
   let state = createGame(config);
   for (const action of actions) state = applyAction(state, action).state;
   return state;
@@ -51,7 +51,7 @@ test('"You were eliminated" copies the game up to your knockout', async ({ page,
   test.setTimeout(120_000);
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   // Seed 8 with eight players: if you only end your turn, you're out in round 9 (seed 3 did before the shaken rule).
-  await page.goto('/?seed=8&players=8&speed=instant&sound=off');
+  await page.goto('/?seed=8&players=8&ai=hard&speed=instant&sound=off');
   await page.waitForFunction(() => !!window.__hexdice?.state());
   await page.evaluate(async () => {
     const open = () => !!document.querySelector('[data-testid=overlay]:not([hidden])');

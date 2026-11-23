@@ -32,7 +32,7 @@ const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout
 function loadTitle(): TitleOptions {
   try {
     const raw = JSON.parse(localStorage.getItem(TITLE_KEY) ?? 'null') as Partial<TitleOptions> | null;
-    if (raw && typeof raw.players === 'number' && (raw.aiLevel === 'easy' || raw.aiLevel === 'normal')) {
+    if (raw && typeof raw.players === 'number' && (raw.aiLevel === 'easy' || raw.aiLevel === 'normal' || raw.aiLevel === 'hard')) {
       return { players: raw.players, aiLevel: raw.aiLevel };
     }
   } catch {
@@ -589,7 +589,7 @@ export class Controller {
         const pace: Speed = this.skipping ? 'instant' : this.speed;
         await sleep(PAUSE_MS[pace]);
         if (gen !== this.gen) return;
-        const level: AiLevel = s.players[s.current]!.aiLevel ?? 'normal';
+        const level: AiLevel = s.players[s.current]!.aiLevel ?? 'hard';
         await this.play(chooseAction(s, level, this.aiRng), gen, pace, true);
         if (gen === this.gen && this.paused) {
           this.busy = false;

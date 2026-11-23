@@ -21,6 +21,9 @@ describe('parseUrlParams', () => {
   it('returns null for an invalid seed', () => {
     expect(parseUrlParams('?seed=abc').seed).toBeNull();
   });
+  it('knows all three levels', () => {
+    for (const ai of ['easy', 'normal', 'hard'] as const) expect(parseUrlParams(`?ai=${ai}`).aiLevel).toBe(ai);
+  });
   it('returns null for unknown ai and speed', () => {
     const p = parseUrlParams('?ai=godlike&speed=warp');
     expect(p.aiLevel).toBeNull();

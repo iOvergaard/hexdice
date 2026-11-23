@@ -85,8 +85,9 @@ Rounded to whole percent. Equal stacks win less than half the time, because ties
 ### The computer players
 
 - **Easy** attacks at random, even against long odds, and sometimes ends its turn early.
-- **Normal** attacks when the odds are at least even, or from a full stack of 8 when they are 30% or better. It prefers captures that grow its largest group, break up the leader's or knock a player out, and the whole table gangs up on anyone who runs away with the map. That includes you.
-- A **runaway** holds 8 territories or more with six to eight players in, 9 with five, 12 with four and 15 with three. A crosshair on their emblem in the player bar shows who that is, whenever a Normal computer player is left to go after them.
+- **Hard** attacks when the odds are at least even, or from a full stack of 8 when they are 30% or better. It prefers captures that grow its largest group, break up the leader's or knock a player out, and the whole table gangs up on anyone who runs away with the map. That includes you. Until 23-11-2026 this level was called Normal.
+- **Normal** plays like Hard, but one move in four is an Easy move: an attack against the odds, or a turn ended early.
+- A **runaway** holds 8 territories or more with six to eight players in, 9 with five, 12 with four and 15 with three. A crosshair on their emblem in the player bar shows who that is, whenever a Normal or Hard computer player is left to go after them.
 
 ### Tips
 
