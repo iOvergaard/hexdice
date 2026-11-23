@@ -987,10 +987,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Light, like the income above it: the chip is a dark panel, so ink here was all but invisible. */
 .chip-bonus {
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--ink);
+  color: var(--text);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
