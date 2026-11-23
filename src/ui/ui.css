@@ -106,13 +106,15 @@
 /* ---------- title ---------- */
 
 /* A dealt board fills the screen behind the menu. Phone: the menu sits at the bottom on ink and any spare height
-   shows more board above the name. Wide screens: the menu sits on the left where the board fades out. */
+   shows more board above the name. Wide screens: the menu sits on the left where the board fades out. The insets
+   keep the menu clear of the home indicator on a home-screen install. */
 .title {
   position: relative;
   isolation: isolate;
   overflow: hidden;
   min-height: 100dvh;
-  padding: 24px max(var(--gutter), calc(50% - 264px));
+  padding: max(24px, env(safe-area-inset-top)) max(var(--gutter), calc(50% - 264px), env(safe-area-inset-right))
+    max(24px, env(safe-area-inset-bottom)) max(var(--gutter), calc(50% - 264px), env(safe-area-inset-left));
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -273,21 +275,26 @@
 
 /* ---------- game layout ---------- */
 
+/* One screen tall, so End turn is on screen from the start. On a phone, only if that leaves the board under 240 px
+   (a 320 px wide phone, or knockout bonuses growing the player bar) does the page grow and scroll instead. The insets
+   keep clear of the home indicator on a home-screen install. */
 .game {
   max-width: 1800px;
   margin: 0 auto;
-  padding: 10px var(--gutter) 14px;
+  padding: max(10px, env(safe-area-inset-top)) max(var(--gutter), env(safe-area-inset-right))
+    max(14px, env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left));
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-height: 100dvh;
+  height: 100dvh;
+  min-height: min-content;
 }
 
 /* The board fills what the roll strip and player bar leave; a portrait box rotates the map. */
 .board-wrap {
   position: relative;
   flex: 1;
-  min-height: 320px;
+  min-height: 240px;
 }
 
 .board-wrap .board {
@@ -301,7 +308,7 @@
 
 @media (min-width: 720px) {
   .game {
-    height: 100dvh;
+    min-height: 0;
   }
   .board-wrap {
     min-height: 0;
@@ -878,9 +885,12 @@
   gap: 8px;
 }
 
+/* The chip is a container, so its name shows only when the chip itself has room (the @container rule below).
+   The reserve and the knockout bonus wrap under the numbers rather than squeeze the name or spill out. */
 .chip {
   position: relative;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
   min-width: 0;
@@ -888,6 +898,7 @@
   background: var(--panel);
   border: 3px solid transparent;
   border-radius: 12px;
+  container-type: inline-size;
 }
 
 .chip-badge {
@@ -907,7 +918,9 @@
   fill: var(--ink);
 }
 
+/* Hidden until the chip has room for it whole; You's shows anyway, as a tag above the chip. */
 .chip-name {
+  display: none;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -991,12 +1004,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Light, like the income above it: the chip is a dark panel, so ink here was all but invisible. */
 .chip-bonus {
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--ink);
+  color: var(--text);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  /* A line of its own under the numbers at every width: inline it was cut or spilled into the next chip. */
+  flex: 1 0 100%;
+  text-align: right;
 }
 
 .chip.is-current {
@@ -1019,8 +1036,35 @@
 }
 
 .chip.is-you .chip-name {
-  color: var(--paper);
+  display: block;
+  position: absolute;
+  top: -9px;
+  left: 8px;
+  padding: 0 6px;
+  font-size: 0.7rem;
   font-weight: 800;
+  line-height: 1.4;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 6px;
+}
+
+/* Room for the badge, the longest name and the numbers, three-digit dice included: every name shows, whole, and
+   You's sits in line with them, in bold. Badge, gaps, Cinder (46 px) and a "240" dice line (36 px) take 120 px in
+   the test browser's font; the rest is for a wider one. In rem, so a bigger default font hides the names sooner. */
+@container (min-width: 8rem) {
+  .chip-name {
+    display: block;
+  }
+  .chip.is-you .chip-name {
+    position: static;
+    padding: 0;
+    font-size: 0.9rem;
+    line-height: inherit;
+    background: none;
+    color: var(--paper);
+    border-radius: 0;
+  }
 }
 
 .controls {
@@ -1071,6 +1115,22 @@
 }
 
 /* ---------- board preview prompt ---------- */
+
+/* The player bar and "Play on this map?" share one cell and both keep their place, so the slot is as tall as the
+   taller of the two and the board's box is the same before and after Yes. The one not in use is inert and unseen. */
+.bar-slot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.bar-slot > .hud,
+.bar-slot > .preview {
+  grid-area: 1 / 1;
+}
+
+.bar-slot > [inert] {
+  visibility: hidden;
+}
 
 .preview {
   display: flex;
@@ -1126,6 +1186,17 @@
 .preview-actions .btn {
   min-width: 84px;
   min-height: 52px;
+}
+
+/* On an upright phone the prompt has the player bar's height: the question on top, No and Yes along the bottom. */
+@media (max-width: 640px) {
+  .preview {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .preview-actions .btn {
+    flex: 1;
+  }
 }
 
 /* ---------- end of game ---------- */
@@ -1676,28 +1747,8 @@
     padding-top: 6px;
   }
   .chip {
-    flex-wrap: wrap;
     padding: 6px;
     gap: 4px;
-  }
-  .chip-bonus {
-    flex: 1 0 100%;
-    text-align: right;
-  }
-  .chip-name {
-    display: none;
-  }
-  .chip.is-you .chip-name {
-    display: block;
-    position: absolute;
-    top: -9px;
-    left: 8px;
-    padding: 0 6px;
-    font-size: 0.7rem;
-    line-height: 1.4;
-    background: var(--paper);
-    color: var(--ink);
-    border-radius: 6px;
   }
   .speed-label {
     display: none;
@@ -1998,20 +2049,19 @@
     grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
     padding-top: 8px;
   }
-  .hud .chip-name {
-    display: none;
-  }
-  .hud .chip.is-you .chip-name {
-    display: block;
-    position: absolute;
-    top: -10px;
-    left: 8px;
-    padding: 0 6px;
-    font-size: 0.75rem;
-    line-height: 1.4;
-    border-radius: 6px;
-    background: var(--paper);
-    color: var(--ink);
+  /* A chip here can be narrower than its emblem and numbers (26 + 6 + 36 px with three-digit dice). They keep to
+     one line and run into the padding, as before, rather than wrap and make the bar taller; the reserve goes under. */
+  @container (max-width: 4.5rem) {
+    .hud .chip-stats {
+      flex: 1 0 0;
+      min-width: 0;
+    }
+    .hud .chip-stats > * {
+      margin-left: auto;
+    }
+    .hud .chip-reserve {
+      flex-basis: 100%;
+    }
   }
   .hud .controls {
     flex: none;
@@ -2067,14 +2117,12 @@
   }
   .bar-slot {
     grid-area: bar;
-    display: flex;
-    flex-direction: column;
+    grid-template-rows: minmax(0, 1fr);
     min-height: 0;
   }
   .hud {
     display: flex;
     flex-direction: column;
-    flex: 1 1 auto;
     min-height: 0;
   }
   /* The padding, offset by the margin, keeps the You tag and the runaway mark inside the scroll box. */

@@ -200,7 +200,10 @@ export class PreviewPrompt {
   ) {
     this.el = el('div', 'preview');
     this.el.dataset.testid = 'preview';
-    this.el.hidden = true;
+    // The prompt and the player bar share one cell of the bar slot and both keep their place, so the board's box is
+    // the same before and after Yes. The one not in use is inert, which ui.css also hides. The attribute rather than
+    // the property, so the CSS hides it even in a browser without inert.
+    this.el.toggleAttribute('inert', true);
     const text = el('div', 'preview-text');
     const head = el('div', 'preview-head');
     head.append(el('p', 'preview-question', 'Play on this map?'));
@@ -241,13 +244,13 @@ export class PreviewPrompt {
     this.seed.textContent = `Seed ${seed}`;
     this.yes.onclick = handlers.onYes;
     this.no.onclick = handlers.onNo;
-    this.hudContainer.hidden = true;
-    this.el.hidden = false;
+    this.hudContainer.toggleAttribute('inert', true);
+    this.el.toggleAttribute('inert', false);
   }
 
   hide(): void {
-    this.el.hidden = true;
-    this.hudContainer.hidden = false;
+    this.el.toggleAttribute('inert', true);
+    this.hudContainer.toggleAttribute('inert', false);
   }
 }
 
