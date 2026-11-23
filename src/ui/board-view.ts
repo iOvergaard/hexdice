@@ -129,7 +129,8 @@ export class BoardView {
     hatch.append(svg('rect', { width: 9, height: 9, fill: 'rgba(255,255,255,0)' }), svg('rect', { width: 4, height: 9, fill: 'rgba(255,255,255,0.55)' }));
 
     this.world = svg('g', {}, 'world');
-    this.seaLayer = svg('g', { 'clip-path': `url(#${FRAME_CLIP_ID})` }, 'layer-sea');
+    // Unclipped: the sea runs on past the map frame, so a wide or tall box shows open water, not a seam.
+    this.seaLayer = svg('g', {}, 'layer-sea');
     this.groundLayer = svg('g', { 'clip-path': `url(#${FRAME_CLIP_ID})` }, 'layer-ground');
     this.landLayer = svg('g', { 'clip-path': `url(#${LAND_CLIP_ID})` }, 'layer-land');
     this.overLayer = svg('g', {}, 'layer-over');
@@ -561,11 +562,12 @@ export class BoardView {
       maxX = Math.max(maxX, c.x);
       maxY = Math.max(maxY, c.y);
     });
+    // The crop may reach past the map frame (the sea carries on there), so a coast near the grid's edge still gets some sea.
     const margin = HEX * 1.4;
-    const x0 = Math.max(0, minX + PAD - margin);
+    const x0 = minX + PAD - margin;
     // Extra room above: units stand on their territory and reach about a hex above its centre.
-    const y0 = Math.max(0, minY + PAD - margin - HEX * 1.2);
-    this.crop = { x: x0, y: y0, w: Math.min(this.mapW, maxX + PAD + margin) - x0, h: Math.min(this.mapH, maxY + PAD + margin) - y0 };
+    const y0 = minY + PAD - margin - HEX * 1.2;
+    this.crop = { x: x0, y: y0, w: maxX + PAD + margin - x0, h: maxY + PAD + margin - y0 };
 
     const terrain = buildTerrain(board, state.territories, state.config.seed, HEX, PAD, this.mapW, this.mapH);
     this.defs.replaceChildren(this.defs.querySelector('#hexdice-hatch') ?? document.createComment(''));

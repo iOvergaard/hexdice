@@ -218,7 +218,9 @@ export function buildTerrain(board: Board, territories: readonly Territory[], se
   const lakeD = pathOf(loopsOf((c, r) => inGrid(c, r) && !sea[idx(c, r)] && cellTerritory[idx(c, r)] === -1));
 
   // ---- sea tones, from deep (rect) to shallow ----
-  let seaSvg = `<rect x="0" y="0" width="${f1(frameW)}" height="${f1(frameH)}" fill="${SEA_TONES[0]}"/><g filter="url(#hd-soft-sea)">`;
+  // The tones run MARGIN cells past the grid, so a view wider than the map frame shows more sea, not a seam.
+  const ext = MARGIN * hex * 2;
+  let seaSvg = `<rect x="${f1(-ext)}" y="${f1(-ext)}" width="${f1(frameW + 2 * ext)}" height="${f1(frameH + 2 * ext)}" fill="${SEA_TONES[0]}"/><g filter="url(#hd-soft-sea)">`;
   for (let k = 4; k >= 1; k--) {
     const d = pathOf(loopsOf((c, r) => (inGrid(c, r) ? !sea[idx(c, r)] || dist[idx(c, r)]! <= k : depthAt(c, r) <= k)));
     seaSvg += `<path d="${d}" fill="${SEA_TONES[5 - k]}"/>`;
@@ -233,15 +235,27 @@ export function buildTerrain(board: Board, territories: readonly Territory[], se
   for (let i = 0; i < W * H; i++) if (sea[i] && dist[i]! >= 2) open.push(i);
   const waves = Math.min(26, Math.round(open.length / 14));
   let waveD = '';
+  const wave = (c: number, r: number, from: Rng) => {
+    const x = cx(c, r) + (from.next() - 0.5) * hex;
+    const y = cy(r) + (from.next() - 0.5) * hex;
+    const s = 0.8 + from.next() * 0.6;
+    waveD += `M${f1(x)} ${f1(y)}q${f1(3 * s)} ${f1(-2.6 * s)} ${f1(6 * s)} 0t${f1(6 * s)} 0t${f1(6 * s)} 0`;
+    if (from.next() < 0.5) waveD += `M${f1(x + 5)} ${f1(y + 5)}q${f1(2.5 * s)} ${f1(-2 * s)} ${f1(5 * s)} 0t${f1(5 * s)} 0`;
+  };
   for (let i = 0; i < waves && open.length > 0; i++) {
     const cell = open[rng.int(open.length)]!;
-    const c = cell % W;
-    const r = Math.floor(cell / W);
-    const x = cx(c, r) + (rng.next() - 0.5) * hex;
-    const y = cy(r) + (rng.next() - 0.5) * hex;
-    const s = 0.8 + rng.next() * 0.6;
-    waveD += `M${f1(x)} ${f1(y)}q${f1(3 * s)} ${f1(-2.6 * s)} ${f1(6 * s)} 0t${f1(6 * s)} 0t${f1(6 * s)} 0`;
-    if (rng.next() < 0.5) waveD += `M${f1(x + 5)} ${f1(y + 5)}q${f1(2.5 * s)} ${f1(-2 * s)} ${f1(5 * s)} 0t${f1(5 * s)} 0`;
+    wave(cell % W, Math.floor(cell / W), rng);
+  }
+  // Waves past the grid, as dense as inside it, from their own stream so every map keeps its waves and tints.
+  const outside: [number, number][] = [];
+  for (let r = 1 - MARGIN; r < H + MARGIN - 1; r++) {
+    for (let c = 1 - MARGIN; c < W + MARGIN - 1; c++) if (!inGrid(c, r) && depthAt(c, r) >= 2) outside.push([c, r]);
+  }
+  const outRng = new Rng((seed ^ 0x57a12) >>> 0);
+  const outWaves = open.length > 0 ? Math.round((outside.length * waves) / open.length) : 0;
+  for (let i = 0; i < outWaves && outside.length > 0; i++) {
+    const [c, r] = outside[outRng.int(outside.length)]!;
+    wave(c, r, outRng);
   }
   seaSvg += `<path d="${waveD}" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="1.3" stroke-linecap="round"/>`;
 
