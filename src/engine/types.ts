@@ -4,7 +4,8 @@ export type PlayerId = number;
 export type TerritoryId = number;
 /** Cell index on the hex grid: row * width + col. */
 export type CellIndex = number;
-export type AiLevel = 'easy' | 'normal';
+/** Easy attacks at random; Hard plays the odds and the table; Normal plays like Hard but a quarter of its moves are Easy's. Until 23-11-2026 Hard was called Normal. */
+export type AiLevel = 'easy' | 'normal' | 'hard';
 export type SeatKind = 'human' | 'ai';
 export type Speed = 'slow' | 'normal' | 'fast' | 'instant';
 /**

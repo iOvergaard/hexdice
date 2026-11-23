@@ -62,13 +62,15 @@ describe('ganged up on', () => {
     expect(gangedUpOn(state)).toEqual(new Set());
   });
 
-  it('leaves out a runaway that is the only Normal player', () => {
+  it('leaves out a runaway that is the only Normal or Hard player', () => {
     const state = held([6, 12, 6, 6]);
     seat(state, 0, 'human');
     seat(state, 2, 'easy');
     seat(state, 3, 'easy');
     expect(gangedUpOn(state)).toEqual(new Set());
     seat(state, 3, 'normal');
+    expect(gangedUpOn(state)).toEqual(new Set([1]));
+    seat(state, 3, 'hard');
     expect(gangedUpOn(state)).toEqual(new Set([1]));
   });
 
@@ -79,7 +81,7 @@ describe('ganged up on', () => {
     expect(gangedUpOn(state)).toEqual(new Set());
   });
 
-  it('treats a computer player with no level as Normal, as the controller does', () => {
+  it('treats a computer player with no level as Hard, as the controller does', () => {
     const state = held([12, 6, 6, 6]);
     seat(state, 0, 'human');
     for (const id of [1, 2, 3]) state.players[id]!.aiLevel = undefined;

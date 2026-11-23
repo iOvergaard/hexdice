@@ -101,7 +101,7 @@ export function helpSections(rules: RulesConfig): HelpSection[] {
   sections.push({
     heading: 'Runaways',
     lines: [
-      'On Normal, the computer players gang up on anyone who runs away with the map, you included. A crosshair on the emblem in the player bar shows who that is.',
+      'On Normal and Hard, the computer players gang up on anyone who runs away with the map, you included. A crosshair on the emblem in the player bar shows who that is.',
       `A runaway holds ${runawayBars(rules.territoryCount)}.`,
     ],
   });

@@ -107,7 +107,7 @@ export function showTitle(
 
   const [aiWrap, aiRow] = chipGroup('AI level', 'title-ai');
   const aiButtons = new Map<AiLevel, HTMLButtonElement>();
-  for (const [level, label] of [['easy', 'Easy'], ['normal', 'Normal']] as const) {
+  for (const [level, label] of [['easy', 'Easy'], ['normal', 'Normal'], ['hard', 'Hard']] as const) {
     const b = button(label, `ai-${level}`, 'chip-btn');
     b.addEventListener('click', () => {
       aiLevel = level;

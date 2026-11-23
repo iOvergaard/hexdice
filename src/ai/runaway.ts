@@ -17,10 +17,10 @@ export function runaways(state: GameState): Set<PlayerId> {
   return new Set(alive.map((p) => p.id).filter((id) => held(id) >= bar));
 }
 
-/** Runaways a Normal computer player gangs up on: one other than them is still in, with a second opponent to pick from. */
+/** Runaways a Normal or Hard computer player gangs up on: one other than them is still in, with a second opponent to pick from. */
 export function gangedUpOn(state: GameState): Set<PlayerId> {
   const alive = state.players.filter((p) => p.alive);
   if (alive.length < 3) return new Set();
-  const normal = alive.filter((p) => p.kind === 'ai' && (p.aiLevel ?? 'normal') === 'normal');
-  return new Set([...runaways(state)].filter((id) => normal.some((p) => p.id !== id)));
+  const hunters = alive.filter((p) => p.kind === 'ai' && (p.aiLevel ?? 'hard') !== 'easy');
+  return new Set([...runaways(state)].filter((id) => hunters.some((p) => p.id !== id)));
 }

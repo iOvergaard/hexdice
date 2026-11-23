@@ -89,7 +89,15 @@ describe('save', () => {
   });
 
   it('gives null for the wrong version', () => {
-    expect(restore(JSON.stringify({ v: 2, config, actions: [] }))).toBeNull();
+    expect(restore(JSON.stringify({ v: 3, config, actions: [] }))).toBeNull();
+    expect(restore(JSON.stringify({ v: 0, config, actions: [] }))).toBeNull();
+  });
+
+  it('keeps the same opponents in a save from before Hard: its Normal players become Hard', () => {
+    const levels = (raw: string) => restore(raw)!.config.seats.map((s) => s.aiLevel);
+    const mixed = makeConfig(defaultSeats(3, 'normal').map((s, i) => (i === 3 ? { ...s, aiLevel: 'easy' as const } : s)), 11);
+    expect(levels(JSON.stringify({ v: 1, config: mixed, actions: [] }))).toEqual([undefined, 'hard', 'hard', 'easy']);
+    expect(levels(serialise(mixed, []))).toEqual([undefined, 'normal', 'normal', 'easy']);
   });
 
   it('gives null when an action is no longer legal', () => {
