@@ -68,9 +68,9 @@ test('an 8 vs 8 roll shows 8 cube dice a side on one row', async ({ page }) => {
   expect(fits).toBe(true);
 });
 
-test('an 8 vs 8 roll stays inside the strip from 320 to 1024 px', async ({ page }, info) => {
+test('an 8 vs 8 roll stays inside the strip from 320 to 1920 px', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'sets its own viewport sizes');
-  for (const width of [320, 360, 375, 641, 720, 768, 1024]) {
+  for (const width of [320, 360, 375, 641, 720, 768, 1024, 1120, 1280, 1920]) {
     await page.setViewportSize({ width, height: 800 });
     await page.goto('/harness.html?seed=7&players=8&roll=1&dice=8x8');
     await expect(page.getByTestId('roll-attacker-sum')).toHaveText('32');
@@ -90,6 +90,21 @@ test('an 8 vs 8 roll stays inside the strip from 320 to 1024 px', async ({ page 
       return worst;
     });
     expect(out, `${width} px`).toBeLessThanOrEqual(0.5);
+  }
+});
+
+test('on a wide screen the two rolls sit together by the middle', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'sets its own viewport sizes');
+  for (const width of [1280, 1805, 2560]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/harness.html?seed=7&players=4&roll=1&dice=3x2');
+    await expect(page.getByTestId('roll-attacker-sum')).toHaveText('12');
+    const gap = await page.evaluate(() => {
+      const box = (sel: string) => document.querySelector(sel)!.getBoundingClientRect();
+      return box('.roll-attacker .roll-dice').left - box('.roll-defender .roll-dice').right;
+    });
+    // Two totals and the middle label between the rows, nothing more, however wide the screen.
+    expect(gap, `${width} px`).toBeLessThan(400);
   }
 });
 
