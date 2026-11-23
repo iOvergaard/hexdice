@@ -105,13 +105,15 @@
 /* ---------- title ---------- */
 
 /* A dealt board fills the screen behind the menu. Phone: the menu sits at the bottom on ink and any spare height
-   shows more board above the name. Wide screens: the menu sits on the left where the board fades out. */
+   shows more board above the name. Wide screens: the menu sits on the left where the board fades out. The insets
+   keep the menu clear of the home indicator on a home-screen install. */
 .title {
   position: relative;
   isolation: isolate;
   overflow: hidden;
   min-height: 100dvh;
-  padding: 24px max(var(--gutter), calc(50% - 264px));
+  padding: max(24px, env(safe-area-inset-top)) max(var(--gutter), calc(50% - 264px), env(safe-area-inset-right))
+    max(24px, env(safe-area-inset-bottom)) max(var(--gutter), calc(50% - 264px), env(safe-area-inset-left));
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -269,21 +271,26 @@
 
 /* ---------- game layout ---------- */
 
+/* One screen tall, so End turn is on screen from the start. On a phone, only if that leaves the board under 240 px
+   (a 320 px wide phone, or knockout bonuses growing the player bar) does the page grow and scroll instead. The insets
+   keep clear of the home indicator on a home-screen install. */
 .game {
   max-width: 1800px;
   margin: 0 auto;
-  padding: 10px var(--gutter) 14px;
+  padding: max(10px, env(safe-area-inset-top)) max(var(--gutter), env(safe-area-inset-right))
+    max(14px, env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left));
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-height: 100dvh;
+  height: 100dvh;
+  min-height: min-content;
 }
 
 /* The board fills what the roll strip and player bar leave; a portrait box rotates the map. */
 .board-wrap {
   position: relative;
   flex: 1;
-  min-height: 320px;
+  min-height: 240px;
 }
 
 .board-wrap .board {
@@ -297,7 +304,7 @@
 
 @media (min-width: 720px) {
   .game {
-    height: 100dvh;
+    min-height: 0;
   }
   .board-wrap {
     min-height: 0;
