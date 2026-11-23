@@ -1076,6 +1076,22 @@
 
 /* ---------- board preview prompt ---------- */
 
+/* The player bar and "Play on this map?" share one cell and both keep their place, so the slot is as tall as the
+   taller of the two and the board's box is the same before and after Yes. The one not in use is inert and unseen. */
+.bar-slot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.bar-slot > .hud,
+.bar-slot > .preview {
+  grid-area: 1 / 1;
+}
+
+.bar-slot > [inert] {
+  visibility: hidden;
+}
+
 .preview {
   display: flex;
   align-items: center;
@@ -1130,6 +1146,17 @@
 .preview-actions .btn {
   min-width: 84px;
   min-height: 52px;
+}
+
+/* On an upright phone the prompt has the player bar's height: the question on top, No and Yes along the bottom. */
+@media (max-width: 640px) {
+  .preview {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .preview-actions .btn {
+    flex: 1;
+  }
 }
 
 /* ---------- end of game ---------- */
@@ -2071,14 +2098,12 @@
   }
   .bar-slot {
     grid-area: bar;
-    display: flex;
-    flex-direction: column;
+    grid-template-rows: minmax(0, 1fr);
     min-height: 0;
   }
   .hud {
     display: flex;
     flex-direction: column;
-    flex: 1 1 auto;
     min-height: 0;
   }
   /* The padding, offset by the margin, keeps the You tag and the runaway mark inside the scroll box. */
