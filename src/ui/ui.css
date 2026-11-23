@@ -881,6 +881,7 @@
   gap: 8px;
 }
 
+/* The chip is a container, so its name shows only when the chip itself has room (the @container rule below). */
 .chip {
   position: relative;
   display: flex;
@@ -891,6 +892,7 @@
   background: var(--panel);
   border: 3px solid transparent;
   border-radius: 12px;
+  container-type: inline-size;
 }
 
 .chip-badge {
@@ -910,7 +912,9 @@
   fill: var(--ink);
 }
 
+/* Hidden until the chip has room for it whole; You's shows anyway, as a tag above the chip. */
 .chip-name {
+  display: none;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1023,8 +1027,35 @@
 }
 
 .chip.is-you .chip-name {
-  color: var(--paper);
+  display: block;
+  position: absolute;
+  top: -9px;
+  left: 8px;
+  padding: 0 6px;
+  font-size: 0.7rem;
   font-weight: 800;
+  line-height: 1.4;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 6px;
+}
+
+/* Room for the badge, the longest name and the numbers, three-digit dice included: every name shows, whole, and
+   You's sits in line with them, in bold. Badge, gaps, Cinder (46 px) and a "240" dice line (36 px) take 120 px in
+   the test browser's font; the rest is for a wider one. In rem, so a bigger default font hides the names sooner. */
+@container (min-width: 8rem) {
+  .chip-name {
+    display: block;
+  }
+  .chip.is-you .chip-name {
+    position: static;
+    padding: 0;
+    font-size: 0.9rem;
+    line-height: inherit;
+    background: none;
+    color: var(--paper);
+    border-radius: 0;
+  }
 }
 
 .controls {
@@ -1715,21 +1746,6 @@
     flex: 1 0 100%;
     text-align: right;
   }
-  .chip-name {
-    display: none;
-  }
-  .chip.is-you .chip-name {
-    display: block;
-    position: absolute;
-    top: -9px;
-    left: 8px;
-    padding: 0 6px;
-    font-size: 0.7rem;
-    line-height: 1.4;
-    background: var(--paper);
-    color: var(--ink);
-    border-radius: 6px;
-  }
   .speed-label {
     display: none;
   }
@@ -2028,21 +2044,6 @@
     flex: 1 1 auto;
     grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
     padding-top: 8px;
-  }
-  .hud .chip-name {
-    display: none;
-  }
-  .hud .chip.is-you .chip-name {
-    display: block;
-    position: absolute;
-    top: -10px;
-    left: 8px;
-    padding: 0 6px;
-    font-size: 0.75rem;
-    line-height: 1.4;
-    border-radius: 6px;
-    background: var(--paper);
-    color: var(--ink);
   }
   .hud .controls {
     flex: none;
