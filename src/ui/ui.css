@@ -881,10 +881,12 @@
   gap: 8px;
 }
 
-/* The chip is a container, so its name shows only when the chip itself has room (the @container rule below). */
+/* The chip is a container, so its name shows only when the chip itself has room (the @container rule below).
+   The reserve and the knockout bonus wrap under the numbers rather than squeeze the name or spill out. */
 .chip {
   position: relative;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
   min-width: 0;
@@ -1005,6 +1007,9 @@
   color: var(--text);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  /* A line of its own under the numbers at every width: inline it was cut or spilled into the next chip. */
+  flex: 1 0 100%;
+  text-align: right;
 }
 
 .chip.is-current {
@@ -1738,13 +1743,8 @@
     padding-top: 6px;
   }
   .chip {
-    flex-wrap: wrap;
     padding: 6px;
     gap: 4px;
-  }
-  .chip-bonus {
-    flex: 1 0 100%;
-    text-align: right;
   }
   .speed-label {
     display: none;
@@ -2044,6 +2044,20 @@
     flex: 1 1 auto;
     grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
     padding-top: 8px;
+  }
+  /* A chip here can be narrower than its emblem and numbers (26 + 6 + 36 px with three-digit dice). They keep to
+     one line and run into the padding, as before, rather than wrap and make the bar taller; the reserve goes under. */
+  @container (max-width: 4.5rem) {
+    .hud .chip-stats {
+      flex: 1 0 0;
+      min-width: 0;
+    }
+    .hud .chip-stats > * {
+      margin-left: auto;
+    }
+    .hud .chip-reserve {
+      flex-basis: 100%;
+    }
   }
   .hud .controls {
     flex: none;
