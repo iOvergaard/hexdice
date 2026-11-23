@@ -4,10 +4,12 @@ What changed in Hexdice, newest first. Players see the New and Fixed lines under
 
 `npm run changelog` adds new `feat`, `rules`, `fix` and `perf` commits on top, each with its commit hash, under the day it reached main. Edit the wording freely, but keep the shape: `## DD-MM-YYYY`, then `- <hash> **New:**`, `**Rules:**`, `**Fixed:**` or `**Faster:**` lines (the hash is optional).
 
-<!-- changelog: up to e33608da9bcc949917e9e99f524fd226a1714271 -->
+<!-- changelog: up to fc189a115250bdcd47e00bbd90967869048b439f -->
 
 ## 23-11-2026
 
+- b8c3c2a **New:** Share your result as a picture from the end card
+- bcd0b94 **Fixed:** Keep both rolls together in the middle on wide screens
 - 696aee7 **Fixed:** A knockout bonus (+1/turn) in the player bar gets its own line at every width, and is never cut
 - 48d342a **Fixed:** Player names in the bar show in full where they fit, and are never cut short
 - 7388560 **Fixed:** The map you say Yes to keeps its shape and size when the game starts
