@@ -106,13 +106,14 @@ test('rolling dice tumble, and keep still with reduced motion', async ({ page })
   expect(await tumble()).toBe('none');
 });
 
-test('title screen has 2–8 player chips', async ({ page }) => {
+test('title screen asks for 1–7 computer opponents', async ({ page }) => {
   await page.goto('/harness.html?title=1&players=5');
-  for (let n = 2; n <= 8; n++) await expect(page.getByTestId(`players-${n}`)).toHaveText(`${n} players`);
-  await expect(page.getByTestId('players-5')).toHaveAttribute('aria-pressed', 'true');
-  await page.getByTestId('players-3').click();
-  await expect(page.getByTestId('players-3')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByTestId('players-5')).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByRole('heading', { name: 'Computer opponents' })).toBeVisible();
+  for (let n = 1; n <= 7; n++) await expect(page.getByTestId(`opponents-${n}`)).toHaveText(String(n));
+  await expect(page.getByTestId('opponents-4')).toHaveAttribute('aria-pressed', 'true');
+  await page.getByTestId('opponents-2').click();
+  await expect(page.getByTestId('opponents-2')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('opponents-4')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.getByTestId('ai-normal')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('start')).toBeVisible();
   const fits = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);

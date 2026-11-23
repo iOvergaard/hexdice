@@ -13,7 +13,7 @@ test('reload mid-game, continue, and land on the same position', async ({ page }
   test.setTimeout(60_000);
   await page.goto('/');
   await expect(page.getByTestId('continue')).toHaveCount(0);
-  await page.getByTestId('players-4').click();
+  await page.getByTestId('opponents-3').click();
   await page.getByTestId('start').click();
   await page.getByTestId('preview-yes').click();
   await page.waitForFunction(() => !!window.__hexdice?.state());
