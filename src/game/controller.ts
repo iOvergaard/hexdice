@@ -13,6 +13,7 @@ import { openWhatsNew } from '../ui/whats-new';
 import { createGameScreen, showTitle, type GameScreen, type TitleOptions } from '../ui/screens';
 import type { Ending, Mood } from '../ui/ending';
 import { nextSelection, selectionAfterAttack, targetsFor } from '../ui/selection';
+import { boardDiff } from './log-check';
 import { restore, serialise, type RestoredGame } from './save';
 import { loadSoundOn, Sound } from './sound';
 import { cuesFor } from './sound-cues';
@@ -97,6 +98,9 @@ export class Controller {
   private state: GameState | null = null;
   private config: GameConfig | null = null;
   private actionLog: Action[] = [];
+  /** The state the action log leads to. The live state should always be it; where it isn't, logProblems says how. */
+  private logState: GameState | null = null;
+  private logProblems: string[] = [];
   private eventLog: GameEvent[] = [];
   /** The state the event log starts from: a new game, a resumed game's first state, or a debug load. */
   private startState: GameState | null = null;
@@ -153,6 +157,7 @@ export class Controller {
   private resume(saved: RestoredGame): void {
     this.newGame({ players: 0, aiLevel: 'normal' }, saved.config.seed, saved.config);
     this.state = saved.state;
+    this.logState = saved.state;
     this.actionLog = [...saved.actions];
     this.eventLog = [...saved.events];
     if (saved.aiRngState !== null) this.aiRng = new Rng(saved.aiRngState);
@@ -168,6 +173,9 @@ export class Controller {
   }
   getEvents(): readonly GameEvent[] {
     return this.eventLog;
+  }
+  getLogProblems(): readonly string[] {
+    return this.logProblems;
   }
   attack(from: TerritoryId, to: TerritoryId): Promise<void> {
     if (!this.canAct() || !this.state || !isLegalAttack(this.state, from, to)) return Promise.reject(new Error('Attack not allowed now'));
@@ -189,6 +197,8 @@ export class Controller {
     this.state = state;
     this.startState = state;
     this.actionLog = [];
+    this.logState = state;
+    this.logProblems = [];
     this.eventLog = [];
     this.replayable = false;
     this.persist = false;
@@ -257,6 +267,8 @@ export class Controller {
     this.state = createGame(this.config);
     this.startState = this.state;
     this.actionLog = [];
+    this.logState = this.state;
+    this.logProblems = [];
     this.eventLog = [];
     this.replayable = true;
     this.paused = false;
@@ -441,6 +453,9 @@ export class Controller {
     const before = this.state!;
     const { state: next, events } = applyAction(before, action);
     if (record) {
+      const drift = this.logState ? boardDiff(before, this.logState) : [];
+      if (drift.length) this.logProblem(`${JSON.stringify(action)} played on a board the log doesn't lead to: ${drift.join('; ')}`);
+      this.logState = next;
       this.actionLog.push(action);
       this.save();
       this.eventLog.push(...events);
@@ -456,6 +471,7 @@ export class Controller {
       if (gen !== this.gen) return;
       if (cues.result) this.sound.result(cues.result);
     }
+    if (record && this.logState !== next) this.logProblem(`${JSON.stringify(action)} landed after another action was logged`);
     this.state = next;
     this.renderAll();
     if (roll && !roll.success) {
@@ -606,7 +622,14 @@ export class Controller {
   private record(): (() => string) | null {
     if (!this.replayable || !this.config) return null;
     const config = this.config;
-    return () => serialise(config, this.actionLog, this.aiRng.state);
+    return () => serialise(config, this.actionLog, this.aiRng.state, this.logProblems);
+  }
+
+  /** The live game left its action log: keep it for the copied record and say so in the console. */
+  private logProblem(message: string): void {
+    const problem = `at ${this.actionLog.length}: ${message}`;
+    this.logProblems.push(problem);
+    console.error(`[hexdice] ${problem}`, new Error().stack);
   }
 
   private ending(title: string, mood: Mood): Ending {

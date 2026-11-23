@@ -73,7 +73,7 @@ Easy attacks at random. Jacob finds Normal hard enough; a Hard AI is parked.
 - Input: pointer events only, nothing hover-only, the whole territory is the tap target.
 - Phone: the title row and the game bar (round, speed, ?, sound, Quit) each fit one row at 375 px.
 - Phone on its side (any landscape screen 520 px tall or less): the board takes the full height on the left; the roll strip, chips and controls share a column on the right (`tests/e2e/landscape.spec.ts`, 750×342 and 568×320). Wide-screen rules need `min-height: 521px`.
-- Test hooks: `data-territory="<id>"` on territories, `data-testid` on controls, `window.__hexdice` in dev (`state`, `actions`, `events`, `attack`, `endTurn`, `autoplay`, `load`, `idle`, `sounds`). E2E tests set up a position with `__hexdice.load(state)`; see `tests/e2e/link.spec.ts` and `last-stand.spec.ts`.
+- Test hooks: `data-territory="<id>"` on territories, `data-testid` on controls, `window.__hexdice` in every build, the live site included (`state`, `actions`, `events`, `attack`, `endTurn`, `autoplay`, `load`, `idle`, `sounds` (dev only), `problems`). `problems` lists where the live game left its action log; Copy game adds them to the record. E2E tests set up a position with `__hexdice.load(state)`; see `tests/e2e/link.spec.ts` and `last-stand.spec.ts`.
 - URL params for tests and repro links: `?seed= &players= &ai=easy|normal &speed=slow|normal|fast|instant &sound=on|off &reinforce=random|frontline|weighted &link=off|flat|smaller|catchup &shaken=on|off`.
 - `import type` for types (`verbatimModuleSyntax`). No new dependencies without asking Jacob, and don't upgrade any unprompted.
 - UI copy in British English, no em dashes; dates DD-MM-YYYY.

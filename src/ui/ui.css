@@ -24,6 +24,7 @@
   border: 2px solid var(--line);
   border-radius: 12px;
   min-height: 44px;
+  min-width: 44px;
   padding: 0 18px;
   cursor: pointer;
   touch-action: manipulation;
@@ -212,10 +213,13 @@
   gap: 10px;
 }
 
-/* Three player chips a row on a phone instead of two. */
+/* All seven opponent chips in one row at 375 px. */
 @media (max-width: 480px) {
   .title .chip-btn {
     padding: 0 12px;
+  }
+  .title .choice-row {
+    gap: 5px;
   }
 }
 

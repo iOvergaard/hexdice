@@ -101,7 +101,7 @@ Rounded to whole percent. Equal stacks win less than half the time, because ties
 <p align="center">
   <img src="docs/screenshots/game-phone.jpg" alt="The same game on a phone, with the map turned upright and the player bar below it" width="250">
   &nbsp;
-  <img src="docs/screenshots/title.jpg" alt="The title screen over the painted map: choose 2 to 8 players and the computer's level, then Start; How to play and What's new sit underneath" width="520">
+  <img src="docs/screenshots/title.jpg" alt="The title screen over the painted map: choose 1 to 7 computer opponents and their level, then Start; How to play and What's new sit underneath" width="520">
 </p>
 
 ## What else is in it

@@ -20,6 +20,8 @@ async function playToEnd(page: Page, query: string): Promise<void> {
 test('the ending leads with the winner and shows how the map changed hands', async ({ page }, info) => {
   test.setTimeout(120_000);
   await playToEnd(page, 'seed=42&players=8');
+  // The live board never left the action log.
+  expect(await page.evaluate(() => window.__hexdice!.problems())).toEqual([]);
   const end = await page.evaluate(() => {
     const s = window.__hexdice!.state()!;
     const w = s.players[s.winner!]!;

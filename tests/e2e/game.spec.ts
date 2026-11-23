@@ -36,7 +36,7 @@ async function findAttack(page: Page): Promise<{ from: number; to: number }> {
 test('title → preview → game', async ({ page }, info) => {
   await page.goto('/');
   await expect(page.getByTestId('title')).toBeVisible();
-  await page.getByTestId('players-4').click();
+  await page.getByTestId('opponents-3').click();
   await shot(page, info, 'title');
   await page.getByTestId('start').click();
   await expect(page.getByTestId('preview')).toBeVisible();
@@ -258,7 +258,7 @@ test('shows a your-turn cue', async ({ page }, info) => {
 
 test('preview names your colour', async ({ page }, info) => {
   await page.goto('/');
-  await page.getByTestId('players-4').click();
+  await page.getByTestId('opponents-3').click();
   await page.getByTestId('start').click();
   await expect(page.getByTestId('preview-you')).toBeVisible();
   await shot(page, info, 'preview-you');

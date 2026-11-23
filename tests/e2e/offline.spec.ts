@@ -30,7 +30,7 @@ const script = (page: Page) => page.locator('script[type="module"]').getAttribut
 const shot = (page: Page, info: TestInfo, name: string) => page.screenshot({ path: `playtest/screens/offline-${info.project.name}-${name}.png` });
 
 async function newGame(page: Page): Promise<void> {
-  await page.getByTestId('players-4').click();
+  await page.getByTestId('opponents-3').click();
   await page.getByTestId('start').click();
   await page.getByTestId('preview-yes').click();
   await expect(page.getByTestId('preview')).toBeHidden();
