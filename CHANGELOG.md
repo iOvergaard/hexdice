@@ -4,10 +4,11 @@ What changed in Hexdice, newest first. Players see the New and Fixed lines under
 
 `npm run changelog` adds new `feat`, `rules`, `fix` and `perf` commits on top, each with its commit hash, under the day it reached main. Edit the wording freely, but keep the shape: `## DD-MM-YYYY`, then `- <hash> **New:**`, `**Rules:**`, `**Fixed:**` or `**Faster:**` lines (the hash is optional).
 
-<!-- changelog: up to 771158756593daf81adf3dbefdca9768c20af6dc -->
+<!-- changelog: up to aa9f460987316d69d63940edae3eedc0ec6fe103 -->
 
 ## 23-11-2026
 
+- b8f209c **Fixed:** The title screen asks how many computer opponents you want, so it no longer reads as a count of people playing
 - 1967da6 **Fixed:** On a phone on its side the map gets the whole height, with the roll strip and players beside it
 - d64a63a **Fixed:** The sea runs on past the map's edge, with no seam on wide screens and phones
 
