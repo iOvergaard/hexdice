@@ -14,9 +14,9 @@ export interface RestoredGame {
   aiRngState: number | null;
 }
 
-/** The engine is deterministic, so config + action log is the whole game; the AI's random state keeps the AIs on course. */
-export function serialise(config: GameConfig, actions: readonly Action[], aiRngState?: number): string {
-  return JSON.stringify({ v: VERSION, config, actions, ai: aiRngState });
+/** The engine is deterministic, so config + action log is the whole game; the AI's random state keeps the AIs on course. Problems: where the live game left its log, for bug reports. */
+export function serialise(config: GameConfig, actions: readonly Action[], aiRngState?: number, problems: readonly string[] = []): string {
+  return JSON.stringify({ v: VERSION, config, actions, ai: aiRngState, ...(problems.length ? { problems } : {}) });
 }
 
 function isAction(a: unknown): a is Action {
