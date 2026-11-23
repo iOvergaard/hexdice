@@ -2021,6 +2021,16 @@
   .roll-sum {
     line-height: 1.05;
   }
+  /* Each side hugs its dice against the middle, so on a wide screen the two rolls sit side by side
+     instead of at the far ends. */
+  .roll-defender {
+    justify-self: end;
+    max-width: 100%;
+  }
+  .roll-attacker {
+    justify-self: start;
+    max-width: 100%;
+  }
 }
 
 /* Tablets: the one-row strip is short of room for 8 dice a side, so the cubes tuck as on phones,
@@ -2034,6 +2044,15 @@
   }
   .die + .die {
     margin-left: calc(var(--die) * -0.215);
+  }
+}
+
+/* From 1120 px the middle keeps one width, room for "Tie · captured", so the sides hugging it don't
+   shift when the result replaces "vs". Narrower, that width would cost an 8 vs 8 roll its dice size. */
+@media (min-width: 1120px) and (min-height: 521px) {
+  .roll-mid {
+    width: 7rem;
+    white-space: nowrap;
   }
 }
 
