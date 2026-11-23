@@ -21,7 +21,7 @@ Jacob asked for a way to share a result from the game-over card, like a screensh
 | Scenario | Result |
 |---|---|
 | `npm run check` (new unit tests: `wrapText`, `pictureDate`, `scoreRows`, `chartShapes`) | Verified: 22 files, 247 tests pass |
-| `npm run e2e`, desktop and phone (new `share-picture.spec.ts`: copy, share, cancelled share, failed share, download) | Verified: 131 passed and 9 skipped as usual; 2 desktop tests (Copy game without a clipboard, the ending leads with the winner) timed out waiting for autoplay while other browsers ran on the machine, and passed when re-run alone, along with the rest of `copy-game`, `game-over` and `share-picture` |
+| `npm run e2e`, desktop and phone (new `share-picture.spec.ts`: copy, share, cancelled share, failed share, download) | Verified: after merging main, 149 passed, 25 skipped (specs that run on one project only), none failed. An earlier run before the merge had 2 desktop tests time out waiting for autoplay while other browsers ran on the machine; both passed when re-run alone |
 | Picture of a 4-player loss (seed 42): header, chart, caption, scoreboard, footer | Verified by eye: `screens/share-picture-desk.png` |
 | Picture of "You were eliminated" with 8 players (seed 8): eight rows, caption wraps | Verified by eye: `screens/share-picture-out.png` |
 | Buttons on a 375 px phone, and on its side at 750×342 and 568×320 | Verified: two rows upright, one row on its side |
