@@ -21,7 +21,7 @@ declare global {
   }
 }
 
-/** Dev builds only; the caller checks import.meta.env.DEV. */
+/** Every build, the live site too, so a game there can be driven and checked from the console. */
 export function installDebug(c: Controller): void {
   window.__hexdice = {
     state: () => c.getState(),
