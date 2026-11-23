@@ -57,13 +57,13 @@ tests/        unit (Vitest), e2e (Playwright), fixtures (state builders)
 - Last stand: the first time a turn ends with two players left (in a game that started with three or more), the one with fewer territories gets +1 die on each.
 - Seat compensation adjusts starting dice by turn order.
 
-Normal AI (`src/ai/normal.ts`):
+Hard AI (`src/ai/hard.ts`; called Normal until 23-11-2026):
 - Attacks at ≥ 50% odds (≥ 30% from a full stack of 8).
 - Prefers captures that grow its largest group, shrink the leader's group or knock someone out.
 - Gangs up on a runaway: anyone holding at least 1.5× the average territory count (and at least 8) gets +0.6 on every attack against them, the human included.
 - Ends its turn when no such attack is left, unless all its border stacks are full; then it takes the best odds on offer.
 
-Easy attacks at random. Jacob finds Normal hard enough; a Hard AI is parked.
+Normal (`src/ai/normal.ts`) plays Hard's move, except that a quarter of its moves (`NORMAL_SLIP`) are Easy's. Easy attacks at random. A level above Hard (focus-to4, issue #13) is parked: a table of eight runs too long. Version 1 saves load with their Normal players as Hard.
 
 ## Conventions
 
@@ -74,7 +74,7 @@ Easy attacks at random. Jacob finds Normal hard enough; a Hard AI is parked.
 - Phone: the title row and the game bar (round, speed, ?, sound, Quit) each fit one row at 375 px.
 - Phone on its side (any landscape screen 520 px tall or less): the board takes the full height on the left; the roll strip, chips and controls share a column on the right (`tests/e2e/landscape.spec.ts`, 750×342 and 568×320). Wide-screen rules need `min-height: 521px`.
 - Test hooks: `data-territory="<id>"` on territories, `data-testid` on controls, `window.__hexdice` in every build, the live site included (`state`, `actions`, `events`, `attack`, `endTurn`, `autoplay`, `load`, `idle`, `sounds` (dev only), `problems`). `problems` lists where the live game left its action log; Copy game adds them to the record. E2E tests set up a position with `__hexdice.load(state)`; see `tests/e2e/link.spec.ts` and `last-stand.spec.ts`.
-- URL params for tests and repro links: `?seed= &players= &ai=easy|normal &speed=slow|normal|fast|instant &sound=on|off &reinforce=random|frontline|weighted &link=off|flat|smaller|catchup &shaken=on|off`.
+- URL params for tests and repro links: `?seed= &players= &ai=easy|normal|hard &speed=slow|normal|fast|instant &sound=on|off &reinforce=random|frontline|weighted &link=off|flat|smaller|catchup &shaken=on|off`.
 - `import type` for types (`verbatimModuleSyntax`). No new dependencies without asking Jacob, and don't upgrade any unprompted.
 - UI copy in British English, no em dashes; dates DD-MM-YYYY.
 - Local storage keys start with `hexdice:` (`title`, `save`, `sound`, `changelog-seen`). Wrap every access in try/catch.
@@ -86,7 +86,7 @@ Easy attacks at random. Jacob finds Normal hard enough; a Hard AI is parked.
 3. Build it as a `RulesConfig` setting with unit tests first, a `sim` flag and, if he should try it, a URL param. Turn it on by default only on his call.
 4. Update §3 of the plan, How to play, the save default, `sim-latest.json` and a playtest report with the before and after numbers.
 
-Balance metrics: Normal-vs-Easy win rate (skill over luck), comeback rates (the leader at round 5 and round 8, and the smaller of the last two), game length (`scripts/stats.ts`) and wins per seat in turn order.
+Balance metrics: Hard-vs-Easy and Normal-vs-Easy win rates (skill over luck), comeback rates (the leader at round 5 and round 8, and the smaller of the last two), game length (`scripts/stats.ts`) and wins per seat in turn order.
 
 ## Playtest gates (every change)
 
@@ -98,10 +98,10 @@ Balance metrics: Normal-vs-Easy win rate (skill over luck), comeback rates (the 
 
 The simulation fails on:
 - any crash, illegal move or 1,000-round cap hit;
-- Normal beating Easy in under 70% of the duels;
+- Hard or Normal beating Easy in under 70% of their duels (half the duels each);
 - eight-player games running long: p90 over 28 rounds, p99 over 36, or more than 0.5% past 60 (`LENGTH_LIMITS` in `scripts/stats.ts`).
 
-Today's defaults give p90 22 and p99 33 on the CI seeds (31 before the shaken rule became the default), so p99 has three rounds of headroom. The limits were 26 and 33 until 20-11-2026 (#7).
+Eight-player games are all Hard, the longest tables. Today's defaults give p90 22 and p99 33 on the CI seeds (31 before the shaken rule became the default), so p99 has three rounds of headroom. The limits were 26 and 33 until 20-11-2026 (#7).
 
 A hands-on report goes in `playtest/DD-MM-YYYY-<change>.md` with screenshots and every scenario marked verified, partly verified or not testable (with why). Bug reports carry the seed and the action log (`__hexdice.actions()`).
 
