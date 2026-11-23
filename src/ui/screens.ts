@@ -91,10 +91,11 @@ export function showTitle(
     return [wrap, row];
   };
 
-  const [playersWrap, playersRow] = chipGroup('Players, including you', 'title-players');
+  // Counted as opponents: "players" read as a hot-seat count to new players.
+  const [playersWrap, playersRow] = chipGroup('Computer opponents', 'title-players');
   const playerButtons: HTMLButtonElement[] = [];
   for (let n = MIN_PLAYERS; n <= MAX_PLAYERS; n++) {
-    const b = button(`${n} players`, `players-${n}`, 'chip-btn');
+    const b = button(String(n - 1), `opponents-${n - 1}`, 'chip-btn');
     b.addEventListener('click', () => {
       players = n;
       sync();
