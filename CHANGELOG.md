@@ -4,10 +4,11 @@ What changed in Hexdice, newest first. Players see the New and Fixed lines under
 
 `npm run changelog` adds new `feat`, `rules`, `fix` and `perf` commits on top, each with its commit hash, under the day it reached main. Edit the wording freely, but keep the shape: `## DD-MM-YYYY`, then `- <hash> **New:**`, `**Rules:**`, `**Fixed:**` or `**Faster:**` lines (the hash is optional).
 
-<!-- changelog: up to fc189a115250bdcd47e00bbd90967869048b439f -->
+<!-- changelog: up to d693fcf4fbb9511894cd3d322704a0d275a0a374 -->
 
 ## 23-11-2026
 
+- c2668a2 **New:** New Normal computer level that slips up now and then; the old Normal is now called Hard
 - b8c3c2a **New:** Share your result as a picture from the end card
 - bcd0b94 **Fixed:** Keep both rolls together in the middle on wide screens
 - 696aee7 **Fixed:** A knockout bonus (+1/turn) in the player bar gets its own line at every width, and is never cut
