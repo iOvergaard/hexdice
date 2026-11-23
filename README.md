@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/game-desktop.jpg" alt="A game in progress on a laptop: a painted continent split into six players' territories, each with its dice; your stack of five is selected and the neighbour you can attack shows a 72% chance of winning" width="820">
+  <img src="docs/screenshots/game-desktop.jpg" alt="A game in progress on a laptop: a painted continent split into six players' territories, each with its dice; your stack of three is selected and the neighbours you can attack show your chance of winning each, from 19% to 97%" width="820">
 </p>
 
 ## How to play
