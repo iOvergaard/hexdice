@@ -4,10 +4,15 @@ What changed in Hexdice, newest first. Players see the New and Fixed lines under
 
 `npm run changelog` adds new `feat`, `rules`, `fix` and `perf` commits on top, each with its commit hash, under the day it reached main. Edit the wording freely, but keep the shape: `## DD-MM-YYYY`, then `- <hash> **New:**`, `**Rules:**`, `**Fixed:**` or `**Faster:**` lines (the hash is optional).
 
-<!-- changelog: up to 080be8814b22d2bb221be45d77a0020aa8d05146 -->
+<!-- changelog: up to e33608da9bcc949917e9e99f524fd226a1714271 -->
 
 ## 23-11-2026
 
+- 696aee7 **Fixed:** A knockout bonus (+1/turn) in the player bar gets its own line at every width, and is never cut
+- 48d342a **Fixed:** Player names in the bar show in full where they fit, and are never cut short
+- 7388560 **Fixed:** The map you say Yes to keeps its shape and size when the game starts
+- 7352fb9 **Fixed:** On an upright phone the game fits the screen, and End turn keeps clear of the home indicator
+- df801a1 **Fixed:** A player's knockout bonus (+1/turn) is readable on the player bar
 - b8f209c **Fixed:** The title screen asks how many computer opponents you want, so it no longer reads as a count of people playing
 - 1967da6 **Fixed:** On a phone on its side the map gets the whole height, with the roll strip and players beside it
 - d64a63a **Fixed:** The sea runs on past the map's edge, with no seam on wide screens and phones

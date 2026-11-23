@@ -114,6 +114,8 @@ export class Controller {
   /** False after the debug load(): its action log is not the whole game. */
   private persist = true;
   private selected: TerritoryId | null = null;
+  /** "Play on this map?" is up: the player bar shows the new game, but nothing acts until Yes. */
+  private previewing = false;
   /** Bumped whenever the running game is abandoned (quit, replay, load); stale async work bails out. */
   private gen = 0;
   private running = -1;
@@ -206,6 +208,7 @@ export class Controller {
     this.mode = 'play';
     this.busy = false;
     this.selected = null;
+    this.previewing = false;
     if (!this.screen) this.screen = this.setupScreen();
     this.screen.overlay.hide();
     this.screen.preview.hide();
@@ -273,6 +276,7 @@ export class Controller {
     this.mode = 'play';
     this.busy = false;
     this.selected = null;
+    this.previewing = false;
     this.aiRng = new Rng(this.config.seed ^ 0x9e3779b9);
     this.screen = this.setupScreen();
   }
@@ -280,11 +284,14 @@ export class Controller {
   private preview(opts: TitleOptions): void {
     const screen = this.screen!;
     const show = (): void => {
-      this.renderBoard(false);
+      // The player bar is drawn for this game behind the prompt, so the board's box is the one it plays in.
+      this.previewing = true;
+      this.renderAll();
       screen.preview.show(
         this.config!.seed,
         {
           onYes: () => {
+            this.previewing = false;
             screen.preview.hide();
             this.begin();
           },
@@ -355,13 +362,13 @@ export class Controller {
   }
 
   private canAct(): boolean {
-    return !!this.state && !this.busy && !this.paused && this.mode === 'play' && this.isHumanTurn();
+    return !!this.state && !this.previewing && !this.busy && !this.paused && this.mode === 'play' && this.isHumanTurn();
   }
 
   /** AIs are playing a live game you could fast-forward. */
   private canSkip(): boolean {
     const s = this.state;
-    return !!s && this.mode === 'play' && !this.paused && !this.skipping && s.winner === null && !this.isHumanTurn();
+    return !!s && !this.previewing && this.mode === 'play' && !this.paused && !this.skipping && s.winner === null && !this.isHumanTurn();
   }
 
   private skip(): void {

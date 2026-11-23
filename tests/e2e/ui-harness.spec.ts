@@ -126,13 +126,19 @@ test('game-over overlay has its buttons', async ({ page }) => {
   for (const id of ['overlay-title', 'overlay-replay', 'overlay-watch']) await expect(page.getByTestId(id)).toBeVisible();
 });
 
-test('board preview prompt replaces the player bar', async ({ page }) => {
+test("board preview prompt takes the player bar's place, and the bar keeps its space", async ({ page }) => {
   await page.goto('/harness.html?seed=7&players=4&preview=1');
   await expect(page.getByTestId('preview-seed')).toHaveText('Seed 7');
+  // Same cell: the prompt covers the bar's box exactly, and the bar is out of sight and out of reach.
+  const hud = page.locator('.hud');
+  expect(await page.getByTestId('preview').boundingBox()).toEqual(await hud.boundingBox());
   await expect(page.getByTestId('player-0')).toBeHidden();
+  await expect(hud).toHaveAttribute('inert', '');
   await page.getByTestId('preview-yes').click();
   await expect(page.getByTestId('preview')).toBeHidden();
+  await expect(page.getByTestId('preview')).toHaveAttribute('inert', '');
   await expect(page.getByTestId('player-0')).toBeVisible();
+  await expect(hud).not.toHaveAttribute('inert');
 });
 
 test('saves screenshots', async ({ page }, testInfo) => {
