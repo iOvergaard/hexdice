@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Ending } from '../../src/ui/ending';
-import { endingCopy, leadOf } from '../../src/ui/ending';
+import { chartShapes, endingCopy, leadOf, scoreRows } from '../../src/ui/ending';
 import type { GameSummary, Standing } from '../../src/game/summary';
 
 const players = [
@@ -102,5 +102,46 @@ describe('endingCopy', () => {
     const e = ending({}, { standings: [st(1, 1, null, 30, 12), st(0, 2, [12, 1], 14, 6), st(2, 3, [5, 0])] });
     const { sub, caption } = endingCopy(e);
     expect(`${sub} ${caption}`).not.toMatch(/—/);
+  });
+});
+
+describe('scoreRows', () => {
+  it('lists everyone in finishing order, with you by name as You', () => {
+    const s = (p: number, place: number | null, out: [number, number] | null, a: [number, number], d: [number, number]): Standing => ({
+      ...st(p, place, out),
+      attacksWon: a[0],
+      attacks: a[1],
+      defencesHeld: d[0],
+      defences: d[1],
+    });
+    const e = ending({}, { standings: [s(1, 1, null, [20, 25], [3, 9]), s(0, 2, [12, 1], [8, 10], [1, 6]), s(2, 3, [5, 0], [2, 4], [0, 3])] });
+    expect(scoreRows(e)).toEqual([
+      { player: 1, place: '1st', name: 'Atlas', identity: 1, out: 'Winner', attacks: '20/25', defences: '3/9', you: false },
+      { player: 0, place: '2nd', name: 'You', identity: 0, out: 'Round 12', attacks: '8/10', defences: '1/6', you: true },
+      { player: 2, place: '3rd', name: 'Brook', identity: 2, out: 'Round 5', attacks: '2/4', defences: '0/3', you: false },
+    ]);
+  });
+});
+
+describe('chartShapes', () => {
+  it('stacks a band per player who held anything, outlines yours and marks each knockout', () => {
+    const e = ending(
+      {},
+      {
+        standings: [st(1, 1, null), st(0, 2, [3, 1]), st(2, 3, [2, 1])],
+        timeline: [
+          { round: 1, counts: [10, 10, 10] },
+          { round: 2, counts: [10, 20, 0] },
+          { round: 3, counts: [0, 30, 0] },
+        ],
+      },
+    );
+    const shapes = chartShapes(e);
+    expect(shapes.bands.map((b) => b.fill)).toEqual(['#ff4a1c', '#f5b82e', '#2fc4d9']);
+    expect(shapes.yours).toBe(shapes.bands[1]!.d);
+    expect(shapes.marks.map((m) => [m.identity, m.x, m.label])).toEqual([
+      [0, 392, 'You, out in round 3'],
+      [2, 200, 'Brook, out in round 2'],
+    ]);
   });
 });

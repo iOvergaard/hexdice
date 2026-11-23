@@ -6,6 +6,7 @@ import { PALETTE, emblemPath, playerColour } from './identity';
 import { RollView } from './roll-view';
 import { soundToggle } from './sound-toggle';
 import { renderEnding, type Ending } from './ending';
+import { PICTURE_LABEL, pictureBlob, pictureDate, pictureWay, sendPicture } from './share-picture';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -294,10 +295,10 @@ export class GameOverOverlay {
     container.append(this.el);
   }
 
-  /** `onCopy` returns the game record to copy; null leaves the button out. */
+  /** `onCopy` returns the game record to copy; null leaves the button out. `seed` goes on the picture, so others can play the same map. */
   show(
     ending: Ending,
-    actions: { onTitle: () => void; onReplay: (() => void) | null; onWatch: (() => void) | null; onCopy?: (() => string) | null },
+    actions: { onTitle: () => void; onReplay: (() => void) | null; onWatch: (() => void) | null; onCopy?: (() => string) | null; seed?: number },
   ): void {
     this.el.className = `overlay mood-${ending.mood}`;
     const card = renderEnding(ending);
@@ -316,16 +317,41 @@ export class GameOverOverlay {
     t.addEventListener('click', actions.onTitle);
     buttons.push(t);
     this.actions.replaceChildren(...buttons);
+    const status = el('p', 'overlay-copy-status');
+    status.dataset.testid = 'overlay-copy-status';
+    status.setAttribute('role', 'status');
+    status.hidden = true;
+    // Drawn now rather than on the press, so the share sheet opens while the press still counts as one.
+    const today = pictureDate(new Date());
+    const footer = actions.seed === undefined ? today : `Seed ${actions.seed} · ${today}`;
+    let blob: Promise<Blob> | null = null;
+    try {
+      blob = pictureBlob(ending, footer);
+      blob.catch(() => {});
+    } catch {
+      blob = null;
+    }
+    if (blob) {
+      const picture = blob;
+      const way = pictureWay();
+      const b = button(PICTURE_LABEL[way], 'overlay-picture', 'btn btn-quiet');
+      b.dataset.way = way;
+      b.addEventListener('click', () => {
+        status.parentElement?.querySelector('.overlay-copy-text')?.remove();
+        void sendPicture(way, picture, `hexdice-${today}.png`).then((line) => {
+          status.hidden = line === null;
+          if (line !== null) status.textContent = line;
+        });
+      });
+      this.actions.append(b);
+    }
     const onCopy = actions.onCopy;
     if (onCopy) {
       const b = button('Copy game', 'overlay-copy', 'btn btn-quiet');
-      const status = el('p', 'overlay-copy-status');
-      status.dataset.testid = 'overlay-copy-status';
-      status.setAttribute('role', 'status');
-      status.hidden = true;
       b.addEventListener('click', () => copyGame(onCopy(), status));
-      this.actions.append(b, status);
+      this.actions.append(b);
     }
+    this.actions.append(status);
     card.append(this.actions);
     this.body.replaceChildren(card);
     this.el.hidden = false;

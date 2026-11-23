@@ -1412,6 +1412,21 @@
   }
 }
 
+/* A phone on its side: a wider card keeps the four buttons on one row, so they don't cover half the screen. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .end-card {
+    width: min(100%, 600px);
+  }
+  .overlay-actions {
+    gap: 8px;
+    padding-block: 10px 12px;
+  }
+  .overlay-actions .btn-quiet {
+    min-width: 0;
+    padding-inline: 12px;
+  }
+}
+
 @keyframes end-rise {
   from {
     opacity: 0;
