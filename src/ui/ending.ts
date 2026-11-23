@@ -99,20 +99,26 @@ function svg<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string,
   return e;
 }
 
-const CHART_W = 400;
-const CHART_H = 150;
+export const CHART_W = 400;
+export const CHART_H = 150;
 /** Room above the chart for the knockout marks. */
-const LANE = 18;
+export const LANE = 18;
 
-/** Territories held per turn, stacked in finishing order with the winner at the bottom: it fills the box as they take the map. */
-function chart(e: Ending): SVGSVGElement {
+export interface ChartShapes {
+  /** Bottom band first: the winner, then the rest in finishing order. */
+  bands: { d: string; fill: string }[];
+  /** Your band's outline, drawn on top so a thin band still reads; null without a single human. */
+  yours: string | null;
+  /** A knockout mark above the chart for each player who went out. */
+  marks: { x: number; identity: number; label: string }[];
+}
+
+/** The chart's geometry in a CHART_W by CHART_H box (the marks sit above it, in LANE). Pure, so the picture draws the same chart. */
+export function chartShapes(e: Ending): ChartShapes {
   const t = e.summary.timeline;
-  const s = svg('svg', { viewBox: `0 ${-LANE} ${CHART_W} ${CHART_H + LANE}`, class: 'end-chart', role: 'img' });
-  s.dataset.testid = 'ending-chart';
-  s.setAttribute('aria-label', `Territories each player held over ${rounds(e.summary.rounds)}`);
   const x = (k: number): number => (t.length === 1 ? 0 : (k / (t.length - 1)) * CHART_W);
   const y = (v: number): number => CHART_H - (v / e.territories) * CHART_H;
-  const bands = svg('g');
+  const bands: ChartShapes['bands'] = [];
   const below = t.map(() => 0);
   let yours: string | null = null;
   for (const st of e.summary.standings) {
@@ -121,32 +127,71 @@ function chart(e: Ending): SVGSVGElement {
     const up = top.map((v, k) => `${k === 0 ? 'M' : 'L'}${x(k).toFixed(1)} ${y(v).toFixed(1)}`);
     const down = below.map((v, k) => `L${x(k).toFixed(1)} ${y(v).toFixed(1)}`).reverse();
     const d = `${up.join(' ')} ${down.join(' ')} Z`;
-    bands.append(svg('path', { d, fill: playerColour(e.players[st.player]!.identity), class: 'end-band' }));
+    bands.push({ d, fill: playerColour(e.players[st.player]!.identity) });
     if (st.player === e.you) yours = d;
     top.forEach((v, k) => (below[k] = v));
   }
-  // Your band's outline goes on top, so a thin band still reads.
-  if (yours) bands.append(svg('path', { d: yours, class: 'end-band-you' }));
-  s.append(bands);
-  const lane = svg('g');
-  const used: number[] = [];
+  const marks: ChartShapes['marks'] = [];
   for (const st of e.summary.standings) {
     if (st.outRound === null) continue;
     const k = t.findIndex((sample, i) => i > 0 && sample.counts[st.player] === 0);
     if (k < 0) continue;
     // Marks that would touch shift left, so knockouts in the same turn stay apart.
     let px = Math.min(CHART_W - 8, Math.max(8, x(k)));
-    while (used.some((u) => Math.abs(u - px) < 15)) px -= 15;
-    used.push(px);
-    const p = e.players[st.player]!;
-    const g = svg('g', { transform: `translate(${px.toFixed(1)} ${-LANE / 2})`, class: 'end-out' });
+    while (marks.some((m) => Math.abs(m.x - px) < 15)) px -= 15;
+    marks.push({ x: px, identity: e.players[st.player]!.identity, label: `${nameOf(e, st.player)}, out in round ${st.outRound}` });
+  }
+  return { bands, yours, marks };
+}
+
+/** Territories held per turn, stacked in finishing order with the winner at the bottom: it fills the box as they take the map. */
+function chart(e: Ending): SVGSVGElement {
+  const s = svg('svg', { viewBox: `0 ${-LANE} ${CHART_W} ${CHART_H + LANE}`, class: 'end-chart', role: 'img' });
+  s.dataset.testid = 'ending-chart';
+  s.setAttribute('aria-label', `Territories each player held over ${rounds(e.summary.rounds)}`);
+  const shapes = chartShapes(e);
+  const bands = svg('g');
+  for (const b of shapes.bands) bands.append(svg('path', { d: b.d, fill: b.fill, class: 'end-band' }));
+  if (shapes.yours) bands.append(svg('path', { d: shapes.yours, class: 'end-band-you' }));
+  s.append(bands);
+  const lane = svg('g');
+  for (const m of shapes.marks) {
+    const g = svg('g', { transform: `translate(${m.x.toFixed(1)} ${-LANE / 2})`, class: 'end-out' });
     const title = svg('title');
-    title.textContent = `${nameOf(e, st.player)}, out in round ${st.outRound}`;
-    g.append(title, svg('line', { x1: 0, y1: 7, x2: 0, y2: LANE / 2 + 3, class: 'end-tick' }), svg('path', { d: emblemPath(p.identity, 6.5), fill: playerColour(p.identity) }));
+    title.textContent = m.label;
+    g.append(title, svg('line', { x1: 0, y1: 7, x2: 0, y2: LANE / 2 + 3, class: 'end-tick' }), svg('path', { d: emblemPath(m.identity, 6.5), fill: playerColour(m.identity) }));
     lane.append(g);
   }
   s.append(lane);
   return s;
+}
+
+export interface ScoreRow {
+  player: PlayerId;
+  place: string;
+  name: string;
+  identity: number;
+  out: string;
+  attacks: string;
+  defences: string;
+  you: boolean;
+}
+
+export const SCORE_HEADINGS = ['', 'Player', 'Out', 'Attacks', 'Defences'] as const;
+export const SCORE_NOTE = 'Attacks: won of made. Defences: held of faced.';
+
+/** The scoreboard's rows in finishing order. Pure, so the picture shows the same table. */
+export function scoreRows(e: Ending): ScoreRow[] {
+  return e.summary.standings.map((st) => ({
+    player: st.player,
+    place: st.place !== null ? ordinal(st.place) : '',
+    name: nameOf(e, st.player),
+    identity: e.players[st.player]!.identity,
+    out: st.outRound !== null ? `Round ${st.outRound}` : st.player === e.summary.winner ? 'Winner' : st.place !== null ? 'Still in' : 'Earlier',
+    attacks: `${st.attacksWon}/${st.attacks}`,
+    defences: `${st.defencesHeld}/${st.defences}`,
+    you: st.player === e.you,
+  }));
 }
 
 /** Every player in finishing order: when they went out, and their attacks and defences. */
@@ -154,37 +199,35 @@ function scoreboard(e: Ending): HTMLElement {
   const table = el('table', 'end-board');
   table.dataset.testid = 'scoreboard';
   const head = el('tr');
-  for (const [label, cls] of [['', 'board-place'], ['Player', 'board-player'], ['Out', 'board-out'], ['Attacks', 'board-num'], ['Defences', 'board-num']] as const) {
-    head.append(el('th', cls, label));
-  }
+  const classes = ['board-place', 'board-player', 'board-out', 'board-num', 'board-num'];
+  SCORE_HEADINGS.forEach((label, i) => head.append(el('th', classes[i], label)));
   const thead = el('thead');
   thead.append(head);
   const tbody = el('tbody');
-  for (const st of e.summary.standings) {
-    const row = el('tr', st.player === e.you ? 'is-you' : undefined);
-    row.dataset.testid = `scoreboard-${st.player}`;
+  for (const r of scoreRows(e)) {
+    const row = el('tr', r.you ? 'is-you' : undefined);
+    row.dataset.testid = `scoreboard-${r.player}`;
     const who = el('td', 'board-player');
     const badge = el('span', 'board-badge');
-    badge.style.setProperty('--c', playerColour(e.players[st.player]!.identity));
+    badge.style.setProperty('--c', playerColour(r.identity));
     const mark = svg('svg', { viewBox: '-12 -12 24 24', 'aria-hidden': 'true' });
-    mark.append(svg('path', { d: emblemPath(e.players[st.player]!.identity, 10) }));
+    mark.append(svg('path', { d: emblemPath(r.identity, 10) }));
     badge.append(mark);
     const inner = el('span', 'board-who');
-    inner.append(badge, nameOf(e, st.player));
+    inner.append(badge, r.name);
     who.append(inner);
-    const out = st.outRound !== null ? `Round ${st.outRound}` : st.player === e.summary.winner ? 'Winner' : st.place !== null ? 'Still in' : 'Earlier';
     row.append(
-      el('td', 'board-place', st.place !== null ? ordinal(st.place) : ''),
+      el('td', 'board-place', r.place),
       who,
-      el('td', 'board-out', out),
-      el('td', 'board-num board-attacks', `${st.attacksWon}/${st.attacks}`),
-      el('td', 'board-num board-defences', `${st.defencesHeld}/${st.defences}`),
+      el('td', 'board-out', r.out),
+      el('td', 'board-num board-attacks', r.attacks),
+      el('td', 'board-num board-defences', r.defences),
     );
     tbody.append(row);
   }
   table.append(thead, tbody);
   const wrap = el('div', 'end-scores');
-  wrap.append(table, el('p', 'end-note', 'Attacks: won of made. Defences: held of faced.'));
+  wrap.append(table, el('p', 'end-note', SCORE_NOTE));
   return wrap;
 }
 

@@ -537,6 +537,7 @@ export class Controller {
         onTitle: () => this.toTitle(),
         onReplay: null,
         onCopy: this.record(),
+        seed: this.state!.config.seed,
         onWatch: () => {
           this.watching = true;
           this.paused = false;
@@ -615,6 +616,7 @@ export class Controller {
       onReplay: this.replayable ? () => void this.replay() : null,
       onWatch: null,
       onCopy: this.record(),
+      seed: s.config.seed,
     });
   }
 
