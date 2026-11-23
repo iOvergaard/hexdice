@@ -54,7 +54,7 @@ for (const size of [
       test.skip(info.project.name !== size.project, `${size.project} layout`);
       await page.setViewportSize(size.viewport);
       await page.goto('/?sound=off&speed=instant');
-      await page.getByTestId(`players-${players}`).click();
+      await page.getByTestId(`opponents-${players - 1}`).click();
       await page.getByTestId('start').click();
       await expect(page.getByTestId('preview')).toBeVisible();
       // The bar is there for this game, holding its space, but out of sight. Soft, so the box is compared regardless.
@@ -76,7 +76,7 @@ for (const size of [
 test('during the preview only No and Yes take focus and Space does nothing; in the game they are gone', async ({ page }, info) => {
   test.skip(info.project.name === 'phone', 'Keyboard focus and shortcuts are a desktop feature');
   await page.goto('/?sound=off&speed=instant');
-  await page.getByTestId('players-2').click();
+  await page.getByTestId('opponents-1').click();
   await page.getByTestId('start').click();
   await expect(page.getByTestId('preview')).toBeVisible();
   await expect.soft(page.locator('.hud')).toHaveAttribute('inert', '');
