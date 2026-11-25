@@ -16,6 +16,7 @@ on:
       - '!.github/FUNDING.yml'
       - '!.github/labels.json'
       - '!.github/workflows/labels.yml'
+      - '!.github/ISSUE_TEMPLATE/**'
   pull_request:
   workflow_dispatch:
 
