@@ -1,0 +1,27 @@
+[
+  {
+    "name": "ready-for-ai",
+    "color": "0e8a16",
+    "description": "Jacob's go-ahead: the build loop may build this issue and open a pull request"
+  },
+  {
+    "name": "ai-blocked",
+    "color": "b60205",
+    "description": "The build loop stopped; its comment says why. Re-add ready-for-ai to retry"
+  },
+  {
+    "name": "generated-by-ai",
+    "color": "6f42c1",
+    "description": "Built by the build loop: its pull request is open with green checks"
+  },
+  {
+    "name": "parked",
+    "color": "c5def5",
+    "description": "An idea waiting for a decision to build it"
+  },
+  {
+    "name": "decision",
+    "color": "fbca04",
+    "description": "Waiting on Jacob's pick"
+  }
+]
