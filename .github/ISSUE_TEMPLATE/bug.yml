@@ -1,0 +1,58 @@
+name: Bug
+description: Something in the game doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One bug per issue. Jacob adds `discuss` if it needs questions first, or `ready-for-ai` when the build loop may fix it; this form adds neither.
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened
+      description: What you saw, as plainly as you can put it. A screenshot helps.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should have happened
+      description: This is how we'll know it's fixed.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to see it
+      description: The steps, or a game link with its seed (`?seed=`). Say whether it happens every time.
+      placeholder: |
+        1. Start a five-player game against Hard on a phone
+        2. ...
+  - type: textarea
+    id: record
+    attributes:
+      label: Game record
+      description: Press Copy game on the end card and paste it here. In the middle of a game, run `__hexdice.actions()` in the browser console and paste what it prints.
+      render: json
+  - type: dropdown
+    id: device
+    attributes:
+      label: Device
+      multiple: true
+      options:
+        - Computer
+        - Phone, upright
+        - Phone on its side
+        - Tablet
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      placeholder: Safari on iPhone
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: What's new on the title screen says "You're on version ..." if you want to look.

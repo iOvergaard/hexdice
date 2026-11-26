@@ -1,0 +1,60 @@
+name: Change
+description: One change to the game's screens, layout, flow or words. Not the rules or the computer players.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Write it so one pull request can build it: what changes, and how we'll know it works, in a few sentences. If it takes more than that, split it into several issues.
+
+        Rules, computer players and the map have their own form. Jacob adds `discuss` to have it questioned and written up first, or `ready-for-ai` when it should be built; this form adds neither.
+  - type: textarea
+    id: change
+    attributes:
+      label: What should change
+      description: One change. Say where it is in the game (title screen, game bar, board, roll strip, end card, How to play).
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: What's awkward today, and for whom.
+  - type: textarea
+    id: done
+    attributes:
+      label: How we'll know it works
+      description: What a player sees, or the test that shows it.
+      placeholder: On a 375 px phone with eight players, every name in the game bar shows in full.
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of change
+      description: This decides which checks it has to pass.
+      options:
+        - Screens, layout or flow (browser tests and a hands-on report)
+        - Words only (How to play, README, docs)
+        - Something else
+    validations:
+      required: true
+  - type: dropdown
+    id: screens
+    attributes:
+      label: Screens it should work on
+      multiple: true
+      options:
+        - Computer
+        - Phone, upright
+        - Phone on its side
+  - type: textarea
+    id: out
+    attributes:
+      label: Not part of this
+      description: Anything nearby that should stay as it is, or wait for another issue.
+  - type: textarea
+    id: related
+    attributes:
+      label: Related issues
+      description: Earlier issues on the same topic, open or closed. One closed as "not planned" was decided against.

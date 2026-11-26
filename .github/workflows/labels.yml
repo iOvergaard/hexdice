@@ -1,0 +1,31 @@
+name: Labels
+
+# Creates and updates the labels listed in .github/labels.json. Never deletes one.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/labels.json'
+      - '.github/workflows/labels.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  sync:
+    name: Sync labels
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Create or update the labels in .github/labels.json
+        # --force updates the colour and description of a label that already exists.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          jq -r '.[] | [.name, .color, .description] | @tsv' .github/labels.json |
+            while IFS=$'\t' read -r name color description; do
+              gh label create "$name" --color "$color" --description "$description" --force
+            done

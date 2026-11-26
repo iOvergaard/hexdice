@@ -1,0 +1,38 @@
+name: Rule or computer player idea
+description: A change to the rules, the computer players or the map. Measured first; Jacob decides.
+labels: [parked]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        These are never built straight from a label. Jacob can add `discuss` to have the idea questioned and written up with what to measure. Then it is measured in simulated games, and Jacob picks from the options with the numbers to hand.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What feels wrong in play
+      description: The situation, and how often it comes up. A seed or a game record helps.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: The rule or behaviour you'd try. Several options are welcome.
+    validations:
+      required: true
+  - type: checkboxes
+    id: affects
+    attributes:
+      label: What it might change
+      description: Tick what you expect it to move. The measurements cover all of them anyway.
+      options:
+        - label: How often skill beats luck (Hard and Normal against Easy)
+        - label: Comebacks (whether the leader at round 5 or round 8 still wins)
+        - label: How long games run, eight-player tables most of all
+        - label: Which seat in the turn order wins
+        - label: The map (every seeded map changes, and older saves stop loading)
+  - type: textarea
+    id: related
+    attributes:
+      label: Related issues
+      description: Earlier issues on the same topic, open or closed. One closed as "not planned" was decided against.
