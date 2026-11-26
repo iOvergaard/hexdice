@@ -1,5 +1,10 @@
 [
   {
+    "name": "discuss",
+    "color": "1d76db",
+    "description": "Jacob's go-ahead for the discuss loop: questions, then a write-up. No code"
+  },
+  {
     "name": "ready-for-ai",
     "color": "0e8a16",
     "description": "Jacob's go-ahead: the build loop may build this issue and open a pull request"

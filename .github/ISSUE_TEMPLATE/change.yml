@@ -7,7 +7,7 @@ body:
       value: |
         Write it so one pull request can build it: what changes, and how we'll know it works, in a few sentences. If it takes more than that, split it into several issues.
 
-        Rules, computer players and the map have their own form. Jacob adds `ready-for-ai` when this should be built; this form never does.
+        Rules, computer players and the map have their own form. Jacob adds `discuss` to have it questioned and written up first, or `ready-for-ai` when it should be built; this form adds neither.
   - type: textarea
     id: change
     attributes:
