@@ -5,7 +5,8 @@ import { Rng } from '../engine/rng';
 import { applyAction, attackOdds, isLegalAttack, largestGroup } from '../engine/rules';
 import { defaultSeats } from '../engine/seats';
 import { createGame } from '../engine/setup';
-import type { Action, AiLevel, GameConfig, GameEvent, GameState, RulesConfig, Speed, TerritoryId } from '../engine/types';
+import type { Action, AiLevel, GameConfig, GameEvent, GameState, PlayerId, RulesConfig, Speed, TerritoryId } from '../engine/types';
+import { withSnapshot, type Snapshot } from '../net/protocol';
 import changelogMarkdown from '../../CHANGELOG.md?raw';
 import { forPlayers, hasUnseen, newestChange, parseChangelog } from '../changelog';
 import { openHowToPlay } from '../ui/how-to-play';
@@ -14,6 +15,7 @@ import { createGameScreen, showTitle, type GameScreen, type TitleOptions } from 
 import type { Ending, Mood } from '../ui/ending';
 import { nextSelection, selectionAfterAttack, targetsFor } from '../ui/selection';
 import { boardDiff } from './log-check';
+import { loadHosts, OnlineFlow, type OnlineLink } from './online';
 import { restore, serialise, type RestoredGame } from './save';
 import { loadSoundOn, Sound } from './sound';
 import { cuesFor } from './sound-cues';
@@ -28,6 +30,9 @@ const changelog = forPlayers(parseChangelog(changelogMarkdown));
 const DEFAULT_TITLE: TitleOptions = { players: 8, aiLevel: 'normal' };
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+const YOUR_TURN = 'Your turn: tap one of your territories with 2+ dice';
+/** Online, more results than this waiting to be shown play at Instant until the board catches up. */
+const CATCH_UP = 12;
 
 function loadTitle(): TitleOptions {
   try {
@@ -119,6 +124,17 @@ export class Controller {
   /** Bumped whenever the running game is abandoned (quit, replay, load); stale async work bails out. */
   private gen = 0;
   private running = -1;
+  /** Set while playing or watching a game on a host: who you are and how to reach it. */
+  private online: OnlineLink | null = null;
+  /** Results from the host not shown yet, each with the state it starts from. */
+  private inbox: Array<{ before: GameState; next: GameState; action: Action; events: GameEvent[] }> = [];
+  /** The state the host's results so far lead to: the last in the inbox, or the board once it's empty. */
+  private tail: GameState | null = null;
+  /** The host's latest `yourTurn`: the move number your action answers. Null when it isn't your move. */
+  private turnI: number | null = null;
+  private readonly onlineFlow: OnlineFlow;
+  /** Hosts from hosts.json; Play online shows when there is one, or a ?host= link. */
+  private readonly hosts = loadHosts();
   readonly sound: Sound;
 
   constructor(
@@ -128,10 +144,12 @@ export class Controller {
     this.speed = params.speed ?? 'normal';
     this.sound = new Sound(params.sound ?? loadSoundOn());
     document.addEventListener('keydown', (e) => this.onKey(e));
+    this.onlineFlow = new OnlineFlow(root, this);
   }
 
   start(): void {
     const saved = readSave();
+    if (this.params.room && this.params.host) return this.openOnline();
     const link = this.params.seed !== null || this.params.players !== null;
     // A link starts its game at once, unless that would replace a game in progress: then the title offers both.
     if (link && !saved) this.playLink();
@@ -225,6 +243,12 @@ export class Controller {
 
   // ---- screen flow ----
   private toTitle(saved: RestoredGame | null = null, onLink?: () => void): void {
+    // Leaving an online game never touches the game saved on this device.
+    if (this.online) {
+      this.online.leave();
+      this.online = null;
+      saved = readSave();
+    }
     if (!saved) clearSave();
     this.gen++;
     this.sound.stopAll();
@@ -246,7 +270,90 @@ export class Controller {
       { unseen: hasUnseen(changelog, seenChange()), open: openChangelog },
       titleScene,
       onLink,
+      { available: this.hosts.then((h) => h.length > 0 || this.params.host !== null), open: () => this.openOnline() },
     );
+  }
+
+  // ---- online ----
+  private openOnline(): void {
+    void this.hosts.then((hosts) => this.onlineFlow.open(hosts, this.params.host, this.params.room));
+  }
+
+  /** Back to the title from the online screens, keeping any game saved on this device. */
+  leaveOnline(): void {
+    this.toTitle(readSave());
+  }
+
+  /** A game on the host began, or you came back to one: show it, then the host's results as they arrive. */
+  startOnline(state: GameState, link: OnlineLink): void {
+    this.gen++;
+    this.sound.stopAll();
+    this.skipping = false;
+    this.online = link;
+    this.inbox = [];
+    this.tail = state;
+    this.turnI = null;
+    this.config = state.config;
+    this.state = state;
+    this.startState = state;
+    this.actionLog = [];
+    this.logState = null;
+    this.logProblems = [];
+    this.eventLog = [];
+    this.replayable = false;
+    this.persist = false;
+    this.paused = false;
+    this.watching = false;
+    this.mode = 'play';
+    this.busy = false;
+    this.selected = null;
+    this.previewing = false;
+    this.screen = this.setupScreen();
+    this.turnCue();
+    this.renderAll();
+    this.kick();
+  }
+
+  onlineResult(action: Action, events: GameEvent[], snap: Snapshot): void {
+    if (!this.online || !this.tail) return;
+    const next = withSnapshot(this.tail, snap);
+    this.inbox.push({ before: this.tail, next, action, events });
+    this.tail = next;
+    this.kick();
+  }
+
+  onlineTurn(i: number): void {
+    if (!this.online) return;
+    this.turnI = i;
+    this.kick();
+  }
+
+  /** The host revealed the seed and the moves: Replay and Copy game work from here. */
+  onlineGameOver(config: GameConfig, actions: readonly Action[]): void {
+    if (!this.online) return;
+    this.config = config;
+    this.actionLog = [...actions];
+    this.replayable = true;
+    // The end card may be up already, from before the reveal: show it again with Replay.
+    if (this.state?.winner !== null && this.inbox.length === 0 && this.running !== this.gen && this.mode === 'play') this.finishGame();
+  }
+
+  /** A message from the host, shown once the board has caught up. */
+  onlineMessage(text: string): void {
+    if (!this.online || !this.screen || this.inbox.length > 0 || this.running === this.gen) return;
+    this.screen.roll.message(text);
+  }
+
+  /** The room changed (someone away or back): refresh the waiting line. */
+  onlineRoom(): void {
+    if (this.online && this.screen && this.inbox.length === 0 && this.running !== this.gen) this.turnCue();
+  }
+
+  /** The player you are: online, your seat; offline, the one human seat, if there is exactly one. */
+  private me(): PlayerId | null {
+    if (this.online) return this.online.you;
+    const humans = this.state?.players.filter((p) => p.kind === 'human') ?? [];
+    return humans.length === 1 ? humans[0]!.id : null;
   }
 
   /** Rules the URL asks for, on top of the defaults. */
@@ -315,8 +422,17 @@ export class Controller {
     const s = this.state!;
     if (s.winner !== null || this.autoplay || this.watching || this.mode !== 'play') return;
     const p = s.players[s.current]!;
+    if (this.online) {
+      if (!p.alive) return;
+      const you = this.online.you;
+      const away = this.online.away(p.identity) ? ' (away)' : '';
+      const note = this.online.note();
+      const line = p.id === you ? YOUR_TURN : you === null ? `${p.name}'s turn${away}` : `Waiting for ${p.name}${away}`;
+      this.screen!.roll.message(note && p.id !== you ? `${line} · ${note}` : line);
+      return;
+    }
     if (p.kind !== 'human' || !p.alive) return;
-    this.screen!.roll.message(this.humans() === 1 ? 'Your turn: tap one of your territories with 2+ dice' : `${p.name}'s turn`);
+    this.screen!.roll.message(this.humans() === 1 ? YOUR_TURN : `${p.name}'s turn`);
   }
 
   private begin(): void {
@@ -337,7 +453,7 @@ export class Controller {
       this.speed = s;
     });
     // Quit keeps a game you're still in, so the title offers Continue; one you're out of has nothing to continue.
-    screen.hud.onQuit(() => this.toTitle(this.state?.players.some((p) => p.kind === 'human' && p.alive) ? readSave() : null));
+    screen.hud.onQuit(() => this.toTitle(this.online || this.state?.players.some((p) => p.kind === 'human' && p.alive) ? readSave() : null));
     screen.hud.onHelp(() => openHowToPlay(this.state?.config ?? this.config ?? DEFAULT_RULES));
     screen.hud.onSoundToggle(() => {
       this.toggleSound();
@@ -358,6 +474,7 @@ export class Controller {
 
   private isHumanTurn(): boolean {
     const s = this.state!;
+    if (this.online) return s.winner === null && s.current === this.online.you && this.inbox.length === 0 && this.turnI !== null;
     return !this.autoplay && s.winner === null && s.players[s.current]!.kind === 'human';
   }
 
@@ -368,7 +485,7 @@ export class Controller {
   /** AIs are playing a live game you could fast-forward. */
   private canSkip(): boolean {
     const s = this.state;
-    return !!s && !this.previewing && this.mode === 'play' && !this.paused && !this.skipping && s.winner === null && !this.isHumanTurn();
+    return !this.online && !!s && !this.previewing && this.mode === 'play' && !this.paused && !this.skipping && s.winner === null && !this.isHumanTurn();
   }
 
   private skip(): void {
@@ -406,6 +523,7 @@ export class Controller {
       speed: this.speed,
       mode: this.mode,
       sound: this.sound.isOn(),
+      ...(this.online ? { you: this.online.you, online: true } : {}),
     });
   }
 
@@ -438,6 +556,16 @@ export class Controller {
   // ---- turn flow ----
   /** Human action. Busy is set synchronously, so a second tap in the same tick is ignored. */
   private async submit(action: Action): Promise<void> {
+    if (this.online) {
+      // The host plays it and sends the result back to everyone, you included; the loop shows it.
+      if (this.turnI === null) return;
+      this.busy = true;
+      this.selected = null;
+      this.renderAll();
+      this.online.act(action, this.turnI);
+      this.turnI = null;
+      return;
+    }
     const gen = this.gen;
     this.busy = true;
     this.selected = null;
@@ -460,8 +588,20 @@ export class Controller {
       this.save();
       this.eventLog.push(...events);
     }
-    const byAi = this.autoplay || before.players[before.current]!.kind === 'ai';
-    const humans = this.autoplay ? [] : before.players.filter((p) => p.kind === 'human' && p.alive).map((p) => p.id);
+    await this.show(before, next, events, action, gen, speed, record);
+  }
+
+  /** Animates one action's events, from `before` to `next`. `live`: a game in play, not a replay. */
+  private async show(before: GameState, next: GameState, events: GameEvent[], action: Action, gen: number, speed: Speed, live: boolean): Promise<void> {
+    const you = this.online?.you ?? null;
+    const byAi = this.autoplay || (this.online ? before.current !== you : before.players[before.current]!.kind === 'ai');
+    const humans = this.autoplay
+      ? []
+      : this.online
+        ? you !== null && before.players[you]!.alive
+          ? [you]
+          : []
+        : before.players.filter((p) => p.kind === 'human' && p.alive).map((p) => p.id);
     const cues = cuesFor(events, { speed, byAi, mode: this.mode, humans });
     const roll = events.find((e) => e.type === 'attackRolled');
     if (roll) {
@@ -471,7 +611,7 @@ export class Controller {
       if (gen !== this.gen) return;
       if (cues.result) this.sound.result(cues.result);
     }
-    if (record && this.logState !== next) this.logProblem(`${JSON.stringify(action)} landed after another action was logged`);
+    if (live && !this.online && this.logState !== next) this.logProblem(`${JSON.stringify(action)} landed after another action was logged`);
     this.state = next;
     this.renderAll();
     if (roll && !roll.success) {
@@ -488,10 +628,10 @@ export class Controller {
       // The big bang: the game deliberately holds here so a knockout lands.
       const loser = next.players[out.player]!;
       const winner = next.players[out.by]!;
-      const solo = this.humans() === 1;
-      const title = solo && loser.kind === 'human' ? 'You were eliminated' : `${loser.name} eliminated`;
+      const me = this.me();
+      const title = loser.id === me ? 'You were eliminated' : `${loser.name} eliminated`;
       const bonus = winner.knockouts * next.config.eliminationBonus;
-      const by = solo && winner.kind === 'human' ? 'you' : winner.name;
+      const by = winner.id === me ? 'you' : winner.name;
       const detail = `by ${by}${bonus > 0 ? ` · ${by === 'you' ? 'you now get' : 'now gets'} +${bonus} ${bonus === 1 ? 'die' : 'dice'} per turn` : ''}`;
       const ms = ELIMINATION_MS[speed];
       const at = this.screen!.board.verticalPosition(roll.to) < 0.5 ? 0.72 : 0.28;
@@ -530,10 +670,10 @@ export class Controller {
     if (events.some((e) => e.type === 'turnStarted')) this.turnCue();
     if (cues.yourTurn) this.sound.yourTurn();
     if (cues.sting) this.sound.sting(cues.sting);
-    if (record && !this.watching && !this.autoplay && this.humansAllOut(events)) {
+    if (live && !this.watching && !this.autoplay && this.humansAllOut(events)) {
       this.paused = true;
       this.renderAll();
-      this.screen!.overlay.show(this.ending(this.humans() === 1 ? 'You were eliminated' : 'All human players were eliminated', 'out'), {
+      this.screen!.overlay.show(this.ending(this.me() !== null ? 'You were eliminated' : 'All human players were eliminated', 'out'), {
         onTitle: () => this.toTitle(),
         onReplay: null,
         onCopy: this.record(),
@@ -555,6 +695,7 @@ export class Controller {
 
   private humansAllOut(events: GameEvent[]): boolean {
     const s = this.state!;
+    if (this.online) return s.winner === null && this.online.you !== null && events.some((e) => e.type === 'playerEliminated') && !s.players[this.online.you]!.alive;
     return (
       s.winner === null &&
       this.humans() > 0 &&
@@ -571,6 +712,7 @@ export class Controller {
   private async loop(gen: number): Promise<void> {
     this.running = gen;
     try {
+      if (this.online) return await this.loopOnline(gen);
       while (gen === this.gen) {
         const s = this.state!;
         if (s.winner !== null) {
@@ -601,23 +743,56 @@ export class Controller {
     }
   }
 
+  /** Online: shows the host's results in order; input opens once they're all shown and the host says it's your move. */
+  private async loopOnline(gen: number): Promise<void> {
+    while (gen === this.gen && !this.paused) {
+      const r = this.inbox.shift();
+      if (!r) {
+        this.busy = false;
+        if (this.state!.winner !== null) return this.finishGame();
+        this.renderAll();
+        return;
+      }
+      this.busy = true;
+      const mine = r.before.current === this.online!.you;
+      const pace: Speed = this.inbox.length > CATCH_UP ? 'instant' : this.speed;
+      if (!mine) {
+        this.renderAll();
+        await sleep(PAUSE_MS[pace]);
+        if (gen !== this.gen) return;
+      }
+      this.eventLog.push(...r.events);
+      await this.show(r.before, r.next, r.events, r.action, gen, pace, true);
+      if (gen !== this.gen) return;
+      if (mine && r.action.type === 'attack' && this.inbox.length === 0 && this.state!.current === this.online!.you) {
+        this.selected = selectionAfterAttack(this.state!, r.action, this.canAttack);
+      }
+    }
+  }
+
   // ---- end of game and replay ----
   private finishGame(): void {
-    clearSave();
+    if (!this.online) clearSave();
     this.busy = false;
     this.skipping = false;
     this.mode = 'play';
     this.renderAll();
     const s = this.state!;
     const winner = s.players[s.winner!]!;
-    const title = this.humans() === 1 && winner.kind === 'human' ? 'You win' : `${winner.name} wins`;
-    this.screen!.overlay.show(this.ending(title, winner.kind === 'human' ? 'won' : 'lost'), {
+    const me = this.me();
+    const title = winner.id === me ? 'You win' : `${winner.name} wins`;
+    const won = this.online ? winner.id === me : winner.kind === 'human';
+    this.screen!.overlay.show(this.ending(title, won ? 'won' : 'lost'), {
       onTitle: () => this.toTitle(),
       onReplay: this.replayable ? () => void this.replay() : null,
       onWatch: null,
       onCopy: this.record(),
-      seed: s.config.seed,
+      // Online, the seed is the host's secret until it reveals it at the end.
+      seed: this.online ? (this.replayable ? this.config!.seed : undefined) : s.config.seed,
+      onRematch: this.online?.rematch() ?? null,
     });
+    const note = this.online?.scores();
+    if (note) this.screen!.roll.message(note);
   }
 
   /** The game so far as config plus moves, for replaying it elsewhere; none after a debug load, whose log starts mid-game. */
@@ -636,13 +811,12 @@ export class Controller {
 
   private ending(title: string, mood: Mood): Ending {
     const s = this.state!;
-    const solo = this.humans() === 1 ? s.players.find((p) => p.kind === 'human')!.id : null;
     return {
       title,
       mood,
       summary: summarise(this.startState ?? s, this.eventLog, s),
       players: s.players.map((p) => ({ name: p.name, identity: p.identity })),
-      you: solo,
+      you: this.me(),
       territories: s.territories.length,
     };
   }

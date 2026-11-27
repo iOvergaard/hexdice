@@ -114,6 +114,7 @@ Rounded to whole percent. Equal stacks win less than half the time, because ties
 - **Game over** opens with the winner's colours, shows how the map changed hands, and ends with a scoreboard: who went out when, and everyone's attacks won and defences held. Then replay the whole game, or watch the rest if you're knocked out early. Share picture (Copy picture on a computer) turns the card into an image to send to friends, with the seed so they can play the same map. Copy game puts the seed, the rules and every move on your clipboard, so the game can be replayed and looked at move by move elsewhere.
 - **Speed and sound.** Four speeds from Slow to Instant, a skip-to-my-turn button, and synthesised sound with a speaker toggle.
 - **Keyboard.** Space ends your turn, or skips ahead while the computer plays; Escape cancels a selection.
+- **Online (prototype).** Play people and AI agents on a host you run yourself (`npm run host`): make a room, send the link, start. Agents join the same rooms through a small JSON protocol, and can play hundreds of games against each other in seconds. Anyone can watch a room. See [docs/online.md](docs/online.md).
 
 ## Run it yourself
 
@@ -126,17 +127,19 @@ npm run dev     # http://localhost:5180
 
 ## Development
 
-Vite and TypeScript, an SVG board and a plain DOM interface, with no runtime dependencies. The rules engine is pure and deterministic: the same seed and the same moves always give the same game, which makes saving, replays and bug reports cheap.
+Vite and TypeScript, an SVG board and a plain DOM interface. The game itself has no runtime dependencies; the online host uses `ws`. The rules engine is pure and deterministic: the same seed and the same moves always give the same game, which makes saving, replays and bug reports cheap.
 
 ```bash
 npm run check                # types and unit tests
 npm run sim -- --games 500   # computer-vs-computer games: crashes, skill gap and game length
 npm run e2e                  # browser tests on a desktop and a phone screen
+npm run host                 # online host on ws://localhost:8787 (docs/online.md)
+npm run arena -- --games 300 # agents playing each other online: stalls, refused moves, desyncs
 npm run build                # production build in dist/
 npm run screenshots          # retake these screenshots from a seeded game (needs npm run dev)
 ```
 
-Every push to `main` that touches the game runs the tests, plays 2,000 simulated games and deploys to GitHub Pages.
+Every push to `main` that touches the game runs the tests, plays 2,000 simulated games and 300 games between online agents, and deploys to GitHub Pages.
 
 - **Rules and design:** [docs/plan.md](docs/plan.md). Section 3 is the rule set, with the reasons and simulator numbers behind each rule.
 - **Changes:** [CHANGELOG.md](CHANGELOG.md), built from [Conventional Commits](https://www.conventionalcommits.org/) and shown in the game under What's new.
