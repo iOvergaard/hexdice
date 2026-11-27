@@ -143,6 +143,10 @@ Every push to `main` that touches the game runs the tests, plays 2,000 simulated
 - **Playtest reports:** [playtest/](playtest/), one per change, with what was verified by hand.
 - **Working on the code:** [CLAUDE.md](CLAUDE.md) has the architecture, conventions and checks.
 
+## Credits
+
+Hexdice is inspired by [DICEWARS](https://www.gamedesign.jp/games/dicewars/) by GAMEDESIGN, the game that made this genre famous. Hexdice is an independent game with its own name, code and art, and is not affiliated with GAMEDESIGN.
+
 ## Licence
 
 [Mozilla Public License 2.0](LICENSE).
