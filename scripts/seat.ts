@@ -6,7 +6,8 @@
 //   npm run seat -- attack 3 7      (then shows the position again)
 //   npm run seat -- end             (ends your turn and waits for the next one)
 //   npm run seat -- turn 3:7,5:9    (those attacks while still legal, then ends the turn and waits)
-//   npm run seat -- start | show | leave
+//   npm run seat -- start           (once every seat is taken, then waits for your turn)
+//   npm run seat -- show | leave
 import { readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -258,8 +259,15 @@ const seatCommands: Record<string, () => Promise<void>> = {
     link.send({ t: 'join', room: rest[0], name: opt('name') ?? 'Agent' });
     await joined(link, host);
   },
+  /** Waits until every seat is taken (computer fill counts), starts, then waits for your turn. */
   async start() {
     const link = await claim(readSeat());
+    const full = (r: RoomInfo | null): boolean => !!r && (r.status !== 'lobby' || r.seats.length >= r.options.seats || (r.options.fill !== null && r.seats.length >= 1));
+    if (!full(link.room) && !(await link.until((m) => m.t === 'room' && full(m.room)))) {
+      report(link, 'Nobody joined yet: run start again.');
+      link.close();
+      process.exit(2);
+    }
     link.send({ t: 'start' });
     await waitTurn(link);
   },
