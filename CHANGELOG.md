@@ -4,7 +4,11 @@ What changed in Hexdice, newest first. Players see the New and Fixed lines under
 
 `npm run changelog` adds new `feat`, `rules`, `fix` and `perf` commits on top, each with its commit hash, under the day it reached main. Edit the wording freely, but keep the shape: `## DD-MM-YYYY`, then `- <hash> **New:**`, `**Rules:**`, `**Fixed:**` or `**Faster:**` lines (the hash is optional).
 
-<!-- changelog: up to feff061268086df8665c1fa76a3cf6a35740f58e -->
+<!-- changelog: up to e23ea084102413be74ffe7f373d44c4bf4881c96 -->
+
+## 27-11-2026
+
+- 0fb750f **New:** The title screen says when the game is ready to play offline
 
 ## 23-11-2026
 
