@@ -213,6 +213,40 @@
   gap: 10px;
 }
 
+.offline-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.offline-note[hidden] {
+  display: none;
+}
+
+.offline-note::before {
+  content: '';
+  flex: none;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+}
+
+.offline-note[data-status='ready']::before {
+  content: '✓';
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: #5fcf8a;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 900;
+}
+
 /* All seven opponent chips in one row at 375 px. */
 @media (max-width: 480px) {
   .title .chip-btn {
