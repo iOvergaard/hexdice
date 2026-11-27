@@ -8,6 +8,8 @@ export interface UrlParams {
   speed: Speed | null;
   /** ?sound=off|on overrides the remembered setting for this visit (tests, repro links). */
   sound: boolean | null;
+  /** ?music=off|on overrides the remembered setting for this visit. */
+  music: boolean | null;
   /** ?reinforce=random|frontline|weighted tries a reinforcement rule (prototype). */
   reinforcement: ReinforcementRule | null;
   /** ?link=off|flat|smaller|catchup tries a connection bonus (prototype). */
@@ -28,6 +30,7 @@ export function parseUrlParams(search: string): UrlParams {
   const ai = q.get('ai');
   const speed = q.get('speed');
   const sound = q.get('sound');
+  const music = q.get('music');
   const reinforce = q.get('reinforce');
   const link = q.get('link');
   const shaken = q.get('shaken');
@@ -38,6 +41,7 @@ export function parseUrlParams(search: string): UrlParams {
     aiLevel: ai !== null && AI_LEVELS.includes(ai) ? (ai as AiLevel) : null,
     speed: speed !== null && SPEEDS.includes(speed) ? (speed as Speed) : null,
     sound: sound === 'on' ? true : sound === 'off' ? false : null,
+    music: music === 'on' ? true : music === 'off' ? false : null,
     reinforcement: reinforce !== null && REINFORCEMENTS.includes(reinforce) ? (reinforce as ReinforcementRule) : null,
     connectionBonus: link !== null && LINKS.includes(link) ? (link as ConnectionBonusRule) : null,
     shaken: shaken === 'on' ? true : shaken === 'off' ? false : null,

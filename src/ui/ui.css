@@ -1802,12 +1802,33 @@
   .speed-label {
     display: none;
   }
-  /* Round, speed, help, sound and Quit share one row on a 375px phone, up to round 99. */
-  .controls-secondary {
+  /* How to play, What's new, sound and music share one row on a 375px phone, each label on one line. */
+  .title-extras {
     gap: 6px;
   }
+  .title-extras .btn:not(.btn-icon) {
+    padding: 0 10px;
+  }
+  /* Round, speed, help, sound, music and Quit share one row on a 375px phone, up to round 99; the speed menu gives
+     way first. */
+  .controls-secondary {
+    flex-wrap: nowrap;
+    gap: 3px;
+  }
+  .controls-secondary .btn-icon {
+    width: 40px;
+    min-width: 40px;
+  }
+  .speed {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+  .speed select {
+    width: 100%;
+    min-width: 0;
+  }
   .controls-secondary .btn-quiet:not(.btn-icon) {
-    padding: 0 8px;
+    padding: 0 6px;
   }
   .hud select {
     padding: 0 4px;

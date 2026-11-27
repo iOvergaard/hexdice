@@ -11,8 +11,9 @@ export interface BuiltFile {
 /** Shipped but never needed offline: the worker itself and the link-preview image. */
 const ONLINE_ONLY = new Set(['sw.js', 'og-image.png']);
 
+/** Music is off by default, so the worker keeps each track the first time it plays instead of up front. */
 export function precacheList(paths: readonly string[]): string[] {
-  return paths.filter((p) => !ONLINE_ONLY.has(p) && !p.endsWith('.map')).sort();
+  return paths.filter((p) => !ONLINE_ONLY.has(p) && !p.endsWith('.map') && !p.startsWith('music/')).sort();
 }
 
 /** Content hash of the files: the same build gives the same id, so redeploying it updates nobody. */

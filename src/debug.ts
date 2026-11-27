@@ -11,6 +11,8 @@ export interface HexdiceDebug {
   load(state: GameState): void;
   idle(): Promise<void>;
   sounds(): string[];
+  /** The track the game is on (heard only with sound and music on). */
+  music(): string | null;
   /** Where the live game left its action log; empty when every action is in it. */
   problems(): string[];
 }
@@ -33,6 +35,7 @@ export function installDebug(c: Controller): void {
     load: (state) => c.load(state),
     idle: () => c.idle(),
     sounds: () => [...c.sound.log],
+    music: () => c.music.wanted(),
     problems: () => [...c.getLogProblems()],
   };
 }

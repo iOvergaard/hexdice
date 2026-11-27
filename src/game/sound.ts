@@ -31,6 +31,7 @@ export class Sound {
   private master: GainNode | null = null;
   private noise: AudioBuffer | null = null;
   private readonly live = new Set<AudioScheduledSourceNode>();
+  private readonly listeners: Array<() => void> = [];
   /** Cues that reached a running context; dev builds only, read through window.__hexdice.sounds(). */
   readonly log: string[] = [];
 
@@ -54,6 +55,21 @@ export class Sound {
     if (this.master) this.master.gain.value = on ? LEVEL : 0;
     // The toggle's own click is a gesture, so the context can start right here.
     if (on) this.wake();
+    this.changed();
+  }
+
+  /** The running context and its output while sound is on; null until the first gesture starts it. */
+  output(): { ctx: AudioContext; master: GainNode } | null {
+    return this.on && this.ctx && this.master && this.ctx.state === 'running' ? { ctx: this.ctx, master: this.master } : null;
+  }
+
+  /** Called when output() may have changed: sound switched, or the context started or was interrupted. */
+  onChange(listener: () => void): void {
+    this.listeners.push(listener);
+  }
+
+  private changed(): void {
+    for (const l of this.listeners) l();
   }
 
   /** Stops everything still scheduled, e.g. when a game is abandoned mid-roll. */
@@ -166,12 +182,14 @@ export class Sound {
       this.master = this.ctx.createGain();
       this.master.gain.value = LEVEL;
       this.master.connect(this.ctx.destination);
+      this.ctx.addEventListener('statechange', () => this.changed());
       const buf = this.ctx.createBuffer(1, this.ctx.sampleRate, this.ctx.sampleRate);
       const data = buf.getChannelData(0);
       for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
       this.noise = buf;
     }
-    if (this.ctx.state !== 'running') void this.ctx.resume().catch(() => {});
+    if (this.ctx.state !== 'running') void this.ctx.resume().then(() => this.changed(), () => {});
+    else this.changed();
   }
 
   private ready(name: string): AudioContext | null {

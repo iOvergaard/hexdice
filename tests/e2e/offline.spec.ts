@@ -137,6 +137,35 @@ test.describe('offline', () => {
     await newGame(page);
   });
 
+  test('a track is kept the first time it plays, and plays offline after that', async ({ page, context }) => {
+    const kept = () =>
+      page.evaluate(() =>
+        caches
+          .open('hexdice-music')
+          .then((c) => c.keys())
+          .then((keys) => keys.map((r) => new URL(r.url).pathname)),
+      );
+    await page.goto(`${server.url}?music=on&sound=on`);
+    await offlineReady(page);
+    expect(await cacheNames(page)).toEqual([first.cache]); // nothing fetched up front
+    await newGame(page);
+    await expect.poll(kept).toEqual(['/music/bards-tale.m4a']);
+
+    await context.setOffline(true);
+    const before = server.requests.length;
+    await page.reload();
+    await newGame(page);
+    await expect.poll(() => page.evaluate(() => window.__hexdice!.music())).toBe('bards-tale');
+    expect(server.requests.slice(before).filter((path) => path.startsWith('/music/'))).toEqual([]);
+
+    // A new deploy keeps the music.
+    await context.setOffline(false);
+    server.root = second.dir;
+    await page.goto(server.url);
+    await expect.poll(() => cacheNames(page)).toEqual(expect.arrayContaining([second.cache, 'hexdice-music']));
+    expect(await kept()).toEqual(['/music/bards-tale.m4a']);
+  });
+
   test('on a stalled connection, the offline copy loads after a few seconds', async ({ page }) => {
     await page.goto(server.url);
     await offlineReady(page);

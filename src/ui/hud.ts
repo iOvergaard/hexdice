@@ -1,6 +1,6 @@
 import type { GameState, PlayerId, Speed } from '../engine/types';
 import { emblemPath, playerColour } from './identity';
-import { soundToggle, type SoundToggle } from './sound-toggle';
+import { musicToggle, soundToggle, type SoundToggle } from './sound-toggle';
 
 export interface HudOptions {
   /** Largest connected group per player id. */
@@ -13,6 +13,7 @@ export interface HudOptions {
   speed: Speed;
   mode: 'play' | 'replay';
   sound: boolean;
+  music: boolean;
 }
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -62,7 +63,9 @@ export class Hud {
   private readonly quit: HTMLButtonElement;
   private readonly help: HTMLButtonElement;
   private readonly sound: SoundToggle;
+  private readonly music: SoundToggle;
   private soundHandler: () => void = () => {};
+  private musicHandler: () => void = () => {};
   private endTurnHandler: () => void = () => {};
   private speedHandler: (speed: Speed) => void = () => {};
   private quitHandler: () => void = () => {};
@@ -89,6 +92,7 @@ export class Hud {
     this.quit.dataset.testid = 'quit';
 
     this.sound = soundToggle();
+    this.music = musicToggle();
 
     this.help = el('button', 'btn btn-quiet btn-icon help-button', '?');
     this.help.type = 'button';
@@ -101,7 +105,7 @@ export class Hud {
     this.endTurn.dataset.testid = 'end-turn';
 
     const secondary = el('div', 'controls-secondary');
-    secondary.append(this.round, speedLabel, this.help, this.sound.el, this.quit);
+    secondary.append(this.round, speedLabel, this.help, this.sound.el, this.music.el, this.quit);
     controls.append(secondary, this.endTurn);
     container.append(this.chips, controls);
 
@@ -109,6 +113,7 @@ export class Hud {
     this.speed.addEventListener('change', () => this.speedHandler(this.speed.value as Speed));
     this.quit.addEventListener('click', () => this.quitHandler());
     this.sound.el.addEventListener('click', () => this.soundHandler());
+    this.music.el.addEventListener('click', () => this.musicHandler());
     this.help.addEventListener('click', () => this.helpHandler());
   }
 
@@ -126,6 +131,9 @@ export class Hud {
   }
   onSoundToggle(h: () => void): void {
     this.soundHandler = h;
+  }
+  onMusicToggle(h: () => void): void {
+    this.musicHandler = h;
   }
 
   render(state: GameState, opts: HudOptions): void {
@@ -188,6 +196,7 @@ export class Hud {
     this.round.textContent = `Round ${state.round}`;
     this.speed.value = opts.speed;
     this.sound.set(opts.sound);
+    this.music.set(opts.music);
     this.endTurn.disabled = !opts.canEndTurn && opts.skip === null;
     this.endTurn.textContent = opts.skip === 'turn' ? 'Skip to my turn' : opts.skip === 'end' ? 'Skip to the end' : 'End turn';
     this.endTurn.hidden = opts.mode === 'replay';
