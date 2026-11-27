@@ -2131,12 +2131,27 @@
   .hud {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 10px;
   }
   .hud .chips {
     flex: 1 1 auto;
     grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
     padding-top: 8px;
+  }
+  /* The controls pack tighter here, so eight chips at 1280 px stay as wide as before the music toggle (75 px). */
+  .controls,
+  .controls-secondary {
+    gap: 8px;
+  }
+  .controls-secondary .btn-icon {
+    width: 40px;
+    min-width: 40px;
+  }
+  .controls-secondary .btn-icon + .btn-icon {
+    margin-left: -4px;
+  }
+  .hud select {
+    padding: 0 4px;
   }
   /* A chip here can be narrower than its emblem and numbers (26 + 6 + 36 px with three-digit dice). They keep to
      one line and run into the padding, as before, rather than wrap and make the bar taller; the reserve goes under. */
