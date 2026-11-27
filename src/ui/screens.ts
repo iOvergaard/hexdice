@@ -7,6 +7,7 @@ import { RollView } from './roll-view';
 import { soundToggle } from './sound-toggle';
 import { renderEnding, type Ending } from './ending';
 import { PICTURE_LABEL, pictureBlob, pictureDate, pictureWay, sendPicture } from './share-picture';
+import { offlineLabel, offlineStatus, onOfflineStatus, type OfflineStatus } from '../offline/status';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -167,9 +168,28 @@ export function showTitle(
 
   form.append(playersWrap, aiWrap, actions);
   if (extras.childElementCount > 0) form.append(extras);
+  form.append(offlineNote());
   if (scene) screen.append(titleScene(scene));
   screen.append(head, form);
   root.replaceChildren(screen);
+}
+
+/** Whether the game is saved for play without a connection; hidden where there is no service worker. */
+function offlineNote(): HTMLElement {
+  const note = el('p', 'offline-note');
+  note.dataset.testid = 'offline-status';
+  note.setAttribute('role', 'status');
+  const show = (status: OfflineStatus): void => {
+    note.dataset.status = status;
+    note.hidden = status === 'none';
+    note.textContent = offlineLabel(status);
+  };
+  show(offlineStatus());
+  const stop = onOfflineStatus((status) => {
+    if (note.isConnected) show(status);
+    else stop();
+  });
+  return note;
 }
 
 /** A dealt board behind the menu, built a frame later so the menu paints first. */

@@ -65,6 +65,7 @@ test.describe('offline', () => {
     await page.goto(server.url);
     await expect(page.getByTestId('title')).toBeVisible();
     await offlineReady(page);
+    await expect(page.getByTestId('offline-status')).toHaveText('Ready to play offline');
     await newGame(page); // starting a game saves it, so Continue has something to resume
 
     await context.setOffline(true);
@@ -72,6 +73,7 @@ test.describe('offline', () => {
     const response = await page.reload();
     expect(response?.fromServiceWorker()).toBe(true);
     await expect(page.getByTestId('title')).toBeVisible();
+    await expect(page.getByTestId('offline-status')).toHaveText('Ready to play offline');
     await shot(page, info, 'title');
     await page.getByTestId('continue').click();
     await expect(page.locator('[data-territory]').first()).toBeVisible();
@@ -84,6 +86,36 @@ test.describe('offline', () => {
     const reached = server.requests.slice(before).filter((path) => path !== '/sw.js');
     expect(reached, 'nothing but the worker update check reached the server while offline').toEqual([]);
   });
+
+  test('the title says when the game is saved for offline play', async ({ page, context }, info) => {
+    // Hold the first install until the page has painted, so the saving state is on screen.
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    await context.route('**/favicon.svg', async (route) => {
+      if (route.request().serviceWorker()) await held;
+      await route.continue();
+    });
+    await page.goto(server.url);
+    const note = page.getByTestId('offline-status');
+    await expect(note).toHaveText('Saving for offline play…');
+    await shot(page, info, 'saving');
+    release();
+    await expect(note).toHaveText('Ready to play offline');
+    await shot(page, info, 'ready');
+  });
+
+  for (const [width, height] of [[750, 342], [568, 320]] as const) {
+    test(`on a phone on its side (${width}×${height}), the note fits`, async ({ page }, info) => {
+      await page.setViewportSize({ width, height });
+      await page.goto(server.url);
+      const note = page.getByTestId('offline-status');
+      await expect(note).toHaveText('Ready to play offline');
+      await note.scrollIntoViewIfNeeded();
+      await expect(note).toBeInViewport();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+      await shot(page, info, `landscape-${width}x${height}`);
+    });
+  }
 
   test('a new deploy replaces the old build and deletes its cache', async ({ page, context }) => {
     expect(second.cache).not.toBe(first.cache);
@@ -120,5 +152,6 @@ test.describe('offline', () => {
     await expect(page.getByTestId('title')).toBeVisible();
     await page.waitForTimeout(500);
     expect(await page.evaluate(() => navigator.serviceWorker.getRegistrations().then((r) => r.length))).toBe(0);
+    await expect(page.getByTestId('offline-status')).toBeHidden();
   });
 });
