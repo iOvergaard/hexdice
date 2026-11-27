@@ -13,6 +13,10 @@
     "test": "vitest run",
     "check": "tsc && vitest run",
     "sim": "tsx scripts/sim.ts",
+    "host": "tsx scripts/host.ts",
+    "agent": "tsx scripts/agent.ts",
+    "seat": "tsx scripts/seat.ts",
+    "arena": "tsx scripts/arena.ts",
     "pacing": "tsx scripts/pacing.ts",
     "icons": "tsx scripts/icons.ts",
     "changelog": "tsx scripts/changelog.ts",
@@ -22,9 +26,13 @@
   "devDependencies": {
     "@playwright/test": "^1.65.1",
     "@types/node": "^26.6.6",
+    "@types/ws": "^8.18.2",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "vite": "^8.3.8",
     "vitest": "^5.1.0"
+  },
+  "dependencies": {
+    "ws": "^8.23.0"
   }
 }
