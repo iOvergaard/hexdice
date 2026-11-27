@@ -84,6 +84,8 @@ jobs:
       - name: Gate 2 · AI-vs-AI simulation and game length
         # 1,000 eight-player games, so the game-length percentiles are stable.
         run: npm run sim -- --games 2000 --out "$RUNNER_TEMP/sim.json"
+      - name: Gate 2b · agents playing online (host, WebSocket, replay check)
+        run: npm run arena -- --games 300
 
   e2e:
     # Desktop and phone run side by side; they were most of the wait when they ran one after the other.

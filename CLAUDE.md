@@ -1,6 +1,6 @@
 # Hexdice
 
-Browser dice-conquest strategy game by Jacob (iOvergaard/hexdice, MPL-2.0), live at https://hexdice.snebold.dk. Our own game in the genre: never copy an existing game's name, logo, art, typography or look. Vite + TypeScript, SVG board, plain DOM UI, no runtime dependencies.
+Browser dice-conquest strategy game by Jacob (iOvergaard/hexdice, MPL-2.0), live at https://hexdice.snebold.dk. Our own game in the genre: never copy an existing game's name, logo, art, typography or look. Vite + TypeScript, SVG board, plain DOM UI, no runtime dependencies in the game (the online host uses `ws`).
 
 ## Commands
 
@@ -8,7 +8,10 @@ Browser dice-conquest strategy game by Jacob (iOvergaard/hexdice, MPL-2.0), live
 npm run dev                  # http://localhost:5180 (browser pane: .claude/launch.json "hexdice")
 npm run check                # tsc + Vitest             (gate 1)
 npm run sim -- --games 500   # headless AI vs AI + game length (gate 2; CI runs 2000)
-npm run e2e                  # Playwright desktop + phone (gate 3), own dev server on E2E_PORT (default 5190)
+npm run e2e                  # Playwright desktop + phone (gate 3), own dev server on E2E_PORT (default 5190) and online host on E2E_HOST_PORT (default E2E_PORT + 600)
+npm run host                 # online host, ws://localhost:8787 (docs/online.md)
+npm run arena -- --games 300 # agents playing each other through an in-process host (gate 2b; CI runs 300)
+npm run agent -- …           # reference agent: the built-in AI over the protocol; npm run seat -- … drives a seat one command at a time
 npm run changelog            # add new player-facing commits to CHANGELOG.md (`-- --check`: fail if it's behind)
 npm run pacing               # seconds you wait between turns per speed; needs `npm run dev` running
 npm run icons                # regenerate the icons and link-preview image from public/favicon.svg
@@ -18,6 +21,7 @@ npm run build
 
 - `sim` flags: `--games`, `--seed`, `--out`, `--loss-rule`, `--reinforcement`, `--overflow`, `--connection`, `--last-stand <dice>`, `--elimination-bonus`, `--seat-tables`, `--shaken on|off`.
 - Several sessions often run at once. If port 5190 is taken, run `E2E_PORT=5197 npm run e2e`.
+- `arena` flags: `--games`, `--levels hard,normal,easy,easy` (one agent each, 2–8), `--rooms` (side by side, default 4), `--host wss://…` (play on a running host instead).
 
 ## Docs
 
@@ -33,14 +37,16 @@ src/ai/       pure TS. chooseAction(state, level, rng): easy.ts, normal.ts
 src/ui/       SVG board (board-view, terrain, units), roll strip, HUD, screens, panels (how-to-play, whats-new)
 src/game/     controller (screen flow, turn flow, animation queue, busy lock, replay), save, sound, URL params, timing
 src/offline/  service worker, production builds only; the Vite plugin in scripts/offline.ts writes dist/sw.js
+src/net/      online play, pure: protocol.ts (the message contract), room.ts (one room: seats, turns, deadlines, series), client.ts (WebSocket)
 src/changelog.ts  parse and write CHANGELOG.md (pure) · src/main.ts entry · src/debug.ts dev-only window.__hexdice
-scripts/      sim, stats (length limits), changelog, pacing, icons, offline
+scripts/      sim, stats (length limits), changelog, pacing, icons, offline; host (ws server), agent, seat, arena
 tests/        unit (Vitest), e2e (Playwright), fixtures (state builders)
 ```
 
 - Engine API: `createGame(config)`, `legalAttacks(state)`, `applyAction(state, action) → { state, events }`. Human and AI submit the same `Action`.
-- The UI renders state and animates events; it never decides rules. A new rule adds a `GameEvent` (`types.ts`), and `play()` in `src/game/controller.ts` animates it.
-- Shared contract: `src/engine/types.ts`, `rng.ts`, `hex.ts`, `config.ts`, `seats.ts` and `tests/fixtures/`. Change them deliberately, never as a side effect.
+- The UI renders state and animates events; it never decides rules. A new rule adds a `GameEvent` (`types.ts`), and `show()` in `src/game/controller.ts` animates it (`play()` resolves an action locally, `loopOnline()` takes it from a host).
+- Shared contract: `src/engine/types.ts`, `rng.ts`, `hex.ts`, `config.ts`, `seats.ts` and `tests/fixtures/`. Change them deliberately, never as a side effect. `src/net/protocol.ts` is the contract with agents written by others: change it with `docs/online.md`, and never break an old message.
+- Online, the host is the authority: it runs the engine and keeps the seed and `rngState` until `gameOver` reveals them. The browser's controller animates the host's results (`startOnline`, `onlineResult`, `loopOnline`) and never applies an action itself. `src/game/online.ts` owns the connection and the Play online and lobby screens. Play online shows only when `public/hosts.json` lists a host or the URL has `?host=`.
 - Saves (`src/game/save.ts`) are the config plus the action log, replayed on load. A new rule setting must default to off in `restore`, as `connectionBonus` and `lastStandDice` do, so older saves replay without it.
 - A change to map generation changes every seeded map, so older saves stop loading. Say so before shipping it.
 - `src/ui/how-to-play.ts` builds the rules text from `RulesConfig`. Update it with every rule change; a unit test bans em dashes. The README's "How to play" mirrors it for the defaults (plus the odds table and the computer players), so update both.
@@ -74,10 +80,10 @@ Normal (`src/ai/normal.ts`) plays Hard's move, except that a quarter of its move
 - Phone: the title row and the game bar (round, speed, ?, sound, Quit) each fit one row at 375 px.
 - Phone on its side (any landscape screen 520 px tall or less): the board takes the full height on the left; the roll strip, chips and controls share a column on the right (`tests/e2e/landscape.spec.ts`, 750×342 and 568×320). Wide-screen rules need `min-height: 521px`.
 - Test hooks: `data-territory="<id>"` on territories, `data-testid` on controls, `window.__hexdice` in every build, the live site included (`state`, `actions`, `events`, `attack`, `endTurn`, `autoplay`, `load`, `idle`, `sounds` (dev only), `problems`). `problems` lists where the live game left its action log; Copy game adds them to the record. E2E tests set up a position with `__hexdice.load(state)`; see `tests/e2e/link.spec.ts` and `last-stand.spec.ts`.
-- URL params for tests and repro links: `?seed= &players= &ai=easy|normal|hard &speed=slow|normal|fast|instant &sound=on|off &reinforce=random|frontline|weighted &link=off|flat|smaller|catchup &shaken=on|off`.
-- `import type` for types (`verbatimModuleSyntax`). No new dependencies without asking Jacob, and don't upgrade any unprompted.
+- URL params for tests and repro links: `?seed= &players= &ai=easy|normal|hard &speed=slow|normal|fast|instant &sound=on|off &reinforce=random|frontline|weighted &link=off|flat|smaller|catchup &shaken=on|off`. Online: `?host=ws://…|wss://… &room=CODE`.
+- `import type` for types (`verbatimModuleSyntax`). No new dependencies without asking Jacob, and don't upgrade any unprompted. `ws` (host only, never in the browser bundle) came with online play, pending his OK.
 - UI copy in British English, no em dashes; dates DD-MM-YYYY.
-- Local storage keys start with `hexdice:` (`title`, `save`, `sound`, `changelog-seen`). Wrap every access in try/catch.
+- Local storage keys start with `hexdice:` (`title`, `save`, `sound`, `changelog-seen`, `online`). Wrap every access in try/catch.
 
 ## Changing the rules or the AI
 
@@ -94,6 +100,7 @@ Balance metrics: Hard-vs-Easy and Normal-vs-Easy win rates (skill over luck), co
 |---|---|
 | Rules or AI | `check`, `sim`, short hands-on |
 | UI or flow | `check`, `e2e`, hands-on |
+| Online (`src/net`, host, online screens) | `check`, `arena`, `e2e`, hands-on |
 | Anything else | `check` at least |
 
 The simulation fails on:

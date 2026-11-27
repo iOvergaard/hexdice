@@ -23,7 +23,7 @@ The point of v0.1 is a **solid, playable base to build your improvement ideas on
 **Non-goals (v0.1, parked for your ideas)**
 - Hot-seat UI. Engine, player model and controller handle several human seats from day one; only the setup option and a "pass the device" screen are parked.
 - Mobile polish beyond basic touch play (gestures, zoom, install as an app).
-- Online multiplayer, accounts, persistence/save games.
+- Online multiplayer, accounts, persistence/save games. Online play exists as a prototype from 27-11-2026 (rooms on a self-run host, people and AI agents; `docs/online.md`), hidden until `public/hosts.json` lists a host. Still no accounts.
 - Sound, map editor, undo, alternative rule sets.
 - A "Hard" AI (stretch only if time allows). Done differently on 23-11-2026: the old Normal became Hard, and a new Normal sits between it and Easy (§3).
 
@@ -157,7 +157,7 @@ Hex orientation and coordinate storage, exact map-growth algorithm, palette and 
 - Reinforcements are placed at random.
 - Dice that don't fit go to a reserve, capped at 64.
 - Default game is 8 players (you + 7 AI); setup offers 1–7 AI.
-- Later ideas the base must be ready for: hot-seat, touch-first mobile, seeing who is who. Online multiplayer isn't planned.
+- Later ideas the base must be ready for: hot-seat, touch-first mobile, seeing who is who. Online multiplayer wasn't planned; a prototype was proposed on 27-11-2026 (`docs/online.md`), waiting on your call.
 
 ## 10. Open questions (my default in brackets)
 1. **Name and folder.** [`~/Projects/hexdice`, working title "Hexdice"]
