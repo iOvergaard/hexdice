@@ -12,6 +12,10 @@ describe('precacheList', () => {
       'index.html',
     ]);
   });
+
+  it('leaves the music to be kept as it plays', () => {
+    expect(precacheList(['index.html', 'music/bards-tale.m4a', 'music/victory.m4a'])).toEqual(['index.html']);
+  });
 });
 
 describe('buildId', () => {

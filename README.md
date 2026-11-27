@@ -112,7 +112,7 @@ Rounded to whole percent. Equal stacks win less than half the time, because ties
 - **Continue.** Close the tab mid-game and pick up exactly where you left off.
 - **How to play and What's new** are one tap away on the title screen. What's new lists the new features and fixes, each by its commit, and tells you which version you're on.
 - **Game over** opens with the winner's colours, shows how the map changed hands, and ends with a scoreboard: who went out when, and everyone's attacks won and defences held. Then replay the whole game, or watch the rest if you're knocked out early. Share picture (Copy picture on a computer) turns the card into an image to send to friends, with the seed so they can play the same map. Copy game puts the seed, the rules and every move on your clipboard, so the game can be replayed and looked at move by move elsewhere.
-- **Speed and sound.** Four speeds from Slow to Instant, a skip-to-my-turn button, and synthesised sound with a speaker toggle.
+- **Speed, sound and music.** Four speeds from Slow to Instant, a skip-to-my-turn button, synthesised sound with a speaker toggle, and music with a toggle of its own (off until you switch it on): a lute tune through the game, battle music once two players are left, and a victory or defeat theme at the end. The speaker toggle silences the music too. Each track is kept for offline play the first time it plays.
 - **Keyboard.** Space ends your turn, or skips ahead while the computer plays; Escape cancels a selection.
 
 ## Run it yourself
@@ -146,6 +146,8 @@ Every push to `main` that touches the game runs the tests, plays 2,000 simulated
 ## Credits
 
 Hexdice is inspired by [DICEWARS](https://www.gamedesign.jp/games/dicewars/) by GAMEDESIGN, the game that made this genre famous. Hexdice is an independent game with its own name, code and art, and is not affiliated with GAMEDESIGN.
+
+The music is by [RandomMind](https://opengameart.org/users/randommind), released under [CC0](https://creativecommons.org/publicdomain/zero/1.0/) on OpenGameArt: [The Bard's Tale](https://opengameart.org/content/medieval-the-bards-tale), [Battle](https://opengameart.org/content/medieval-battle), [Victory Theme](https://opengameart.org/content/medieval-victory-theme) and [Defeat Theme](https://opengameart.org/content/medieval-defeat-theme). The files in `public/music/` are mono AAC copies at matched loudness; they stay CC0.
 
 ## Licence
 

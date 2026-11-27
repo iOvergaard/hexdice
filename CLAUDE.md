@@ -71,13 +71,14 @@ Normal (`src/ai/normal.ts`) plays Hard's move, except that a quarter of its move
 - `applyAction` never mutates its input; `config` and `board` are immutable after `createGame`.
 - Hex grid: pointy-top, odd-r offset, cell = `row * width + col`, directions E, SE, SW, W, NW, NE = 0..5.
 - Input: pointer events only, nothing hover-only, the whole territory is the tap target.
-- Phone: the title row and the game bar (round, speed, ?, sound, Quit) each fit one row at 375 px.
+- Phone: the title row and the game bar (round, speed, ?, sound, music, Quit) each fit one row at 375 px.
+- Music (`src/game/music.ts`): CC0 tracks in `public/music/`, played on the sound's AudioContext. `trackFor(state)` picks the track. The service worker keeps each track in the `hexdice-music` cache the first time it plays, not in the precache, and keeps that cache across deploys, so a changed track needs a new file name.
 - Phone on its side (any landscape screen 520 px tall or less): the board takes the full height on the left; the roll strip, chips and controls share a column on the right (`tests/e2e/landscape.spec.ts`, 750×342 and 568×320). Wide-screen rules need `min-height: 521px`.
-- Test hooks: `data-territory="<id>"` on territories, `data-testid` on controls, `window.__hexdice` in every build, the live site included (`state`, `actions`, `events`, `attack`, `endTurn`, `autoplay`, `load`, `idle`, `sounds` (dev only), `problems`). `problems` lists where the live game left its action log; Copy game adds them to the record. E2E tests set up a position with `__hexdice.load(state)`; see `tests/e2e/link.spec.ts` and `last-stand.spec.ts`.
-- URL params for tests and repro links: `?seed= &players= &ai=easy|normal|hard &speed=slow|normal|fast|instant &sound=on|off &reinforce=random|frontline|weighted &link=off|flat|smaller|catchup &shaken=on|off`.
+- Test hooks: `data-territory="<id>"` on territories, `data-testid` on controls, `window.__hexdice` in every build, the live site included (`state`, `actions`, `events`, `attack`, `endTurn`, `autoplay`, `load`, `idle`, `sounds` (dev only), `music` (the track the game is on), `problems`). `problems` lists where the live game left its action log; Copy game adds them to the record. E2E tests set up a position with `__hexdice.load(state)`; see `tests/e2e/link.spec.ts` and `last-stand.spec.ts`.
+- URL params for tests and repro links: `?seed= &players= &ai=easy|normal|hard &speed=slow|normal|fast|instant &sound=on|off &music=on|off &reinforce=random|frontline|weighted &link=off|flat|smaller|catchup &shaken=on|off`.
 - `import type` for types (`verbatimModuleSyntax`). No new dependencies without asking Jacob, and don't upgrade any unprompted.
 - UI copy in British English, no em dashes; dates DD-MM-YYYY.
-- Local storage keys start with `hexdice:` (`title`, `save`, `sound`, `changelog-seen`). Wrap every access in try/catch.
+- Local storage keys start with `hexdice:` (`title`, `save`, `sound`, `music`, `changelog-seen`). Wrap every access in try/catch.
 
 ## Changing the rules or the AI
 

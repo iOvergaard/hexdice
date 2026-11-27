@@ -4,7 +4,7 @@ import { BoardView } from './board-view';
 import { Hud } from './hud';
 import { PALETTE, emblemPath, playerColour } from './identity';
 import { RollView } from './roll-view';
-import { soundToggle } from './sound-toggle';
+import { musicToggle, soundToggle } from './sound-toggle';
 import { renderEnding, type Ending } from './ending';
 import { PICTURE_LABEL, pictureBlob, pictureDate, pictureWay, sendPicture } from './share-picture';
 import { offlineLabel, offlineStatus, onOfflineStatus, type OfflineStatus } from '../offline/status';
@@ -55,10 +55,11 @@ function emblemRow(): SVGSVGElement {
   return s;
 }
 
-/** The title's sound toggle: toggle() flips the setting and returns the new state. */
+/** The title's sound and music toggles: toggle() flips the setting and returns the new state. */
 export interface TitleSound {
   on: boolean;
   toggle: () => boolean;
+  music: { on: boolean; toggle: () => boolean };
 }
 
 export function showTitle(
@@ -163,7 +164,10 @@ export function showTitle(
     const toggle = soundToggle();
     toggle.set(sound.on);
     toggle.el.addEventListener('click', () => toggle.set(sound.toggle()));
-    extras.append(toggle.el);
+    const music = musicToggle();
+    music.set(sound.music.on);
+    music.el.addEventListener('click', () => music.set(sound.music.toggle()));
+    extras.append(toggle.el, music.el);
   }
 
   form.append(playersWrap, aiWrap, actions);

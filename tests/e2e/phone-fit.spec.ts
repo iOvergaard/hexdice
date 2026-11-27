@@ -66,3 +66,19 @@ test('on a 4-inch phone the board keeps 240 px and the page scrolls to End turn'
   expect(l.scrollH).toBeGreaterThan(l.vh);
   expect(l.scrollH - l.endBottom).toBeCloseTo(14, 0);
 });
+
+test('at 375 px the game bar keeps round, speed, help, sound, music and Quit on one row', async ({ page }, info) => {
+  test.skip(info.project.name !== 'phone', 'phone layout');
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.goto('/?seed=42&players=4&speed=instant&sound=off');
+  await page.waitForFunction(() => !!window.__hexdice?.state());
+  // The widest it gets: a two-digit round at Instant.
+  await page.getByTestId('round').evaluate((e) => (e.textContent = 'Round 99'));
+  const ids = ['round', 'speed', 'help', 'sound', 'music', 'quit'];
+  const boxes = await Promise.all(ids.map(async (id) => (await page.getByTestId(id).boundingBox())!));
+  const quit = boxes.at(-1)!;
+  expect(quit.y).toBeLessThan(boxes[0]!.y + boxes[0]!.height);
+  expect(quit.x + quit.width).toBeLessThanOrEqual(375);
+  expect(await page.getByTestId('speed').evaluate((e: HTMLSelectElement) => e.scrollWidth <= e.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(375);
+});

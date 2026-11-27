@@ -30,7 +30,9 @@ test('at 375 × 812 the title fits: Start on the first screen, the extras on one
   const start = (await page.getByTestId('start').boundingBox())!;
   expect(start.y + start.height).toBeLessThanOrEqual(812);
   const tops = await Promise.all(['how-to-play', 'whats-new'].map(async (id) => (await page.getByTestId(id).boundingBox())!.y));
-  const sound = (await page.getByTestId('title').getByRole('button', { name: 'Sound' }).boundingBox())!.y;
-  expect(new Set([...tops, sound].map(Math.round)).size).toBe(1);
+  const toggles = await Promise.all(['Sound', 'Music'].map(async (name) => (await page.getByTestId('title').getByRole('button', { name }).boundingBox())!.y));
+  expect(new Set([...tops, ...toggles].map(Math.round)).size).toBe(1);
+  // Each label stays on one line.
+  for (const id of ['how-to-play', 'whats-new']) expect((await page.getByTestId(id).boundingBox())!.height).toBeLessThanOrEqual(44);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });

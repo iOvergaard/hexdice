@@ -15,6 +15,7 @@ import type { Ending, Mood } from '../ui/ending';
 import { nextSelection, selectionAfterAttack, targetsFor } from '../ui/selection';
 import { boardDiff } from './log-check';
 import { restore, serialise, type RestoredGame } from './save';
+import { loadMusicOn, Music, trackFor } from './music';
 import { loadSoundOn, Sound } from './sound';
 import { cuesFor } from './sound-cues';
 import { summarise } from './summary';
@@ -120,6 +121,7 @@ export class Controller {
   private gen = 0;
   private running = -1;
   readonly sound: Sound;
+  readonly music: Music;
 
   constructor(
     private readonly root: HTMLElement,
@@ -127,6 +129,7 @@ export class Controller {
   ) {
     this.speed = params.speed ?? 'normal';
     this.sound = new Sound(params.sound ?? loadSoundOn());
+    this.music = new Music(this.sound, params.music ?? loadMusicOn());
     document.addEventListener('keydown', (e) => this.onKey(e));
   }
 
@@ -232,6 +235,7 @@ export class Controller {
     this.busy = false;
     this.screen = null;
     this.state = null;
+    this.music.play(null);
     showTitle(
       this.root,
       loadTitle(),
@@ -240,7 +244,7 @@ export class Controller {
         this.newGame(opts, randomSeed());
         this.preview(opts);
       },
-      { on: this.sound.isOn(), toggle: () => this.toggleSound() },
+      { on: this.sound.isOn(), toggle: () => this.toggleSound(), music: { on: this.music.isOn(), toggle: () => this.toggleMusic() } },
       saved ? () => this.resume(saved) : undefined,
       () => openHowToPlay({ ...DEFAULT_RULES, ...this.ruleOverrides() }),
       { unseen: hasUnseen(changelog, seenChange()), open: openChangelog },
@@ -343,12 +347,21 @@ export class Controller {
       this.toggleSound();
       this.renderAll();
     });
+    screen.hud.onMusicToggle(() => {
+      this.toggleMusic();
+      this.renderAll();
+    });
     return screen;
   }
 
   private toggleSound(): boolean {
     this.sound.setOn(!this.sound.isOn());
     return this.sound.isOn();
+  }
+
+  private toggleMusic(): boolean {
+    this.music.setOn(!this.music.isOn());
+    return this.music.isOn();
   }
 
   // ---- rendering ----
@@ -406,7 +419,9 @@ export class Controller {
       speed: this.speed,
       mode: this.mode,
       sound: this.sound.isOn(),
+      music: this.music.isOn(),
     });
+    this.music.play(trackFor(s));
   }
 
   // ---- input ----
@@ -466,7 +481,10 @@ export class Controller {
     const roll = events.find((e) => e.type === 'attackRolled');
     if (roll) {
       this.renderBoard(false, { from: roll.from, to: roll.to }, before);
-      if (cues.dice) this.sound.dice(cues.dice);
+      if (cues.dice) {
+        this.sound.dice(cues.dice);
+        this.music.duck(cues.dice.durationMs, cues.dice.quiet);
+      }
       await this.screen!.roll.show(roll, before, (byAi ? AI_ROLL_MS : ROLL_MS)[speed]);
       if (gen !== this.gen) return;
       if (cues.result) this.sound.result(cues.result);

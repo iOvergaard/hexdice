@@ -8,6 +8,9 @@
 // next visit; it takes over at once and deletes older caches.
 
 const INDEX = new URL('index.html', self.location).href;
+// Music outlives builds: a track is kept the first time it plays, and a changed track gets a new file name.
+const MUSIC = 'hexdice-music';
+const MUSIC_DIR = new URL('music/', self.location).href;
 const PRECACHE = new Set(FILES.map((file) => new URL(file, self.location).href));
 // On a signal that connects but carries nothing, serve the offline copy rather than wait.
 const PAGE_TIMEOUT_MS = 4000;
@@ -27,7 +30,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
       const keys = await caches.keys();
-      await Promise.all(keys.filter((key) => key.startsWith('hexdice-') && key !== CACHE).map((key) => caches.delete(key)));
+      await Promise.all(keys.filter((key) => key.startsWith('hexdice-') && key !== CACHE && key !== MUSIC).map((key) => caches.delete(key)));
       await self.clients.claim();
     })(),
   );
@@ -38,6 +41,7 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   if (request.mode === 'navigate') event.respondWith(page(request));
   else if (PRECACHE.has(request.url)) event.respondWith(asset(request));
+  else if (request.url.startsWith(MUSIC_DIR)) event.respondWith(music(request));
 });
 
 async function page(request) {
@@ -57,4 +61,13 @@ async function page(request) {
 async function asset(request) {
   const cache = await caches.open(CACHE);
   return (await cache.match(request.url)) ?? fetch(request);
+}
+
+async function music(request) {
+  const cache = await caches.open(MUSIC);
+  const cached = await cache.match(request.url);
+  if (cached) return cached;
+  const response = await fetch(request);
+  if (response.ok && response.status === 200) await cache.put(request.url, response.clone());
+  return response;
 }

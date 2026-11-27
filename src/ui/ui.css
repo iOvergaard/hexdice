@@ -1802,12 +1802,33 @@
   .speed-label {
     display: none;
   }
-  /* Round, speed, help, sound and Quit share one row on a 375px phone, up to round 99. */
-  .controls-secondary {
+  /* How to play, What's new, sound and music share one row on a 375px phone, each label on one line. */
+  .title-extras {
     gap: 6px;
   }
+  .title-extras .btn:not(.btn-icon) {
+    padding: 0 10px;
+  }
+  /* Round, speed, help, sound, music and Quit share one row on a 375px phone, up to round 99; the speed menu gives
+     way first. */
+  .controls-secondary {
+    flex-wrap: nowrap;
+    gap: 3px;
+  }
+  .controls-secondary .btn-icon {
+    width: 40px;
+    min-width: 40px;
+  }
+  .speed {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+  .speed select {
+    width: 100%;
+    min-width: 0;
+  }
   .controls-secondary .btn-quiet:not(.btn-icon) {
-    padding: 0 8px;
+    padding: 0 6px;
   }
   .hud select {
     padding: 0 4px;
@@ -2110,12 +2131,27 @@
   .hud {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 10px;
   }
   .hud .chips {
     flex: 1 1 auto;
     grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
     padding-top: 8px;
+  }
+  /* The controls pack tighter here, so eight chips at 1280 px stay as wide as before the music toggle (75 px). */
+  .controls,
+  .controls-secondary {
+    gap: 8px;
+  }
+  .controls-secondary .btn-icon {
+    width: 40px;
+    min-width: 40px;
+  }
+  .controls-secondary .btn-icon + .btn-icon {
+    margin-left: -4px;
+  }
+  .hud select {
+    padding: 0 4px;
   }
   /* A chip here can be narrower than its emblem and numbers (26 + 6 + 36 px with three-digit dice). They keep to
      one line and run into the padding, as before, rather than wrap and make the bar taller; the reserve goes under. */
