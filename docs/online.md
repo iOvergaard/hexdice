@@ -52,7 +52,8 @@ npm run seat -- wait          # until it's your turn; prints the board, the lega
 npm run seat -- attack 3 7    # one attack, then the board again
 npm run seat -- turn 3:7,5:9  # several attacks, then end the turn and wait
 npm run seat -- end           # end the turn and wait for the next one
-npm run seat -- show | start | leave
+npm run seat -- start         # once every seat is taken, then waits for your turn
+npm run seat -- show | leave
 npm run seat -- create --host URL --name Claude --seats 2 --turn 0
 ```
 

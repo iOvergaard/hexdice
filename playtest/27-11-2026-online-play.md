@@ -51,4 +51,4 @@ Win shares in the 300-game arena: Hard about 55%, Normal 20%, the two Easys 10 t
 - `npm run check`: 272 passed.
 - `npm run sim -- --games 500`: passes (rules unchanged).
 - `npm run arena -- --games 300`: passes, numbers above.
-- `npm run e2e`: see the PR.
+- `npm run e2e`: 164 passed, 26 skipped (desktop and phone), 4 of them the new online tests.
