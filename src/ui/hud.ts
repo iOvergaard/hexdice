@@ -13,6 +13,10 @@ export interface HudOptions {
   speed: Speed;
   mode: 'play' | 'replay';
   sound: boolean;
+  /** Online: your seat (null when watching). Offline it's left out, and the one human seat is you. */
+  you?: PlayerId | null;
+  /** Online: Quit reads Leave. */
+  online?: boolean;
 }
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -139,7 +143,7 @@ export class Hud {
     this.chips.replaceChildren(
       ...state.players.map((p) => {
         const group = opts.largestGroups[p.id] ?? 0;
-        const isYou = humans === 1 && p.kind === 'human';
+        const isYou = opts.you !== undefined ? p.id === opts.you : humans === 1 && p.kind === 'human';
         const li = el('li', 'chip');
         li.dataset.testid = `player-${p.id}`;
         li.style.setProperty('--c', playerColour(p.identity));
@@ -191,6 +195,6 @@ export class Hud {
     this.endTurn.disabled = !opts.canEndTurn && opts.skip === null;
     this.endTurn.textContent = opts.skip === 'turn' ? 'Skip to my turn' : opts.skip === 'end' ? 'Skip to the end' : 'End turn';
     this.endTurn.hidden = opts.mode === 'replay';
-    this.quit.textContent = opts.mode === 'replay' ? 'Stop replay' : 'Quit';
+    this.quit.textContent = opts.mode === 'replay' ? 'Stop replay' : opts.online ? 'Leave' : 'Quit';
   }
 }

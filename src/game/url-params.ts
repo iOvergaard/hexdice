@@ -1,4 +1,5 @@
 import { MAX_PLAYERS, MIN_PLAYERS } from '../engine/config';
+import { cleanRoomCode } from '../net/protocol';
 import type { AiLevel, ConnectionBonusRule, ReinforcementRule, Speed } from '../engine/types';
 
 export interface UrlParams {
@@ -14,6 +15,10 @@ export interface UrlParams {
   connectionBonus: ConnectionBonusRule | null;
   /** ?shaken=on|off tries the shaken rule (prototype). */
   shaken: boolean | null;
+  /** ?host=ws://… or wss://…: an online host to play on, besides those in hosts.json. */
+  host: string | null;
+  /** ?room=ABCDE: an online room to join (with ?host=). */
+  room: string | null;
 }
 
 const AI_LEVELS: readonly string[] = ['easy', 'normal', 'hard'];
@@ -31,6 +36,7 @@ export function parseUrlParams(search: string): UrlParams {
   const reinforce = q.get('reinforce');
   const link = q.get('link');
   const shaken = q.get('shaken');
+  const host = q.get('host');
   const players = playersRaw !== null && /^\d+$/.test(playersRaw) ? Number(playersRaw) : null;
   return {
     seed: seedRaw !== null && /^\d+$/.test(seedRaw) ? Number(seedRaw) >>> 0 : null,
@@ -41,5 +47,7 @@ export function parseUrlParams(search: string): UrlParams {
     reinforcement: reinforce !== null && REINFORCEMENTS.includes(reinforce) ? (reinforce as ReinforcementRule) : null,
     connectionBonus: link !== null && LINKS.includes(link) ? (link as ConnectionBonusRule) : null,
     shaken: shaken === 'on' ? true : shaken === 'off' ? false : null,
+    host: host !== null && /^wss?:\/\/[^\s]+$/.test(host) ? host : null,
+    room: cleanRoomCode(q.get('room')),
   };
 }

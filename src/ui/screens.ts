@@ -72,6 +72,8 @@ export function showTitle(
   scene?: () => GameState,
   /** A game link opened while a game is in progress: offered beside Continue instead of replacing it unasked. */
   onLink?: () => void,
+  /** Play online: the button shows once `available` says there is a host to play on. */
+  online?: { available: Promise<boolean>; open: () => void },
 ): void {
   let players = Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, initial.players));
   let aiLevel = initial.aiLevel;
@@ -140,6 +142,14 @@ export function showTitle(
     actions.append(link);
   }
   actions.append(start);
+  if (online) {
+    void online.available.then((yes) => {
+      if (!yes || !actions.isConnected) return;
+      const b = button('Play online', 'play-online', 'btn btn-big');
+      b.addEventListener('click', online.open);
+      actions.append(b);
+    });
+  }
   const extras = el('div', 'title-extras');
   if (onHelp) {
     const help = button('How to play', 'how-to-play', 'btn btn-quiet');
@@ -321,18 +331,31 @@ export class GameOverOverlay {
   /** `onCopy` returns the game record to copy; null leaves the button out. `seed` goes on the picture, so others can play the same map. */
   show(
     ending: Ending,
-    actions: { onTitle: () => void; onReplay: (() => void) | null; onWatch: (() => void) | null; onCopy?: (() => string) | null; seed?: number },
+    actions: {
+      onTitle: () => void;
+      onReplay: (() => void) | null;
+      onWatch: (() => void) | null;
+      onCopy?: (() => string) | null;
+      seed?: number;
+      /** Online, for the room's owner: the same seats play again. */
+      onRematch?: (() => void) | null;
+    },
   ): void {
     this.el.className = `overlay mood-${ending.mood}`;
     const card = renderEnding(ending);
     const buttons: HTMLButtonElement[] = [];
+    if (actions.onRematch) {
+      const b = button('Rematch', 'overlay-rematch', 'btn btn-primary');
+      b.addEventListener('click', actions.onRematch);
+      buttons.push(b);
+    }
     if (actions.onWatch) {
       const b = button('Watch the rest', 'overlay-watch', 'btn btn-primary');
       b.addEventListener('click', actions.onWatch);
       buttons.push(b);
     }
     if (actions.onReplay) {
-      const b = button('Replay', 'overlay-replay', actions.onWatch ? 'btn' : 'btn btn-primary');
+      const b = button('Replay', 'overlay-replay', actions.onWatch || actions.onRematch ? 'btn' : 'btn btn-primary');
       b.addEventListener('click', actions.onReplay);
       buttons.push(b);
     }
